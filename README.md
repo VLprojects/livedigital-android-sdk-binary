@@ -1,7 +1,5 @@
 # livedigital-android-sdk-binary
 
-LiveDigitalSDK public builds
-
 ## Installation
 
 1. Add the following repository to your project's `build.gradle`:

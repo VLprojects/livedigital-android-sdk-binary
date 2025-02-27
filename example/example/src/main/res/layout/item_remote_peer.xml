@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <space.livedigital.sdk.view.PeerView
+        android:id="@+id/remote_peer_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:background="#000" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/peer_id_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:background="#035397"
+        android:ellipsize="end"
+        android:padding="4dp"
+        android:textColor="#FFAA4C"
+        android:textSize="12sp"
+        tools:text="4314" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/peer_name_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#035397"
+        android:ellipsize="end"
+        android:padding="4dp"
+        android:textColor="#FFAA4C"
+        android:textSize="12sp"
+        tools:text="4314" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:background="#035397"
+        android:orientation="vertical"
+        tools:ignore="RelativeOverlap">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/video_status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:ellipsize="end"
+            android:padding="4dp"
+            android:textColor="#FFAA4C"
+            android:textSize="12sp"
+            tools:text="video is ON" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/audio_status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:padding="4dp"
+            android:textColor="#FFAA4C"
+            android:textSize="12sp"
+            tools:text="audio is ON" />
+    </LinearLayout>
+</RelativeLayout>

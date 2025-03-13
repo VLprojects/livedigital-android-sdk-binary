@@ -3,7 +3,7 @@ androidGradlePlugin = "8.7.3"
 kotlin = "1.9.23"
 kotlinxSerializationJson = "1.6.0"
 
-livedigitalSdk = "1.0.0"
+livedigitalSdk = "1.1.0"
 
 appcompat = "1.7.0"
 material = "1.12.0"

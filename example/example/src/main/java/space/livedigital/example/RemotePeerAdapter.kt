@@ -26,10 +26,6 @@ internal class RemotePeerAdapter(
         (holder as? RemotePeerViewHolder)?.bind(list[position])
     }
 
-    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-        (holder as? RemotePeerViewHolder)?.unbind()
-    }
-
     override fun getItemCount() = list.size
 
     fun addPeer(peer: Peer) {

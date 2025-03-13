@@ -40,7 +40,6 @@ import space.livedigital.sdk.entities.Peer
 import space.livedigital.sdk.entities.PeerId
 import space.livedigital.sdk.entities.PeerVolume
 import space.livedigital.sdk.entities.Role
-import space.livedigital.sdk.entities.permission.PermissionMediaLabel
 import space.livedigital.sdk.media.MediaSourceId
 import space.livedigital.sdk.media.audio.AudioSource
 import space.livedigital.sdk.media.video.CameraManager
@@ -348,11 +347,7 @@ internal class MainActivity : AppCompatActivity() {
 
             override fun peerAppDataUpdated(peerId: PeerId, appData: JSONObject) {}
 
-            override fun peerPermissionsUpdated(
-                peerId: PeerId,
-                permissions: List<PermissionMediaLabel>
-            ) {
-            }
+            override fun peerPermissionsUpdated(peerId: PeerId, permissions: List<MediaLabel>) {}
 
             override fun stoppedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
 

@@ -1,12 +1,12 @@
 package space.livedigital.example.moodhood_api
 
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import space.livedigital.example.entities.MoodhoodParticipant
 import space.livedigital.example.entities.MoodhoodUserToken
 import space.livedigital.example.entities.Room

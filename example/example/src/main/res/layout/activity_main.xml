@@ -106,10 +106,17 @@
             android:gravity="center"
             android:orientation="horizontal">
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/audio_device_switch_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:drawableStart="@drawable/ic_outline_audiotrack_24"
+                android:drawablePadding="4dp"
+                android:padding="24dp"
+                android:text="Switch audio"
+                android:textColor="@color/white"
+                android:textSize="15sp" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/camera_switch_button"
@@ -121,12 +128,7 @@
                 android:padding="24dp"
                 android:text="Switch camera"
                 android:textColor="@color/white"
-                android:textSize="20sp" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:textSize="15sp" />
         </LinearLayout>
 
     </LinearLayout>

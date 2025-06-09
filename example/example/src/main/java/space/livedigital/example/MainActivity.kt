@@ -1,10 +1,13 @@
 package space.livedigital.example
 
 import android.Manifest
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.ArrayAdapter
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.lifecycleScope
@@ -19,6 +22,7 @@ import space.livedigital.example.entities.MoodhoodParticipant
 import space.livedigital.example.entities.PeerAppData
 import space.livedigital.example.entities.Room
 import space.livedigital.example.entities.SignalingToken
+import space.livedigital.example.logger.ConsoleLogger
 import space.livedigital.example.moodhood_api.MoodHoodApiClient
 import space.livedigital.example.moodhood_api.result.api.ExecutionError
 import space.livedigital.example.moodhood_api.result.api.ExecutionResult
@@ -28,6 +32,7 @@ import space.livedigital.sdk.channel.ChannelId
 import space.livedigital.sdk.channel.ChannelSession
 import space.livedigital.sdk.channel.ChannelSessionDelegate
 import space.livedigital.sdk.channel.ChannelSessionStatus
+import space.livedigital.sdk.debug.LDSDKLogger
 import space.livedigital.sdk.engine.LiveDigitalEngine
 import space.livedigital.sdk.engine.LiveDigitalEngineDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineDestroyDelegate
@@ -41,6 +46,9 @@ import space.livedigital.sdk.entities.PeerId
 import space.livedigital.sdk.entities.PeerVolume
 import space.livedigital.sdk.entities.Role
 import space.livedigital.sdk.media.MediaSourceId
+import space.livedigital.sdk.media.audio.AudioRoute
+import space.livedigital.sdk.media.audio.AudioRouter
+import space.livedigital.sdk.media.audio.AudioRouter.UpdateCurrentRouteCallback
 import space.livedigital.sdk.media.audio.AudioSource
 import space.livedigital.sdk.media.video.CameraManager
 import space.livedigital.sdk.media.video.CameraManagerDelegate
@@ -64,6 +72,8 @@ internal class MainActivity : AppCompatActivity() {
 
     private var adapter: RemotePeerAdapter? = null
 
+    private var chooseAudioDeviceAlertDialog: AlertDialog? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -86,6 +96,7 @@ internal class MainActivity : AppCompatActivity() {
         binding?.restartButton?.setOnClickListener {
             restartConference()
         }
+
         binding?.cameraStatusEnableButton?.setOnClickListener {
             val cameraPermissionGrantedAction = {
                 if (localVideoSource == null) startLocalVideo() else stopLocalVideo()
@@ -96,6 +107,7 @@ internal class MainActivity : AppCompatActivity() {
                 cameraPermissionGrantedAction
             )
         }
+
         binding?.micStatusEnableButton?.setOnClickListener {
             val microphonePermissionGrantedAction = {
                 if (localAudioSource == null) startLocalAudio() else stopLocalAudio()
@@ -106,8 +118,21 @@ internal class MainActivity : AppCompatActivity() {
                 microphonePermissionGrantedAction
             )
         }
+
         binding?.cameraSwitchButton?.setOnClickListener {
             liveDigitalEngine?.cameraManager?.flipCamera()
+        }
+
+        binding?.audioDeviceSwitchButton?.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                checkPermission(
+                    listOf(Manifest.permission.BLUETOOTH_CONNECT),
+                    permissionGrantedAction = this::showAudioDeviceChooseAlertDialog,
+                    permissionDeniedAction = this::showAudioDeviceChooseAlertDialog
+                )
+            } else {
+                showAudioDeviceChooseAlertDialog()
+            }
         }
     }
 
@@ -157,6 +182,38 @@ internal class MainActivity : AppCompatActivity() {
         localAudioSource = null
     }
 
+    private fun showAudioDeviceChooseAlertDialog() {
+        val availableAudioDevices =
+            liveDigitalEngine?.audioRouter?.getAvailableRoutes().orEmpty()
+        val availableAudioDeviceNames = availableAudioDevices.map { it.kind.name }
+        val selectedAudioDeviceIndex = availableAudioDevices.indexOfFirst { it.isCurrent }
+
+        chooseAudioDeviceAlertDialog = showSimpleSelectorDialog(
+            context = this,
+            title = "Choose audio device",
+            items = availableAudioDeviceNames,
+            initialItemIndex = selectedAudioDeviceIndex
+        ) { index, value ->
+            val actualAvailableAudioDevices =
+                liveDigitalEngine?.audioRouter?.getAvailableRoutes().orEmpty()
+            val audioRoute = actualAvailableAudioDevices.find { it.kind.name == value }
+                ?: return@showSimpleSelectorDialog
+
+            liveDigitalEngine?.audioRouter?.updateCurrentRoute(
+                audioRoute,
+                object : UpdateCurrentRouteCallback {
+                    override fun onCurrentRouteUpdated(audioRoute: AudioRoute) {}
+                    override fun onRouteAlreadyCurrent() {}
+                    override fun onCurrentRouteUpdateError() {}
+                }
+            )
+        }.apply {
+            setOnDismissListener {
+                chooseAudioDeviceAlertDialog = null
+            }
+        }
+    }
+
     private fun startConference() {
         lifecycleScope.launch {
             authorize()
@@ -182,6 +239,8 @@ internal class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "Error getting signalingToken from: $signalingTokenResult")
                 return@launch
             }
+
+            LDSDKLogger.add(ConsoleLogger)
 
             initLiveDigitalEngine()
 
@@ -213,7 +272,8 @@ internal class MainActivity : AppCompatActivity() {
     }
 
     private fun initLiveDigitalEngine() {
-        liveDigitalEngine = StockLiveDigitalEngine(context = this)
+        liveDigitalEngine = StockLiveDigitalEngine(context = applicationContext)
+
         liveDigitalEngine?.cameraManager?.delegate = object : CameraManagerDelegate {
             override fun cameraManagerSwitchedCamera(
                 cameraManager: CameraManager,
@@ -226,11 +286,29 @@ internal class MainActivity : AppCompatActivity() {
                 binding?.cameraSwitchButton?.setIcon(drawableResId)
             }
         }
+
         liveDigitalEngine?.delegate = object : LiveDigitalEngineDelegate {
             override fun engineFailed(error: LiveDigitalEngineError) {
                 Log.e(TAG, "Engine failed $error")
             }
         }
+
+        liveDigitalEngine?.audioRouter?.setAvailableRoutesChangedDelegate(
+            object : AudioRouter.AvailableRoutesChangedDelegate {
+                override fun availableRoutesChanged(availableRoutes: List<AudioRoute>) {
+                    chooseAudioDeviceAlertDialog?.listView?.let { alertDialogListView ->
+                        val availableAudioDeviceNames = availableRoutes.map { it.kind.name }
+                        val selectedAudioDeviceIndex = availableRoutes.indexOfFirst { it.isCurrent }
+
+                        (alertDialogListView.adapter as? ArrayAdapter<String>)?.apply {
+                            clear()
+                            addAll(availableAudioDeviceNames)
+                            notifyDataSetChanged()
+                        }
+                        alertDialogListView.setItemChecked(selectedAudioDeviceIndex, true)
+                    }
+                }
+            })
     }
 
     private fun connectToChannel(
@@ -518,6 +596,34 @@ internal class MainActivity : AppCompatActivity() {
         setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null)
     }
 
+    private fun showSimpleSelectorDialog(
+        context: Context,
+        title: String,
+        items: List<String>,
+        initialItemIndex: Int,
+        onSelected: (index: Int, value: String) -> Unit
+    ): AlertDialog {
+        var selectedItemIndex = initialItemIndex
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_list_item_single_choice,
+            items.toMutableList()
+        )
+
+        return AlertDialog.Builder(context)
+            .setTitle(title)
+            .setSingleChoiceItems(adapter, selectedItemIndex) { _, newSelectedItemIndex ->
+                selectedItemIndex = newSelectedItemIndex
+            }
+            .setPositiveButton("OK") { dialog, _ ->
+                val selectedItem = adapter?.getItem(selectedItemIndex) ?: return@setPositiveButton
+                onSelected(selectedItemIndex, selectedItem)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private companion object {
         // To check example, you can use link in browser:
         // https://edu.livedigital.space/room/LpT7NITj6C
@@ -533,3 +639,4 @@ internal class MainActivity : AppCompatActivity() {
         const val TAG = "LivedigitalAndroidSdkExample"
     }
 }
+

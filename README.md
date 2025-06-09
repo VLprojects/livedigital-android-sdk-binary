@@ -21,3 +21,9 @@ dependencies {
     implementation("com.github.vlprojects:livedigital-android-sdk:1.3.0")
 }
 ```
+
+## Whats new
+
+- Handle bluetooth permission applying after call started
+- Add switch audio device feature in example
+- Add logger showcase in example

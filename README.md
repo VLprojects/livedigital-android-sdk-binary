@@ -22,7 +22,7 @@ dependencies {
 }
 ```
 
-## Whats new
+## What's new in 1.3.0
 
 - Handle bluetooth permission applying after call started
 - Add switch audio device feature in example

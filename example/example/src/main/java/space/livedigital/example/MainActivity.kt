@@ -85,6 +85,13 @@ internal class MainActivity : AppCompatActivity() {
         startConference()
     }
 
+    override fun onResume() {
+        super.onResume()
+        chooseAudioDeviceAlertDialog?.listView?.let { alertDialogListView ->
+            (alertDialogListView.adapter as? ArrayAdapter<String>)?.apply { notifyDataSetChanged() }
+        }
+    }
+
     private fun initPeerList() {
         adapter = RemotePeerAdapter(layoutInflater)
         binding?.remotePeerList?.layoutManager =
@@ -639,4 +646,3 @@ internal class MainActivity : AppCompatActivity() {
         const val TAG = "LivedigitalAndroidSdkExample"
     }
 }
-

@@ -74,6 +74,9 @@ internal class MainActivity : AppCompatActivity() {
 
     private var chooseAudioDeviceAlertDialog: AlertDialog? = null
 
+    // Need to save reference of delegate (because in sdk delegate is Weak Reference)
+    private val availableRoutesChangedDelegate = createAvailableRoutesChangedDelegate()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -91,6 +94,23 @@ internal class MainActivity : AppCompatActivity() {
             (alertDialogListView.adapter as? ArrayAdapter<String>)?.apply { notifyDataSetChanged() }
         }
     }
+
+    private fun createAvailableRoutesChangedDelegate(): AudioRouter.AvailableRoutesChangedDelegate =
+        object : AudioRouter.AvailableRoutesChangedDelegate {
+            override fun availableRoutesChanged(availableRoutes: List<AudioRoute>) {
+                chooseAudioDeviceAlertDialog?.listView?.let { alertDialogListView ->
+                    val availableAudioDeviceNames = availableRoutes.map { it.kind.name }
+                    val selectedAudioDeviceIndex = availableRoutes.indexOfFirst { it.isCurrent }
+
+                    (alertDialogListView.adapter as? ArrayAdapter<String>)?.apply {
+                        clear()
+                        addAll(availableAudioDeviceNames)
+                        notifyDataSetChanged()
+                    }
+                    alertDialogListView.setItemChecked(selectedAudioDeviceIndex, true)
+                }
+            }
+        }
 
     private fun initPeerList() {
         adapter = RemotePeerAdapter(layoutInflater)
@@ -301,21 +321,8 @@ internal class MainActivity : AppCompatActivity() {
         }
 
         liveDigitalEngine?.audioRouter?.setAvailableRoutesChangedDelegate(
-            object : AudioRouter.AvailableRoutesChangedDelegate {
-                override fun availableRoutesChanged(availableRoutes: List<AudioRoute>) {
-                    chooseAudioDeviceAlertDialog?.listView?.let { alertDialogListView ->
-                        val availableAudioDeviceNames = availableRoutes.map { it.kind.name }
-                        val selectedAudioDeviceIndex = availableRoutes.indexOfFirst { it.isCurrent }
-
-                        (alertDialogListView.adapter as? ArrayAdapter<String>)?.apply {
-                            clear()
-                            addAll(availableAudioDeviceNames)
-                            notifyDataSetChanged()
-                        }
-                        alertDialogListView.setItemChecked(selectedAudioDeviceIndex, true)
-                    }
-                }
-            })
+            availableRoutesChangedDelegate
+        )
     }
 
     private fun connectToChannel(

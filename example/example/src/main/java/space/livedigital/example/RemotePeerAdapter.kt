@@ -3,8 +3,8 @@ package space.livedigital.example
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import space.livedigital.sdk.entities.Peer
-import space.livedigital.sdk.entities.PeerId
+import space.livedigital.sdk.data.entities.Peer
+import space.livedigital.sdk.data.entities.PeerId
 
 internal class RemotePeerAdapter(
     private val layoutInflater: LayoutInflater

@@ -1,13 +1,13 @@
 package space.livedigital.example.logger
 
 import android.util.Log
-import space.livedigital.sdk.debug.Level
-import space.livedigital.sdk.debug.Logger
+import space.livedigital.sdk.debug.logger.Level
+import space.livedigital.sdk.debug.logger.Logger
 
 object ConsoleLogger : Logger {
     private const val LOG_PREFIX = "LD_SDK_"
 
-    override fun log(level: Level, tag: String, message: String, payload: Map<String, String>?) {
+    override fun log(level: Level, tag: String, message: String, payload: Map<String, String?>?) {
         val consoleLogTag = LOG_PREFIX + tag
         var consoleMessage = message
         if (payload.isNullOrEmpty().not()) {

@@ -4,8 +4,8 @@ import android.annotation.SuppressLint
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import space.livedigital.example.databinding.ItemRemotePeerBinding
-import space.livedigital.sdk.entities.MediaLabel
-import space.livedigital.sdk.entities.Peer
+import space.livedigital.sdk.data.entities.MediaLabel
+import space.livedigital.sdk.data.entities.Peer
 
 internal class RemotePeerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val binding = ItemRemotePeerBinding.bind(itemView)

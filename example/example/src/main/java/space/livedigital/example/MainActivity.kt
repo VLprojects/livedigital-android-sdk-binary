@@ -32,19 +32,20 @@ import space.livedigital.sdk.channel.ChannelId
 import space.livedigital.sdk.channel.ChannelSession
 import space.livedigital.sdk.channel.ChannelSessionDelegate
 import space.livedigital.sdk.channel.ChannelSessionStatus
-import space.livedigital.sdk.debug.LDSDKLogger
+import space.livedigital.sdk.data.entities.ActivityConfirmationData
+import space.livedigital.sdk.data.entities.CustomEvent
+import space.livedigital.sdk.data.entities.MediaLabel
+import space.livedigital.sdk.data.entities.Peer
+import space.livedigital.sdk.data.entities.PeerId
+import space.livedigital.sdk.data.entities.PeerVolume
+import space.livedigital.sdk.data.entities.Role
+import space.livedigital.sdk.data.entities.StockChannelSessionParams
+import space.livedigital.sdk.data.entities.channel_state_consistency.ChannelStateConsistencyIssue
 import space.livedigital.sdk.engine.LiveDigitalEngine
 import space.livedigital.sdk.engine.LiveDigitalEngineDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineDestroyDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineError
 import space.livedigital.sdk.engine.StockLiveDigitalEngine
-import space.livedigital.sdk.entities.ActivityConfirmationData
-import space.livedigital.sdk.entities.CustomEvent
-import space.livedigital.sdk.entities.MediaLabel
-import space.livedigital.sdk.entities.Peer
-import space.livedigital.sdk.entities.PeerId
-import space.livedigital.sdk.entities.PeerVolume
-import space.livedigital.sdk.entities.Role
 import space.livedigital.sdk.media.MediaSourceId
 import space.livedigital.sdk.media.audio.AudioRoute
 import space.livedigital.sdk.media.audio.AudioRouter
@@ -267,8 +268,6 @@ internal class MainActivity : AppCompatActivity() {
                 return@launch
             }
 
-            LDSDKLogger.add(ConsoleLogger)
-
             initLiveDigitalEngine()
 
             connectToChannel(channelId, participantId, signalingToken)
@@ -299,7 +298,11 @@ internal class MainActivity : AppCompatActivity() {
     }
 
     private fun initLiveDigitalEngine() {
-        liveDigitalEngine = StockLiveDigitalEngine(context = applicationContext)
+        liveDigitalEngine =
+            StockLiveDigitalEngine(
+                context = applicationContext,
+                externalLoggers = listOf(ConsoleLogger)
+            )
 
         liveDigitalEngine?.cameraManager?.delegate = object : CameraManagerDelegate {
             override fun cameraManagerSwitchedCamera(
@@ -335,13 +338,18 @@ internal class MainActivity : AppCompatActivity() {
         )
         val appDataJson = JsonUtils.encodeToJsonString(appData)
 
-        liveDigitalEngine?.connectToChannel(
+        val channelSessionParams = StockChannelSessionParams(
             channelId = ChannelId(channelId),
             participantId = participantId,
             role = Role.HOST,
             signalingToken = signalingToken,
             peerId = PeerId(participantId),
             appData = JSONObject(appDataJson),
+            analyticsMetaKeyValues = emptyMap()
+        )
+
+        liveDigitalEngine?.connectToChannel(
+            channelSessionParams = channelSessionParams,
             delegate = createChannelSessionDelegate(),
             successAction = { session = it }
         )
@@ -472,6 +480,10 @@ internal class MainActivity : AppCompatActivity() {
             override fun peerVolumesUpdated(volumes: List<PeerVolume>) {}
 
             override fun silenceHasBeenSet() {}
+
+            override fun gotChannelStateConsistencyIssues(
+                issues: Set<ChannelStateConsistencyIssue>
+            ) {}
         }
     }
 

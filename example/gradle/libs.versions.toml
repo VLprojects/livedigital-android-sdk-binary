@@ -3,7 +3,7 @@ androidGradlePlugin = "8.7.3"
 kotlin = "2.1.20"
 kotlinxSerializationJson = "1.8.0"
 
-livedigitalSdk = "1.4.0"
+livedigitalSdk = "1.5.0"
 
 appcompat = "1.7.0"
 material = "1.12.0"
@@ -11,6 +11,7 @@ recyclerview = "1.4.0"
 
 retrofit = "2.11.0"
 loggingInterceptor = "4.12.0"
+koin = "4.0.2"
 
 permissionChecker = "0.1"
 
@@ -25,6 +26,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 retrofit2-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit2-kotlinx-serialization-converter = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 okhttp3-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "loggingInterceptor" }
+koin = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
 
 sequenia-permissionChecker = { group = "com.github.sequenia", name = "Permission-Checker", version.ref = "permissionChecker" }
 

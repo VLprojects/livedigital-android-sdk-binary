@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.okhttp3.logging.interceptor)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.retrofit2.kotlinx.serialization.converter)
+    implementation(libs.koin)
 
     implementation(libs.sequenia.permissionChecker)
 }

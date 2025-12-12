@@ -4,7 +4,9 @@ import android.os.Build
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -53,23 +55,40 @@ import kotlin.time.TimeSource.Monotonic.markNow
 
 class MainViewModel() : ViewModel(), KoinComponent {
 
-
     val state
         get() = mutableState
+    val eventFlow
+        get() = eventChannel.receiveAsFlow()
 
     private val mutableState = MutableStateFlow(ScreenState())
+    private val eventChannel = Channel<ScreenEvent>(Channel.UNLIMITED)
     private val apiClient = MoodHoodApiClient(MOODHOOD_API_URL)
+    private val availableRoutesChangedDelegate = createAvailableRoutesChangedDelegate()
     private var localParticipantId: String? = null
     private var session: ChannelSession? = null
-
     private var liveDigitalEngine: LiveDigitalEngine? = null
+    private var isLocalVideoPaused = false
 
     // Need to save reference of delegate (because in sdk delegate is Weak Reference)
-    private val availableRoutesChangedDelegate = createAvailableRoutesChangedDelegate()
 
-    init {
+    fun onPostNotificationsPermissionGranted() {
         viewModelScope.launch {
             startConference()
+            eventChannel.send(ScreenEvent.ShowCallNotification)
+        }
+    }
+
+    fun onAppBecameFocused() {
+        if (session != null && isLocalVideoPaused) {
+            startLocalVideo()
+            isLocalVideoPaused = false
+        }
+    }
+
+    fun onAppBecameUnfocused() {
+        if (session != null && mutableState.value.isLocalVideoOn) {
+            isLocalVideoPaused = true
+            stopLocalVideo()
         }
     }
 
@@ -85,7 +104,6 @@ class MainViewModel() : ViewModel(), KoinComponent {
                 }
             }
         })
-
     }
 
     fun onFlipCameraButtonClicked() {
@@ -623,5 +641,10 @@ data class ScreenState(
     val audioDeviceIndex: Int = 0,
     val localCameraPosition: CameraPosition = CameraPosition.BACK
 )
+
+sealed interface ScreenEvent {
+
+    data object ShowCallNotification : ScreenEvent
+}
 
 data class PeerWithUpdateTime(val peer: Peer, val updateTimeMark: TimeMark)

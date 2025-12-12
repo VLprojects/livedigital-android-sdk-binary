@@ -2,9 +2,9 @@ package space.livedigital.example
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -45,14 +45,27 @@ internal class MainActivity : AppCompatActivity() {
 
         initPeerList()
         initListeners()
-        observeState()
+        observeStateAndEvents()
+        checkPostNotificationPermission(savedInstanceState)
     }
+
+    override fun onPause() {
+        super.onPause()
+        if (isChangingConfigurations.not()) viewModel.onAppBecameUnfocused()
+    }
+
 
     override fun onResume() {
         super.onResume()
+        viewModel.onAppBecameFocused()
         chooseAudioDeviceAlertDialog?.listView?.let { alertDialogListView ->
             (alertDialogListView.adapter as? ArrayAdapter<String>)?.apply { notifyDataSetChanged() }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isFinishing) stopService(Intent(this, CallService::class.java))
     }
 
     private fun initPeerList() {
@@ -122,15 +135,38 @@ internal class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun observeState() {
+    private fun observeStateAndEvents() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.state.collect { state ->
-                    adapter?.updateItemsWithDiffUtil(state.remotePeers)
-                    handleCameraSwitchButtonState(state)
-                    handleLocalVideoState(state)
-                    handleLocalAudioState(state)
-                    handleChooseAudioDeviceAlertDialog(state)
+                launch {
+                    observeState()
+                }
+
+                launch {
+                    observeEvents()
+                }
+            }
+        }
+    }
+
+    private suspend fun observeState() {
+        viewModel.state.collect { state ->
+            adapter?.updateItemsWithDiffUtil(state.remotePeers)
+            handleCameraSwitchButtonState(state)
+            handleLocalVideoState(state)
+            handleLocalAudioState(state)
+            handleChooseAudioDeviceAlertDialog(state)
+        }
+    }
+
+    private suspend fun observeEvents() {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                ScreenEvent.ShowCallNotification -> {
+                    val serviceIntent = Intent(this.applicationContext, CallService::class.java).apply {
+                        setPackage(this@MainActivity.packageName)
+                    }
+                    startForegroundService(serviceIntent)
                 }
             }
         }
@@ -251,5 +287,18 @@ internal class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .show()
+    }
+
+    private fun checkPostNotificationPermission(savedInstanceState: Bundle?) {
+        if (savedInstanceState == null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                checkPermission(
+                    listOf(Manifest.permission.POST_NOTIFICATIONS),
+                    viewModel::onPostNotificationsPermissionGranted
+                )
+            } else {
+                viewModel.onPostNotificationsPermissionGranted()
+            }
+        }
     }
 }

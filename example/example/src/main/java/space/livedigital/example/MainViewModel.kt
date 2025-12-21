@@ -620,8 +620,8 @@ class MainViewModel() : ViewModel(), KoinComponent {
         const val MOODHOOD_CLIENT_SECRET = "demo12345abcde6789zxcvDemo"
         const val CLIENT_CREDENTIALS_GARANT_TYPE = "client_credentials"
 
-        const val TEST_SPACE_ID = "6144806aac512ee6cd29be10"
-        const val TEST_ROOM_ID = "679cbb21da09394f6df29bda"
+        const val TEST_SPACE_ID = "612dbb98b2f9d4a99f18f553"
+        const val TEST_ROOM_ID = "61554214ae218a31f78e8bc8"
 
         const val TAG = "LivedigitalAndroidSdkExample"
     }

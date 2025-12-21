@@ -3,8 +3,8 @@ package space.livedigital.example
 import androidx.recyclerview.widget.DiffUtil
 
 class PeerDiffUtils(
-    private val oldList: List<PeerWithUpdateTime>,
-    private val newList: List<PeerWithUpdateTime>
+    private val oldList: List<PeerWithMediaContentType>,
+    private val newList: List<PeerWithMediaContentType>
 ) : DiffUtil.Callback() {
 
     override fun getOldListSize(): Int {
@@ -19,15 +19,16 @@ class PeerDiffUtils(
         oldItemPosition: Int,
         newItemPosition: Int
     ): Boolean {
-        return oldList[oldItemPosition].peer.id == newList[newItemPosition].peer.id
+        return oldList[oldItemPosition].peerWithUpdateTime.peer.id ==
+                newList[newItemPosition].peerWithUpdateTime.peer.id
     }
 
     override fun areContentsTheSame(
         oldItemPosition: Int,
         newItemPosition: Int
     ): Boolean {
-        val oldPeerUpdateTime = oldList[oldItemPosition].updateTimeMark
-        val newPeerUpdateTime = newList[newItemPosition].updateTimeMark
+        val oldPeerUpdateTime = oldList[oldItemPosition].peerWithUpdateTime.updateTimeMark
+        val newPeerUpdateTime = newList[newItemPosition].peerWithUpdateTime.updateTimeMark
 
         return oldPeerUpdateTime == newPeerUpdateTime
     }

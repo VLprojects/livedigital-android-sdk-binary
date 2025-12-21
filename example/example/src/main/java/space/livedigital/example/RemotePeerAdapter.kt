@@ -7,9 +7,9 @@ import androidx.recyclerview.widget.RecyclerView
 
 internal class RemotePeerAdapter(
     private val layoutInflater: LayoutInflater
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), DiffUtilsUpdater<PeerWithUpdateTime> {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), DiffUtilsUpdater<PeerWithMediaContentType> {
 
-    private val list = mutableListOf<PeerWithUpdateTime>()
+    private val list = mutableListOf<PeerWithMediaContentType>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return RemotePeerViewHolder(
@@ -22,7 +22,7 @@ internal class RemotePeerAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        (holder as? RemotePeerViewHolder)?.bind(list[position].peer)
+        (holder as? RemotePeerViewHolder)?.bind(list[position])
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
@@ -30,7 +30,7 @@ internal class RemotePeerAdapter(
     }
     override fun getItemCount() = list.size
 
-    override fun updateItemsWithDiffUtil(items: List<PeerWithUpdateTime>) {
+    override fun updateItemsWithDiffUtil(items: List<PeerWithMediaContentType>) {
         val diffUtil = PeerDiffUtils(list, items)
         val result = DiffUtil.calculateDiff(diffUtil)
         list.clear()

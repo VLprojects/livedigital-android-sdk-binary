@@ -19,6 +19,8 @@ import com.sequenia.permissionchecker.registerPermissionChecker
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.databinding.ActivityMainBinding
+import space.livedigital.sdk.data.entities.MediaLabel
+import space.livedigital.sdk.data.entities.Peer
 import space.livedigital.sdk.media.video.CameraPosition
 import space.livedigital.sdk.view.PeerView
 import space.livedigital.sdk.view.VideoRenderer
@@ -151,7 +153,8 @@ internal class MainActivity : AppCompatActivity() {
 
     private suspend fun observeState() {
         viewModel.state.collect { state ->
-            adapter?.updateItemsWithDiffUtil(state.remotePeers)
+            val peers = buildPeers(state)
+            adapter?.updateItemsWithDiffUtil(peers)
             handleCameraSwitchButtonState(state)
             handleLocalVideoState(state)
             handleLocalAudioState(state)
@@ -159,13 +162,43 @@ internal class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun buildPeers(state: ScreenState): List<PeerWithMediaContentType> = buildList {
+        state.remotePeers.forEach { peer ->
+            if (peer.peer.hasMedia(MediaLabel.CUSTOM_VIDEO)) {
+                add(
+                    PeerWithMediaContentType(
+                        peerWithUpdateTime = peer,
+                        videoContentType = PeerVideoContentType.CUSTOM_VIDEO
+                    )
+                )
+            }
+
+            if (peer.peer.hasMedia(MediaLabel.SCREEN_VIDEO)) {
+                add(
+                    PeerWithMediaContentType(
+                        peerWithUpdateTime = peer,
+                        videoContentType = PeerVideoContentType.SCREEN_VIDEO
+                    )
+                )
+            }
+
+            add(
+                PeerWithMediaContentType(
+                    peerWithUpdateTime = peer,
+                    videoContentType = PeerVideoContentType.CAMERA
+                )
+            )
+        }
+    }
+
     private suspend fun observeEvents() {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 ScreenEvent.ShowCallNotification -> {
-                    val serviceIntent = Intent(this.applicationContext, CallService::class.java).apply {
-                        setPackage(this@MainActivity.packageName)
-                    }
+                    val serviceIntent =
+                        Intent(this.applicationContext, CallService::class.java).apply {
+                            setPackage(this@MainActivity.packageName)
+                        }
                     startForegroundService(serviceIntent)
                 }
             }
@@ -301,4 +334,20 @@ internal class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun Peer.hasMedia(label: MediaLabel): Boolean {
+        return (this.hasConsumer(label) || this.hasProducerDataInStock(label)) &&
+                this.isRemoteProducerResumed(label)
+    }
+}
+
+data class PeerWithMediaContentType(
+    val peerWithUpdateTime: PeerWithUpdateTime,
+    val videoContentType: PeerVideoContentType
+)
+
+enum class PeerVideoContentType(val videoMediaLabel: MediaLabel) {
+    CUSTOM_VIDEO(MediaLabel.CUSTOM_VIDEO),
+    SCREEN_VIDEO(MediaLabel.SCREEN_VIDEO),
+    CAMERA(MediaLabel.CAMERA)
 }

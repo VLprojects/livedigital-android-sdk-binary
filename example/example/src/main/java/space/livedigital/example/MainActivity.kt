@@ -26,7 +26,7 @@ import space.livedigital.sdk.view.PeerView
 import space.livedigital.sdk.view.VideoRenderer
 
 // To check example, you can use link in browser:
-// https://edu.livedigital.space/room/LpT7NITj6C
+// https://edu.livedigital.space/room/q3_5V3uwik
 internal class MainActivity : AppCompatActivity() {
 
     private val viewModel by viewModel<MainViewModel>()

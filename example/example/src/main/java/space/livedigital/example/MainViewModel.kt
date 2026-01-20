@@ -93,17 +93,7 @@ class MainViewModel() : ViewModel(), KoinComponent {
     }
 
     fun onRestartButtonClicked() {
-        liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
-            override fun onDestroyed() {
-                viewModelScope.launch {
-                    stopLocalVideo()
-                    stopLocalAudio()
-                    session = null
-                    apiClient.logout()
-                    startConference()
-                }
-            }
-        })
+        restartSession()
     }
 
     fun onFlipCameraButtonClicked() {
@@ -500,7 +490,15 @@ class MainViewModel() : ViewModel(), KoinComponent {
 
             override fun disconnectedFromChannel() {}
 
-            override fun onStatusChanged(status: ChannelSessionStatus) {}
+            override fun onStatusChanged(status: ChannelSessionStatus) {
+                when (status) {
+                    ChannelSessionStatus.RESTARTING -> {}
+                    ChannelSessionStatus.STARTING -> {}
+                    ChannelSessionStatus.STARTED -> {}
+                    ChannelSessionStatus.STOPPED -> restartSession()
+                    ChannelSessionStatus.STOPPING -> {}
+                }
+            }
 
             override fun onChannelErrorOccurred(error: ChannelError) {}
 
@@ -612,6 +610,20 @@ class MainViewModel() : ViewModel(), KoinComponent {
                 mutableState.value.copy(isLocalAudioOn = false)
             }
         }
+    }
+
+    private fun restartSession() {
+        liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
+            override fun onDestroyed() {
+                viewModelScope.launch {
+                    stopLocalVideo()
+                    stopLocalAudio()
+                    session = null
+                    apiClient.logout()
+                    startConference()
+                }
+            }
+        })
     }
 
     companion object {

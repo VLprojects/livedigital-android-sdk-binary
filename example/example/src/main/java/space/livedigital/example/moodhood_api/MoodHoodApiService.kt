@@ -28,6 +28,9 @@ internal interface MoodHoodApiService {
         @Path("roomId") roomId: String?,
     ): Room
 
+    @GET("v1/spaces/room-by-alias/{alias}")
+    suspend fun getRoomByAlias(@Path("alias") alias: String): Room
+
     @POST("v1/spaces/{SPACE_ID}/participants")
     suspend fun createParticipant(
         @Path("SPACE_ID") spaceId: String,

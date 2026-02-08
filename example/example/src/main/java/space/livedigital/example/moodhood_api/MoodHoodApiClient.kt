@@ -47,6 +47,10 @@ internal class MoodHoodApiClient(
         return apiRequestExecutor.execute { apiService.getRoomById(spaceId, roomId) }
     }
 
+    suspend fun getRoomByAlias(roomAlias: String): ExecutionResult<Room> {
+        return  apiRequestExecutor.execute { apiService.getRoomByAlias(roomAlias) }
+    }
+
     suspend fun createParticipant(
         name: String,
         role: String,

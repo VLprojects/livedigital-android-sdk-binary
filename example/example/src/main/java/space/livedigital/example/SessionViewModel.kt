@@ -2,6 +2,7 @@ package space.livedigital.example
 
 import android.os.Build
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
@@ -13,6 +14,10 @@ import org.json.JSONObject
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import space.livedigital.example.bson.BSONObjectIdGenerator
+import space.livedigital.example.calls.CallAction
+import space.livedigital.example.calls.CallState
+import space.livedigital.example.calls.utils.CallRepository
+import space.livedigital.example.telecom_calls.utils.CallAnsweredReceiver
 import space.livedigital.example.entities.MoodhoodParticipant
 import space.livedigital.example.entities.PeerAppData
 import space.livedigital.example.entities.Room
@@ -53,23 +58,97 @@ import space.livedigital.sdk.media.video.visual_effects.VideoSourceType
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource.Monotonic.markNow
 
-class MainViewModel() : ViewModel(), KoinComponent {
+class SessionViewModel(
+    savedStateHandle: SavedStateHandle,
+    private val callRepository: CallRepository
+) : ViewModel(), KoinComponent {
+
 
     val state
         get() = mutableState
     val eventFlow
         get() = eventChannel.receiveAsFlow()
 
+    private var roomAlias: String? =
+        savedStateHandle.get<String>(CallAnsweredReceiver.ROOM_ALIAS_KEY)
+
     private val mutableState = MutableStateFlow(ScreenState())
     private val eventChannel = Channel<ScreenEvent>(Channel.UNLIMITED)
     private val apiClient = MoodHoodApiClient(MOODHOOD_API_URL)
+
+    // Need to save reference of delegate (because in sdk delegate is Weak Reference)
     private val availableRoutesChangedDelegate = createAvailableRoutesChangedDelegate()
     private var localParticipantId: String? = null
     private var session: ChannelSession? = null
     private var liveDigitalEngine: LiveDigitalEngine? = null
     private var isLocalVideoPaused = false
 
-    // Need to save reference of delegate (because in sdk delegate is Weak Reference)
+    init {
+        viewModelScope.launch {
+            callRepository.currentCallState.collect { callState ->
+                val wasMuted = (state.value.callState as? CallState.Registered)?.isMuted
+                mutableState.update {
+                    mutableState.value.copy(callState = callState)
+                }
+
+                when (callState) {
+                    CallState.None -> {}
+
+                    is CallState.Registered -> {
+                        val isIncomingCall = session == null && callState.isActive
+
+                        if (isIncomingCall) {
+                            roomAlias = callState.roomAlias
+                            startConference()
+                        }
+
+                        if (wasMuted == null) return@collect
+
+                        val isMuted = callState.isMuted
+
+                        Log.d("xd", "wasMuted $wasMuted isMuted $isMuted")
+
+                        if (wasMuted != isMuted) {
+                            if (mutableState.value.isLocalAudioOn) {
+                                stopLocalAudio()
+                            } else {
+                                startLocalAudio()
+                            }
+                        }
+                    }
+
+                    is CallState.Unregistered -> {
+                        liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
+                            override fun onDestroyed() {
+                                viewModelScope.launch {
+                                    stopLocalVideo()
+                                    stopLocalAudio()
+                                    session = null
+                                    apiClient.logout()
+                                    eventChannel.send(ScreenEvent.CloseRoom)
+                                }
+                            }
+                        })
+                    }
+                }
+            }
+        }
+    }
+
+    fun onCallEnded() {
+        liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
+            override fun onDestroyed() {
+                viewModelScope.launch {
+                    stopLocalVideo()
+                    stopLocalAudio()
+                    session = null
+                    apiClient.logout()
+                    eventChannel.send(ScreenEvent.CloseRoom)
+                }
+            }
+        })
+    }
+
 
     fun onPostNotificationsPermissionGranted() {
         viewModelScope.launch {
@@ -152,13 +231,15 @@ class MainViewModel() : ViewModel(), KoinComponent {
         authorize()
 
         val room = getRoom() ?: return
+        val roomId = room.id ?: return
+        val spaceId = room.spaceId ?: return
         val channelId = room.channelId
         if (channelId == null) {
             Log.e(TAG, "Error getting channelId from: $room")
             return
         }
 
-        val participant = createParticipant() ?: return
+        val participant = createParticipant(spaceId, roomId) ?: return
         val participantId = participant.id
         localParticipantId = participantId
         if (participantId == null) {
@@ -166,7 +247,7 @@ class MainViewModel() : ViewModel(), KoinComponent {
             return
         }
 
-        val signalingTokenResult = getSignalingToken(participantId)
+        val signalingTokenResult = getSignalingToken(participantId, spaceId)
         val signalingToken = signalingTokenResult?.signalingToken
         if (signalingToken == null) {
             Log.e(TAG, "Error getting signalingToken from: $signalingTokenResult")
@@ -177,7 +258,7 @@ class MainViewModel() : ViewModel(), KoinComponent {
 
         initDelegates()
 
-        connectToChannel(channelId, participantId, signalingToken)
+        connectToChannel(channelId, participantId, signalingToken, spaceId, roomId)
     }
 
     private suspend fun authorize() {
@@ -204,7 +285,8 @@ class MainViewModel() : ViewModel(), KoinComponent {
     }
 
     private suspend fun getRoom(): Room? {
-        val roomResult = apiClient.getRoom(TEST_SPACE_ID, TEST_ROOM_ID)
+        val roomAlias = roomAlias ?: return null
+        val roomResult = apiClient.getRoomByAlias(roomAlias)
         return when (roomResult) {
             is ExecutionResult.Success -> {
                 Log.i(TAG, "Room details received: ${roomResult.data}")
@@ -224,13 +306,13 @@ class MainViewModel() : ViewModel(), KoinComponent {
         }
     }
 
-    private suspend fun createParticipant(): MoodhoodParticipant? {
+    private suspend fun createParticipant(spaceId: String, roomId: String): MoodhoodParticipant? {
         val participantResult = apiClient.createParticipant(
             name = "${Build.MANUFACTURER} ${Build.MODEL}",
             role = "host",
             clientUniqueId = BSONObjectIdGenerator.generateBSONObjectId(),
-            spaceId = TEST_SPACE_ID,
-            roomId = TEST_ROOM_ID
+            spaceId = spaceId,
+            roomId = roomId
         )
 
         return when (participantResult) {
@@ -252,8 +334,8 @@ class MainViewModel() : ViewModel(), KoinComponent {
         }
     }
 
-    private suspend fun getSignalingToken(participantId: String): SignalingToken? {
-        val signalingTokenResult = apiClient.getSignalingToken(TEST_SPACE_ID, participantId)
+    private suspend fun getSignalingToken(participantId: String, spaceId: String): SignalingToken? {
+        val signalingTokenResult = apiClient.getSignalingToken(spaceId, participantId)
         return when (signalingTokenResult) {
             is ExecutionResult.Success -> {
                 Log.i(TAG, "Created signaling token")
@@ -299,7 +381,9 @@ class MainViewModel() : ViewModel(), KoinComponent {
     private fun connectToChannel(
         channelId: String,
         participantId: String,
-        signalingToken: String
+        signalingToken: String,
+        spaceId: String,
+        roomId: String
     ) {
         Log.d(TAG, "connect to channel")
         val appData = PeerAppData(
@@ -319,14 +403,17 @@ class MainViewModel() : ViewModel(), KoinComponent {
 
         liveDigitalEngine?.connectToChannel(
             channelSessionParams = channelSessionParams,
-            delegate = createChannelSessionDelegate(),
+            delegate = createChannelSessionDelegate(spaceId, roomId),
             successAction = {
                 session = it
             }
         )
     }
 
-    private fun createChannelSessionDelegate(): ChannelSessionDelegate {
+    private fun createChannelSessionDelegate(
+        spaceId: String,
+        roomId: String
+    ): ChannelSessionDelegate {
         return object : ChannelSessionDelegate {
             override fun peersJoined(peers: List<Peer>) {
                 for (peer in peers) {
@@ -482,7 +569,7 @@ class MainViewModel() : ViewModel(), KoinComponent {
 
             override fun connectedToChannel() {
                 viewModelScope.launch {
-                    joinRoom()
+                    joinRoom(spaceId, roomId)
                 }
             }
 
@@ -522,14 +609,14 @@ class MainViewModel() : ViewModel(), KoinComponent {
         }
     }
 
-    private suspend fun joinRoom() {
+    private suspend fun joinRoom(spaceId: String, roomId: String) {
         val participantId = localParticipantId
         if (participantId == null) {
             Log.e(TAG, "Failed to join room: missing participantId")
             return
         }
 
-        val joinRoomResult = apiClient.joinRoom(participantId, TEST_SPACE_ID, TEST_ROOM_ID)
+        val joinRoomResult = apiClient.joinRoom(participantId, spaceId, roomId)
         when (joinRoomResult) {
             is ExecutionResult.Success -> {
                 Log.i(TAG, "Joined room")
@@ -632,8 +719,8 @@ class MainViewModel() : ViewModel(), KoinComponent {
         const val MOODHOOD_CLIENT_SECRET = "demo12345abcde6789zxcvDemo"
         const val CLIENT_CREDENTIALS_GARANT_TYPE = "client_credentials"
 
-        const val TEST_SPACE_ID = "612dbb98b2f9d4a99f18f553"
-        const val TEST_ROOM_ID = "61554214ae218a31f78e8bc8"
+//        const val TEST_SPACE_ID = "612dbb98b2f9d4a99f18f553"
+//        const val TEST_ROOM_ID = "61554214ae218a31f78e8bc8"
 
         const val TAG = "LivedigitalAndroidSdkExample"
     }
@@ -651,12 +738,15 @@ data class ScreenState(
     val isAudioDevicePickerShown: Boolean = false,
     val availableAudioDeviceNames: List<String> = emptyList(),
     val audioDeviceIndex: Int = 0,
-    val localCameraPosition: CameraPosition = CameraPosition.BACK
+    val localCameraPosition: CameraPosition = CameraPosition.BACK,
+    val callState: CallState = CallState.None,
 )
 
 sealed interface ScreenEvent {
 
     data object ShowCallNotification : ScreenEvent
+
+    data object CloseRoom : ScreenEvent
 }
 
 data class PeerWithUpdateTime(val peer: Peer, val updateTimeMark: TimeMark)

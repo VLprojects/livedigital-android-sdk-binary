@@ -18,7 +18,8 @@ import com.sequenia.permissionchecker.check
 import com.sequenia.permissionchecker.registerPermissionChecker
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import space.livedigital.example.databinding.ActivityMainBinding
+import space.livedigital.example.telecom_calls.utils.TelecomCallRepository
+import space.livedigital.example.databinding.SessionActivityBinding
 import space.livedigital.sdk.data.entities.MediaLabel
 import space.livedigital.sdk.data.entities.Peer
 import space.livedigital.sdk.media.video.CameraPosition
@@ -27,10 +28,10 @@ import space.livedigital.sdk.view.VideoRenderer
 
 // To check example, you can use link in browser:
 // https://edu.livedigital.space/room/q3_5V3uwik
-internal class MainActivity : AppCompatActivity() {
+internal class SessionActivity : AppCompatActivity() {
 
-    private val viewModel by viewModel<MainViewModel>()
-    private var binding: ActivityMainBinding? = null
+    private val viewModel by viewModel<SessionViewModel>()
+    private var binding: SessionActivityBinding? = null
 
     private val permissionChecker = registerPermissionChecker()
 
@@ -42,7 +43,7 @@ internal class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = SessionActivityBinding.inflate(layoutInflater)
         setContentView(binding?.root)
 
         initPeerList()
@@ -67,7 +68,10 @@ internal class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (isFinishing) stopService(Intent(this, CallService::class.java))
+        TelecomCallRepository.clearObservers()
+        if (isFinishing) {
+            TelecomCallRepository.endCall()
+        }
     }
 
     private fun initPeerList() {
@@ -119,6 +123,16 @@ internal class MainActivity : AppCompatActivity() {
                 showAudioDeviceChooseAlertDialog()
             }
         }
+
+        binding?.endCallButton?.setOnClickListener {
+            TelecomCallRepository.endCall()
+        }
+
+        TelecomCallRepository.addObserver(object : TelecomCallRepository.CallObserver {
+            override fun onCallEnded() {
+                viewModel.onCallEnded()
+            }
+        })
     }
 
     private fun showAudioDeviceChooseAlertDialog() {
@@ -197,9 +211,14 @@ internal class MainActivity : AppCompatActivity() {
                 ScreenEvent.ShowCallNotification -> {
                     val serviceIntent =
                         Intent(this.applicationContext, CallService::class.java).apply {
-                            setPackage(this@MainActivity.packageName)
+                            setPackage(this@SessionActivity.packageName)
                         }
                     startForegroundService(serviceIntent)
+                }
+
+                ScreenEvent.CloseRoom -> {
+                    stopService(Intent(this@SessionActivity, CallService::class.java))
+                    finishAndRemoveTask()
                 }
             }
         }
@@ -269,7 +288,7 @@ internal class MainActivity : AppCompatActivity() {
                 }
 
                 chooseAudioDeviceAlertDialog = showSimpleSelectorDialog(
-                    context = this@MainActivity,
+                    context = this@SessionActivity,
                     items = state.availableAudioDeviceNames,
                     itemIndex = state.audioDeviceIndex
                 ) { _, deviceName ->

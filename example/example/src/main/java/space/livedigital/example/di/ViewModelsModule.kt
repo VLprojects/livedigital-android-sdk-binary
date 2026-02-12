@@ -6,12 +6,20 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import space.livedigital.example.SessionViewModel
 import space.livedigital.example.calls.utils.CallRepository
+import space.livedigital.example.telecom_calls.MainViewModel
 
 val viewModelsModule = module {
     viewModel {
         SessionViewModel(
             savedStateHandle = get(),
-            callRepository = CallRepository.instance ?: CallRepository.create(androidContext())
+            callRepository = get()
+        )
+    }
+    viewModel {
+        MainViewModel(
+            savedStateHandle = get(),
+            callRepository = get(),
+            contentResolver = get()
         )
     }
 }

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.widget.ArrayAdapter
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.telecom_calls.utils.TelecomCallRepository
 import space.livedigital.example.databinding.SessionActivityBinding
+import space.livedigital.example.telecom_calls.utils.Call
 import space.livedigital.sdk.data.entities.MediaLabel
 import space.livedigital.sdk.data.entities.Peer
 import space.livedigital.sdk.media.video.CameraPosition
@@ -38,6 +40,8 @@ internal class SessionActivity : AppCompatActivity() {
     private var adapter: RemotePeerAdapter? = null
 
     private var chooseAudioDeviceAlertDialog: AlertDialog? = null
+
+    private lateinit var callObserver : TelecomCallRepository.CallObserver
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +72,7 @@ internal class SessionActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        TelecomCallRepository.clearObservers()
+        TelecomCallRepository.removeObserver(callObserver)
         if (isFinishing) {
             TelecomCallRepository.endCall()
         }
@@ -128,11 +132,12 @@ internal class SessionActivity : AppCompatActivity() {
             TelecomCallRepository.endCall()
         }
 
-        TelecomCallRepository.addObserver(object : TelecomCallRepository.CallObserver {
-            override fun onCallEnded() {
+        callObserver = object : TelecomCallRepository.CallObserver {
+            override fun onCallEnded(call: Call) {
                 viewModel.onCallEnded()
             }
-        })
+        }
+        TelecomCallRepository.addObserver(callObserver)
     }
 
     private fun showAudioDeviceChooseAlertDialog() {

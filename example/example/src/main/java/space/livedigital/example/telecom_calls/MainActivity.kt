@@ -7,18 +7,27 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.telecom.TelecomManager
 import android.util.Log
 import android.view.Gravity
 import android.widget.Button
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.messaging.FirebaseMessaging
 import com.sequenia.permissionchecker.check
 import com.sequenia.permissionchecker.registerPermissionChecker
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.databinding.MainActivityBinding
+import space.livedigital.example.telecom_calls.utils.TelecomCallRepository
+import kotlin.getValue
 
 class MainActivity : AppCompatActivity() {
+
+    private val viewModel by viewModel<MainViewModel>()
 
     private val permissionChecker = registerPermissionChecker()
     private var binding: MainActivityBinding? = null
@@ -30,13 +39,19 @@ class MainActivity : AppCompatActivity() {
                 checkPermissions(
                     listOf(
                         Manifest.permission.POST_NOTIFICATIONS,
-                        Manifest.permission.READ_PHONE_STATE
+                        Manifest.permission.READ_PHONE_STATE,
+                        Manifest.permission.WRITE_CONTACTS,
+                        Manifest.permission.READ_CONTACTS
                     ),
                     {}
                 )
             } else {
                 checkPermissions(
-                    listOf(Manifest.permission.READ_PHONE_STATE),
+                    listOf(
+                        Manifest.permission.READ_PHONE_STATE,
+                        Manifest.permission.WRITE_CONTACTS,
+                        Manifest.permission.READ_CONTACTS
+                    ),
                     {}
                 )
             }
@@ -59,7 +74,36 @@ class MainActivity : AppCompatActivity() {
         binding?.addPhoneAccountButton?.setOnClickListener {
             startActivity(Intent(TelecomManager.ACTION_CHANGE_PHONE_ACCOUNTS))
         }
+
+        lifecycleScope.launch {
+            viewModel.eventFlow.collect { callEvent ->
+                delay(500L)
+                when (callEvent) {
+                    is MainViewModel.Event.OnContactMissing -> openContacts(
+                        callEvent.caller,
+                        callEvent.number
+                    )
+                }
+            }
+        }
+
     }
+
+    private fun openContacts(caller: String, number: String) {
+
+
+        val intent = Intent(Intent.ACTION_INSERT).apply {
+            type = ContactsContract.Contacts.CONTENT_TYPE
+            putExtra(ContactsContract.Intents.Insert.NAME, caller)
+            putExtra(ContactsContract.Intents.Insert.PHONE, number)
+            putExtra(
+                ContactsContract.Intents.Insert.PHONE_TYPE,
+                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
+            )
+        }
+        startActivity(intent)
+    }
+
 
     private fun copyToClipboard(context: Context, text: String) {
         val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager

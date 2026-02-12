@@ -17,11 +17,23 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import space.livedigital.example.calls.CallAction
 import space.livedigital.example.calls.CallState
+import space.livedigital.example.telecom_calls.utils.Call
+import space.livedigital.example.telecom_calls.utils.TelecomCallRepository
 
 class CallRepository(private val callsManager: CallsManager) {
 
     private val _currentCallState: MutableStateFlow<CallState> = MutableStateFlow(CallState.None)
     val currentCallState = _currentCallState.asStateFlow()
+
+    private var callObserver: CallObserver? = null
+
+    fun addObserver(observer: CallObserver) {
+        callObserver = observer
+    }
+
+    fun removeObserver(observer: CallObserver) {
+        callObserver = null
+    }
 
     suspend fun registerCall(displayName: String, roomAlias: String, phoneNumber: Uri) {
 
@@ -136,6 +148,7 @@ class CallRepository(private val callsManager: CallsManager) {
      */
     val onIsCallDisconnected: suspend (cause: DisconnectCause) -> Unit = {
         updateCurrentCall {
+            callObserver?.onCallEnded(callAttributes)
             CallState.Unregistered(callAttributes, it)
         }
     }
@@ -164,6 +177,11 @@ class CallRepository(private val callsManager: CallsManager) {
                 isOnHold = true
             )
         }
+    }
+
+    interface CallObserver {
+
+        fun onCallEnded(callAttributes: CallAttributesCompat)
     }
 
     private fun updateCurrentCall(transform: CallState.Registered.() -> CallState) {

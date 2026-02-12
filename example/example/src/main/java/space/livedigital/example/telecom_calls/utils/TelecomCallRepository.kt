@@ -9,6 +9,10 @@ object TelecomCallRepository {
         observers.add(observer)
     }
 
+    fun removeObserver(observer: CallObserver) {
+        observers.remove(observer)
+    }
+
     fun clearObservers() {
         observers.clear()
     }
@@ -19,8 +23,9 @@ object TelecomCallRepository {
     }
 
     fun endCall() {
+        val call = currentConnection?.call ?: return
         observers.forEach {
-            it.onCallEnded()
+            it.onCallEnded(call)
         }
         currentConnection?.destroy()
         currentConnection = null
@@ -28,6 +33,6 @@ object TelecomCallRepository {
 
     interface CallObserver {
 
-        fun onCallEnded()
+        fun onCallEnded(call: Call)
     }
 }

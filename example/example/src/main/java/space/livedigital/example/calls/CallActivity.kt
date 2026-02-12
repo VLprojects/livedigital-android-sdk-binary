@@ -20,6 +20,7 @@ import space.livedigital.example.calls.utils.CallBroadcast
 import space.livedigital.example.calls.utils.CallNotificationManager
 import space.livedigital.example.calls.utils.CallNotificationManager.Companion.TELECOM_NOTIFICATION_ACTION
 import space.livedigital.example.calls.utils.CallService
+import space.livedigital.example.telecom_calls.utils.TelecomCallRepository
 import kotlin.getValue
 
 class CallActivity : ComponentActivity() {
@@ -66,7 +67,10 @@ class CallActivity : ComponentActivity() {
                 ) {
                     CallScreen(
                         state = state,
-                        onCallFinished = ::finishAndRemoveTask
+                        onCallFinished = {
+                            TelecomCallRepository.endCall()
+                            finishAndRemoveTask()
+                        }
                     )
                 }
             }

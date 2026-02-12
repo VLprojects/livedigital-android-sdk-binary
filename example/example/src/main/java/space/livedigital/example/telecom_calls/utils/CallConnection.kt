@@ -8,7 +8,7 @@ import android.telecom.Connection
 import android.telecom.DisconnectCause
 import android.util.Log
 
-class CallConnection(private val context: Context, private val call: Call) : Connection() {
+class CallConnection(private val context: Context, val call: Call) : Connection() {
 
     private val TAG = "CallConnection"
 

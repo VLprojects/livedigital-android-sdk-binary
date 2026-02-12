@@ -3,7 +3,9 @@ package space.livedigital.example.telecom_calls.utils
 import android.Manifest
 import android.content.ComponentName
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
+import android.telecom.PhoneAccount
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.annotation.RequiresPermission
@@ -25,10 +27,16 @@ class CallHandler {
         extras.putString("id", call.id)
         extras.putString("roomAlias", call.roomAlias)
         extras.putString("caller", call.caller)
+
         extras.putParcelable(
             TelecomManager.EXTRA_INCOMING_CALL_ADDRESS,
-            call.callerNumber.toUri()
+            Uri.fromParts(
+                PhoneAccount.SCHEME_TEL,
+                call.callerNumber,   // must be digits or +E.164
+                null
+            )
         )
+
         extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle)
         extras.putBoolean(TelecomManager.EXTRA_START_CALL_WITH_SPEAKERPHONE, true)
 

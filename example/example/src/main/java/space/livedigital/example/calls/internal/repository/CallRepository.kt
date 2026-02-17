@@ -1,4 +1,4 @@
-package space.livedigital.example.calls.utils
+package space.livedigital.example.calls.internal.repository
 
 import android.content.Context
 import android.net.Uri
@@ -15,25 +15,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import space.livedigital.example.calls.CallAction
-import space.livedigital.example.calls.CallState
-import space.livedigital.example.telecom_calls.utils.Call
-import space.livedigital.example.telecom_calls.utils.TelecomCallRepository
+import space.livedigital.example.calls.entities.CallAction
+import space.livedigital.example.calls.entities.CallState
 
-class CallRepository(private val callsManager: CallsManager) {
+class CallRepository private constructor(private val callsManager: CallsManager) {
 
+    val currentCallState
+        get() = _currentCallState.asStateFlow()
     private val _currentCallState: MutableStateFlow<CallState> = MutableStateFlow(CallState.None)
-    val currentCallState = _currentCallState.asStateFlow()
-
-    private var callObserver: CallObserver? = null
-
-    fun addObserver(observer: CallObserver) {
-        callObserver = observer
-    }
-
-    fun removeObserver(observer: CallObserver) {
-        callObserver = null
-    }
 
     suspend fun registerCall(displayName: String, roomAlias: String, phoneNumber: Uri) {
 
@@ -148,7 +137,6 @@ class CallRepository(private val callsManager: CallsManager) {
      */
     val onIsCallDisconnected: suspend (cause: DisconnectCause) -> Unit = {
         updateCurrentCall {
-            callObserver?.onCallEnded(callAttributes)
             CallState.Unregistered(callAttributes, it)
         }
     }

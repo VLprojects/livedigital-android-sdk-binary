@@ -36,7 +36,7 @@
         android:theme="@style/Theme.LiveDigitalSDK">
 
         <activity
-            android:name=".telecom_calls.MainActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -46,7 +46,7 @@
         </activity>
 
         <service
-            android:name=".telecom_calls.utils.PushNotificationService"
+            android:name=".calls.services.PushNotificationService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -54,27 +54,13 @@
         </service>
 
         <service
-            android:name=".telecom_calls.utils.CallConnectionService"
+            android:name=".calls.telecom.services.CallConnectionService"
             android:exported="true"
             android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
             <intent-filter>
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
         </service>
-
-        <activity
-            android:name=".SessionActivity"
-            android:exported="false" />
-
-        <service
-            android:name=".CallService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="microphone|phoneCall" />
-
-        <receiver
-            android:name=".telecom_calls.utils.CallAnsweredReceiver"
-            android:exported="false" />
 
         <activity
             android:name=".calls.CallActivity"
@@ -85,12 +71,12 @@
             android:turnScreenOn="true" />
 
         <service
-            android:name=".calls.utils.CallService"
+            android:name=".calls.internal.service.CallService"
             android:exported="false"
             android:foregroundServiceType="phoneCall|microphone" />
 
         <receiver
-            android:name=".calls.utils.CallBroadcast"
+            android:name=".calls.internal.broadcasts.CallBroadcast"
             android:exported="false" />
     </application>
 </manifest>

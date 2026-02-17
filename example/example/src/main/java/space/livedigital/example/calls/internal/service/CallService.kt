@@ -1,4 +1,4 @@
-package space.livedigital.example.calls.utils
+package space.livedigital.example.calls.internal.service
 
 import android.Manifest
 import android.app.ForegroundServiceStartNotAllowedException
@@ -7,14 +7,17 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
+import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
+import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.util.Log
 import androidx.core.app.ServiceCompat
 import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineScope
@@ -24,8 +27,9 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import space.livedigital.example.calls.CallState
-import kotlin.jvm.java
+import space.livedigital.example.calls.constants.CallConstants
+import space.livedigital.example.calls.entities.CallState
+import space.livedigital.example.calls.internal.repository.CallRepository
 
 class CallService : Service() {
 
@@ -61,7 +65,6 @@ class CallService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("xd", "onStartCommand $intent")
         val call = repository?.currentCallState?.value
         val notificationManager = notificationManager ?: CallNotificationManager(applicationContext)
             .also {
@@ -84,7 +87,7 @@ class CallService : Service() {
                 serviceType
             )
         } catch (exception: IllegalStateException) {
-            // Решение взято из https://issuetracker.google.com/issues/307329994#comment86
+            // Solution from https://issuetracker.google.com/issues/307329994#comment86
             @Suppress("InstanceOfCheckForException")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                 exception is ForegroundServiceStartNotAllowedException
@@ -95,7 +98,7 @@ class CallService : Service() {
 
         if (intent != null) {
             when (intent.action) {
-                ACTION_INCOMING_CALL -> registerCall(intent)
+                CallConstants.ACTION_INCOMING_CALL -> registerCall(intent)
             }
         }
 
@@ -111,7 +114,7 @@ class CallService : Service() {
             return FOREGROUND_SERVICE_TYPE_PHONE_CALL
         }
 
-        if (intent.action == ACTION_INCOMING_CALL) {
+        if (intent.action == CallConstants.ACTION_INCOMING_CALL) {
             return FOREGROUND_SERVICE_TYPE_PHONE_CALL
         }
 
@@ -129,10 +132,10 @@ class CallService : Service() {
         }
 
         runCatching {
-            val name = intent.getStringExtra(EXTRA_NAME) ?: return
-            val phoneNumber = intent.getStringExtra(EXTRA_NUMBER) ?: return
+            val name = intent.getStringExtra(CallConstants.EXTRA_NAME) ?: return
+            val phoneNumber = intent.getStringExtra(CallConstants.EXTRA_NUMBER) ?: return
             val phoneNumberUri = "tel:$phoneNumber".toUri()
-            val roomAlias = intent.getStringExtra(EXTRA_ROOM_ALIAS) ?: return
+            val roomAlias = intent.getStringExtra(CallConstants.EXTRA_ROOM_ALIAS) ?: return
 
             scope.launch {
                 repository?.registerCall(name, roomAlias, phoneNumberUri)
@@ -149,31 +152,95 @@ class CallService : Service() {
     }
 
     private fun startRingtoneAndVibration() {
-        val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-        ringtone = RingtoneManager.getRingtone(applicationContext, ringtoneUri)
-        ringtone?.isLooping = true
-        ringtone?.play()
+        turnOnBluetoothAndCommunicationModeIfPossible()
+        startRingtone()
+        startVibration()
+    }
 
+    private fun turnOnBluetoothAndCommunicationModeIfPossible() {
+        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+
+        if (audioManager.isBluetoothScoAvailableOffCall) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val devices = audioManager.availableCommunicationDevices.filter {
+                    it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                }
+
+                if (devices.isEmpty()) return
+
+                audioManager.setCommunicationDevice(devices.first())
+            } else {
+                audioManager.startBluetoothSco()
+                audioManager.isBluetoothScoOn = true
+            }
+        }
+    }
+
+    private fun startRingtone() {
+        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        if (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL) {
+            val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            val audioAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            ringtone = RingtoneManager.getRingtone(applicationContext, ringtoneUri)
+            ringtone?.audioAttributes = audioAttributes
+            ringtone?.isLooping = true
+            ringtone?.play()
+        }
+    }
+
+    private fun startVibration() {
+        val vibrationAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
         val vibPattern = longArrayOf(0, 1000, 1000)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val effect = VibrationEffect.createWaveform(vibPattern, 0)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val vibManager = getSystemService(VibratorManager::class.java)
             vibrator = vibManager
-            val effect = VibrationEffect.createWaveform(vibPattern, 0)
-            vibManager?.defaultVibrator?.vibrate(effect)
+            val vibAttributes = VibrationAttributes.Builder()
+                .setUsage(VibrationAttributes.USAGE_RINGTONE)
+                .build()
+
+            vibManager?.defaultVibrator?.vibrate(effect, vibAttributes)
         } else {
             val vib = getSystemService(Vibrator::class.java)
                 ?: getSystemService(VIBRATOR_SERVICE) as Vibrator
-            vibrator = vib
-            val effect = VibrationEffect.createWaveform(vibPattern, 0)
-            vib.vibrate(effect)
+            vib.vibrate(effect, vibrationAttributes)
         }
     }
 
     private fun stopRingtoneAndVibration() {
-        ringtone?.stop()
-        ringtone = null
+        resetAudioMode()
+        stopRingtone()
+        stopVibration()
+    }
+
+    private fun resetAudioMode() {
+        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+
+        audioManager.mode = AudioManager.MODE_NORMAL
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            audioManager.clearCommunicationDevice()
+        } else {
+            audioManager.isBluetoothScoOn = false
+            audioManager.stopBluetoothSco()
+        }
+    }
+
+    private fun stopRingtone() {
+        ringtone?.stop()
+        ringtone = null
+    }
+
+    private fun stopVibration() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             (vibrator as? VibratorManager)?.defaultVibrator?.cancel()
         } else {
             (vibrator as? Vibrator)?.cancel()
@@ -204,12 +271,4 @@ class CallService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-
-    companion object {
-        internal const val EXTRA_NAME: String = "extra_name"
-        internal const val EXTRA_NUMBER: String = "extra_number"
-        internal const val EXTRA_ROOM_ALIAS: String = "extra_room_alias"
-        internal const val ACTION_INCOMING_CALL = "incoming_call"
-        internal const val ACTION_UPDATE_CALL = "update_call"
-    }
 }

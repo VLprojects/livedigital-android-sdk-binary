@@ -1,22 +1,21 @@
-package space.livedigital.example.telecom_calls
+package space.livedigital.example
 
 import android.content.ContentResolver
 import android.net.Uri
 import android.provider.ContactsContract
 import androidx.core.telecom.CallAttributesCompat
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import org.koin.core.component.KoinComponent
-import space.livedigital.example.calls.utils.CallRepository
-import space.livedigital.example.telecom_calls.utils.Call
-import space.livedigital.example.telecom_calls.utils.TelecomCallRepository
+import space.livedigital.example.calls.internal.repository.CallRepository
+import space.livedigital.example.calls.telecom.entities.CallFromPush
+import space.livedigital.example.calls.telecom.repositories.TelecomCallRepository
 
 class MainViewModel(
-    savedStateHandle: SavedStateHandle,
     private val callRepository: CallRepository,
+    // TODO: Move to repository
     private val contentResolver: ContentResolver
 ) : ViewModel(), KoinComponent {
 
@@ -35,11 +34,10 @@ class MainViewModel(
                 )
             }
         }
-
     }
 
     private val telecomCallObserver = object : TelecomCallRepository.CallObserver {
-        override fun onCallEnded(call: Call) {
+        override fun onCallEnded(call: CallFromPush) {
             if(!hasContact(call.callerNumber)) {
                 eventChannel.trySend(
                     Event.OnContactMissing(
@@ -51,16 +49,10 @@ class MainViewModel(
         }
     }
 
-    init {
-        callRepository.addObserver(observer)
-        TelecomCallRepository.addObserver(telecomCallObserver)
-    }
-
 
     private fun hasContact(
         number: String
     ): Boolean {
-
         val uri = Uri.withAppendedPath(
             ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
             number
@@ -85,9 +77,6 @@ class MainViewModel(
 
     override fun onCleared() {
         super.onCleared()
-
-        callRepository.removeObserver(observer)
-        TelecomCallRepository.removeObserver(telecomCallObserver)
     }
 
     sealed interface Event {

@@ -1,6 +1,6 @@
-package space.livedigital.example.telecom_calls.utils
+package space.livedigital.example.calls.telecom.entities
 
-data class Call(
+data class CallFromPush(
     val id: String,
     val caller: String,
     val callerNumber: String,

@@ -1,12 +1,10 @@
-package space.livedigital.example.calls
+package space.livedigital.example.calls.entities
 
-import android.os.ParcelUuid
 import android.os.Parcelable
 import android.telecom.DisconnectCause
 import androidx.core.telecom.CallAttributesCompat
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.Parcelize
-import space.livedigital.sdk.media.audio.AudioRoute
 
 sealed interface CallState {
     object None : CallState

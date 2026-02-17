@@ -1,12 +1,15 @@
-package space.livedigital.example.calls.utils
+package space.livedigital.example.calls.internal.broadcasts
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import org.koin.core.component.KoinComponent
-import space.livedigital.example.calls.CallAction
-import space.livedigital.example.calls.CallState
+import space.livedigital.example.calls.constants.CallConstants
+import space.livedigital.example.calls.entities.CallAction
+import space.livedigital.example.calls.entities.CallState
+import space.livedigital.example.calls.internal.service.CallNotificationManager
+import space.livedigital.example.calls.internal.repository.CallRepository
 
 class CallBroadcast : BroadcastReceiver(), KoinComponent {
 
@@ -31,11 +34,11 @@ class CallBroadcast : BroadcastReceiver(), KoinComponent {
     private fun Intent.getTelecomCallAction(): CallAction? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getParcelableExtra(
-                CallNotificationManager.TELECOM_NOTIFICATION_ACTION,
+                CallConstants.EXTRA_ACTION,
                 CallAction::class.java,
             )
         } else {
             @Suppress("DEPRECATION")
-            getParcelableExtra(CallNotificationManager.TELECOM_NOTIFICATION_ACTION)
+            getParcelableExtra(CallConstants.EXTRA_ACTION)
         }
 }

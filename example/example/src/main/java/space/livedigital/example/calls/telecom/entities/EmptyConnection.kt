@@ -1,4 +1,4 @@
-package space.livedigital.example.telecom_calls.utils
+package space.livedigital.example.calls.telecom.entities
 
 import android.telecom.Connection
 

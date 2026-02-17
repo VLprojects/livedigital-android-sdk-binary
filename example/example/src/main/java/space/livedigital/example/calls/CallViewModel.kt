@@ -1,25 +1,20 @@
-package space.livedigital.example
+package space.livedigital.example.calls
 
-import android.content.Intent
 import android.os.Build
-import android.provider.ContactsContract
+import android.telecom.DisconnectCause
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import space.livedigital.example.bson.BSONObjectIdGenerator
-import space.livedigital.example.calls.CallAction
-import space.livedigital.example.calls.CallState
-import space.livedigital.example.calls.utils.CallRepository
-import space.livedigital.example.telecom_calls.utils.CallAnsweredReceiver
+import space.livedigital.example.calls.entities.CallState
+import space.livedigital.example.calls.use_cases.EndCallUseCase
+import space.livedigital.example.calls.use_cases.GetCallStateUseCase
 import space.livedigital.example.entities.MoodhoodParticipant
 import space.livedigital.example.entities.PeerAppData
 import space.livedigital.example.entities.Room
@@ -48,46 +43,31 @@ import space.livedigital.sdk.engine.LiveDigitalEngineDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineDestroyDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineError
 import space.livedigital.sdk.media.MediaSourceId
-import space.livedigital.sdk.media.audio.AudioRoute
-import space.livedigital.sdk.media.audio.AudioRouter
-import space.livedigital.sdk.media.audio.AudioRouter.UpdateCurrentRouteCallback
 import space.livedigital.sdk.media.audio.AudioSource
-import space.livedigital.sdk.media.video.CameraManager
-import space.livedigital.sdk.media.video.CameraManagerDelegate
-import space.livedigital.sdk.media.video.CameraPosition
-import space.livedigital.sdk.media.video.VideoSource
-import space.livedigital.sdk.media.video.visual_effects.VideoSourceType
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource.Monotonic.markNow
 
-class SessionViewModel(
-    savedStateHandle: SavedStateHandle,
-    private val callRepository: CallRepository
+class CallViewModel(
+    private val getCallStateUseCase: GetCallStateUseCase,
+    private val endCallUseCase: EndCallUseCase
 ) : ViewModel(), KoinComponent {
 
 
     val state
         get() = mutableState
-    val eventFlow
-        get() = eventChannel.receiveAsFlow()
-
-    private var roomAlias: String? =
-        savedStateHandle.get<String>(CallAnsweredReceiver.ROOM_ALIAS_KEY)
 
     private val mutableState = MutableStateFlow(ScreenState())
-    private val eventChannel = Channel<ScreenEvent>(Channel.UNLIMITED)
     private val apiClient = MoodHoodApiClient(MOODHOOD_API_URL)
 
-    // Need to save reference of delegate (because in sdk delegate is Weak Reference)
-    private val availableRoutesChangedDelegate = createAvailableRoutesChangedDelegate()
     private var localParticipantId: String? = null
     private var session: ChannelSession? = null
     private var liveDigitalEngine: LiveDigitalEngine? = null
-    private var isLocalVideoPaused = false
+    private var roomAlias: String? = null
 
     init {
         viewModelScope.launch {
-            callRepository.currentCallState.collect { callState ->
+            getCallStateUseCase.invoke().collect { callState ->
+                Log.d("xd", "callState in view model $callState")
                 val wasMuted = (state.value.callState as? CallState.Registered)?.isMuted
                 mutableState.update {
                     mutableState.value.copy(callState = callState)
@@ -108,8 +88,6 @@ class SessionViewModel(
 
                         val isMuted = callState.isMuted
 
-                        Log.d("xd", "wasMuted $wasMuted isMuted $isMuted")
-
                         if (wasMuted != isMuted) {
                             if (mutableState.value.isLocalAudioOn) {
                                 stopLocalAudio()
@@ -123,11 +101,9 @@ class SessionViewModel(
                         liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
                             override fun onDestroyed() {
                                 viewModelScope.launch {
-                                    stopLocalVideo()
                                     stopLocalAudio()
                                     session = null
                                     apiClient.logout()
-                                    eventChannel.send(ScreenEvent.CloseRoom)
                                 }
                             }
                         })
@@ -137,97 +113,18 @@ class SessionViewModel(
         }
     }
 
-    fun onCallEnded() {
+    fun onCallEnded(cause: DisconnectCause) {
+        endCallUseCase.invoke(cause)
         liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
             override fun onDestroyed() {
                 viewModelScope.launch {
-                    stopLocalVideo()
                     stopLocalAudio()
                     session = null
                     apiClient.logout()
-                    eventChannel.send(ScreenEvent.CloseRoom)
                 }
             }
         })
     }
-
-
-    fun onPostNotificationsPermissionGranted() {
-        viewModelScope.launch {
-            startConference()
-            eventChannel.send(ScreenEvent.ShowCallNotification)
-        }
-    }
-
-    fun onAppBecameFocused() {
-        if (session != null && isLocalVideoPaused) {
-            startLocalVideo()
-            isLocalVideoPaused = false
-        }
-    }
-
-    fun onAppBecameUnfocused() {
-        if (session != null && mutableState.value.isLocalVideoOn) {
-            isLocalVideoPaused = true
-            stopLocalVideo()
-        }
-    }
-
-    fun onRestartButtonClicked() {
-        restartSession()
-    }
-
-    fun onFlipCameraButtonClicked() {
-        liveDigitalEngine?.cameraManager?.flipCamera()
-    }
-
-    fun onCameraButtonClicked() {
-        if (mutableState.value.isLocalVideoOn) stopLocalVideo() else startLocalVideo()
-    }
-
-    fun onMicrophoneButtonClicked() {
-        if (mutableState.value.isLocalAudioOn) stopLocalAudio() else startLocalAudio()
-    }
-
-    fun onAudioDeviceChooseRequired() {
-        mutableState.update {
-            mutableState.value.copy(isAudioDevicePickerShown = true)
-        }
-    }
-
-    fun onAudioDeviceChooseDismissed() {
-        mutableState.update {
-            mutableState.value.copy(isAudioDevicePickerShown = false)
-        }
-    }
-
-    fun onAudioDeviceSelected(deviceName: String) {
-        val actualAvailableAudioDevices =
-            liveDigitalEngine?.audioRouter?.getAvailableRoutes().orEmpty()
-        val audioRoute = actualAvailableAudioDevices.find { it.kind.name == deviceName }
-            ?: return
-
-        liveDigitalEngine?.audioRouter?.updateCurrentRoute(
-            audioRoute,
-            object : UpdateCurrentRouteCallback {
-                override fun onCurrentRouteUpdated(audioRoute: AudioRoute) {}
-                override fun onRouteAlreadyCurrent() {}
-                override fun onCurrentRouteUpdateError() {}
-            }
-        )
-    }
-
-    private fun createAvailableRoutesChangedDelegate(): AudioRouter.AvailableRoutesChangedDelegate =
-        object : AudioRouter.AvailableRoutesChangedDelegate {
-            override fun availableRoutesChanged(availableRoutes: List<AudioRoute>) {
-                mutableState.update {
-                    mutableState.value.copy(
-                        availableAudioDeviceNames = availableRoutes.map { it.kind.name },
-                        audioDeviceIndex = availableRoutes.indexOfFirst { it.isCurrent }
-                    )
-                }
-            }
-        }
 
     private suspend fun startConference() {
         authorize()
@@ -358,26 +255,11 @@ class SessionViewModel(
     }
 
     private fun initDelegates() {
-        liveDigitalEngine?.cameraManager?.delegate = object : CameraManagerDelegate {
-            override fun cameraManagerSwitchedCamera(
-                cameraManager: CameraManager,
-                cameraPosition: CameraPosition
-            ) {
-                mutableState.update {
-                    mutableState.value.copy(localCameraPosition = cameraPosition)
-                }
-            }
-        }
-
         liveDigitalEngine?.delegate = object : LiveDigitalEngineDelegate {
             override fun engineFailed(error: LiveDigitalEngineError) {
                 Log.e(TAG, "Engine failed $error")
             }
         }
-
-        liveDigitalEngine?.audioRouter?.setAvailableRoutesChangedDelegate(
-            availableRoutesChangedDelegate
-        )
     }
 
     private fun connectToChannel(
@@ -636,43 +518,6 @@ class SessionViewModel(
         }
     }
 
-    private fun startLocalVideo() {
-        val localVideoSource = liveDigitalEngine?.startCameraVideoSource(
-            videoOutputFormat = null,
-            videoEncodingPresets = null,
-            visualEffects = listOf(),
-            videoSourceType = VideoSourceType.CAMERA
-        )
-        localVideoSource?.let { source ->
-            mutableState.update {
-                mutableState.value.copy(
-                    localVideoSource = source,
-                    isLocalVideoOn = true
-                )
-            }
-        }
-    }
-
-    private fun stopLocalVideo() {
-        if (!mutableState.value.isLocalVideoOn) {
-            mutableState.update {
-                mutableState.value.copy(localVideoSource = null)
-            }
-            return
-        }
-
-        mutableState.value.localVideoSource?.let {
-            liveDigitalEngine?.stopMediaSource(
-                mediaSource = it,
-                videoSourceType = VideoSourceType.CAMERA
-            )
-
-            mutableState.update {
-                mutableState.value.copy(isLocalVideoOn = false)
-            }
-        }
-    }
-
     private fun startLocalAudio() {
         val localAudioSource = liveDigitalEngine?.startAudioSource(audioEncodingPresets = null)
         localAudioSource?.let { source ->
@@ -705,7 +550,6 @@ class SessionViewModel(
         liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
             override fun onDestroyed() {
                 viewModelScope.launch {
-                    stopLocalVideo()
                     stopLocalAudio()
                     session = null
                     apiClient.logout()
@@ -721,9 +565,6 @@ class SessionViewModel(
         const val MOODHOOD_CLIENT_SECRET = "demo12345abcde6789zxcvDemo"
         const val CLIENT_CREDENTIALS_GARANT_TYPE = "client_credentials"
 
-//        const val TEST_SPACE_ID = "612dbb98b2f9d4a99f18f553"
-//        const val TEST_ROOM_ID = "61554214ae218a31f78e8bc8"
-
         const val TAG = "LivedigitalAndroidSdkExample"
     }
 }
@@ -733,22 +574,9 @@ private fun <T> List<T>.replaceBy(item: T, predicate: (T) -> Boolean): List<T> =
 
 data class ScreenState(
     val remotePeers: List<PeerWithUpdateTime> = emptyList(),
-    val isLocalVideoOn: Boolean = false,
     val isLocalAudioOn: Boolean = false,
-    val localVideoSource: VideoSource? = null,
     val localAudioSource: AudioSource? = null,
-    val isAudioDevicePickerShown: Boolean = false,
-    val availableAudioDeviceNames: List<String> = emptyList(),
-    val audioDeviceIndex: Int = 0,
-    val localCameraPosition: CameraPosition = CameraPosition.BACK,
     val callState: CallState = CallState.None,
 )
-
-sealed interface ScreenEvent {
-
-    data object ShowCallNotification : ScreenEvent
-
-    data object CloseRoom : ScreenEvent
-}
 
 data class PeerWithUpdateTime(val peer: Peer, val updateTimeMark: TimeMark)

@@ -1,4 +1,4 @@
-package space.livedigital.example.telecom_calls
+package space.livedigital.example
 
 import android.Manifest
 import android.content.ClipData
@@ -10,9 +10,6 @@ import android.os.Bundle
 import android.provider.ContactsContract
 import android.telecom.TelecomManager
 import android.util.Log
-import android.view.Gravity
-import android.widget.Button
-import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.messaging.FirebaseMessaging
@@ -22,8 +19,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.databinding.MainActivityBinding
-import space.livedigital.example.telecom_calls.utils.TelecomCallRepository
-import kotlin.getValue
 
 class MainActivity : AppCompatActivity() {
 
@@ -120,26 +115,6 @@ class MainActivity : AppCompatActivity() {
             onAllGranted(permissionGrantedAction)
 
             onAnyDenied { permissionDeniedAction?.invoke() }
-        }
-    }
-
-    class CenterButtonLayout(context: Context) : FrameLayout(context) {
-
-        private val copyButton: Button = Button(context).apply {
-            text = "Copy token"
-            layoutParams = LayoutParams(
-                LayoutParams.WRAP_CONTENT,
-                LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-            )
-        }
-
-        init {
-            addView(copyButton)
-        }
-
-        fun setButtonClickListener(listener: OnClickListener) {
-            copyButton.setOnClickListener(listener)
         }
     }
 }

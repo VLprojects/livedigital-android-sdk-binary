@@ -1,39 +1,28 @@
-package space.livedigital.example.calls.utils
+package space.livedigital.example.calls.internal.service
 
 import android.Manifest
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.AudioManager
-import android.media.RingtoneManager
 import android.os.Build
-import android.os.VibrationEffect
 import android.telecom.DisconnectCause
-import android.util.Log
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.content.PermissionChecker
 import space.livedigital.example.R
-import space.livedigital.example.calls.CallAction
+import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.CallActivity
-import space.livedigital.example.calls.CallState
+import space.livedigital.example.calls.constants.CallConstants
+import space.livedigital.example.calls.entities.CallState
+import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
 
 class CallNotificationManager(private val context: Context) {
 
     private val notificationManager: NotificationManagerCompat =
         NotificationManagerCompat.from(context)
-
-    fun notifyAboutCall(
-        displayName: String,
-        address: String,
-        isActive: Boolean
-    ) {
-
-    }
 
     /**
      * Updates, creates or dismisses a CallStyle notification based on the given [TelecomCall]
@@ -78,14 +67,6 @@ class CallNotificationManager(private val context: Context) {
         )
     }
 
-    fun createForegroundNotification(
-        displayName: String,
-        address: String,
-        isActive: Boolean
-    ): Notification {
-        return createNotification(displayName, address, isActive)
-    }
-
     fun createIdleNotification(): Notification {
         return NotificationCompat.Builder(context, TELECOM_NOTIFICATION_ONGOING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_round_call_24)
@@ -118,7 +99,7 @@ class CallNotificationManager(private val context: Context) {
         // Define the call style based on the call state and set the right actions
         val callIntent = Intent(context, CallActivity::class.java)
         callIntent.putExtra(
-            TELECOM_NOTIFICATION_ACTION,
+            CallConstants.EXTRA_ACTION,
             CallAction.Answer,
         )
 
@@ -173,8 +154,8 @@ class CallNotificationManager(private val context: Context) {
     private fun getPendingIntent(action: CallAction): PendingIntent {
         val callIntent = Intent(context, CallBroadcast::class.java)
         callIntent.putExtra(
-            TELECOM_NOTIFICATION_ACTION,
-            action,
+            CallConstants.EXTRA_ACTION,
+            action
         )
 
         return PendingIntent.getBroadcast(
@@ -214,7 +195,6 @@ class CallNotificationManager(private val context: Context) {
 
     internal companion object {
         const val TELECOM_NOTIFICATION_ID = 200
-        const val TELECOM_NOTIFICATION_ACTION = "telecom_action"
         const val TELECOM_NOTIFICATION_INCOMING_CHANNEL_ID = "telecom_incoming_channel"
         const val TELECOM_NOTIFICATION_ONGOING_CHANNEL_ID = "telecom_ongoing_channel"
     }

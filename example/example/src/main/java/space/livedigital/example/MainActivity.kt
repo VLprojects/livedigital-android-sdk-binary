@@ -11,18 +11,12 @@ import android.provider.ContactsContract
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.google.firebase.messaging.FirebaseMessaging
 import com.sequenia.permissionchecker.check
 import com.sequenia.permissionchecker.registerPermissionChecker
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.databinding.MainActivityBinding
 
 class MainActivity : AppCompatActivity() {
-
-    private val viewModel by viewModel<MainViewModel>()
 
     private val permissionChecker = registerPermissionChecker()
     private var binding: MainActivityBinding? = null
@@ -70,17 +64,17 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(TelecomManager.ACTION_CHANGE_PHONE_ACCOUNTS))
         }
 
-        lifecycleScope.launch {
-            viewModel.eventFlow.collect { callEvent ->
-                delay(500L)
-                when (callEvent) {
-                    is MainViewModel.Event.OnContactMissing -> openContacts(
-                        callEvent.caller,
-                        callEvent.number
-                    )
-                }
-            }
-        }
+//        lifecycleScope.launch {
+//            viewModel.eventFlow.collect { callEvent ->
+//                delay(500L)
+//                when (callEvent) {
+//                    is MainViewModel.Event.OnContactMissing -> openContacts(
+//                        callEvent.caller,
+//                        callEvent.number
+//                    )
+//                }
+//            }
+//        }
 
     }
 

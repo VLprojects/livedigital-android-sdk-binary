@@ -67,7 +67,6 @@ class CallViewModel(
     init {
         viewModelScope.launch {
             getCallStateUseCase.invoke().collect { callState ->
-                Log.d("xd", "callState in view model $callState")
                 val wasMuted = (state.value.callState as? CallState.Registered)?.isMuted
                 mutableState.update {
                     mutableState.value.copy(callState = callState)

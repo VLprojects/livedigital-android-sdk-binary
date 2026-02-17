@@ -13,9 +13,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.content.PermissionChecker
 import space.livedigital.example.R
-import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.CallActivity
 import space.livedigital.example.calls.constants.CallConstants
+import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
 import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
 
@@ -23,6 +23,24 @@ class CallNotificationManager(private val context: Context) {
 
     private val notificationManager: NotificationManagerCompat =
         NotificationManagerCompat.from(context)
+
+    fun notifyAboutMissedCall(callerName: String) {
+        // If notifications are not granted, skip it.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            PermissionChecker.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PermissionChecker.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        // Ensure that the channel is created
+        createNotificationChannels()
+        val notificationId = System.currentTimeMillis().toInt()
+        val notification = createMissedCallNotification(callerName)
+        notificationManager.notify(notificationId, notification)
+    }
 
     /**
      * Updates, creates or dismisses a CallStyle notification based on the given [TelecomCall]
@@ -44,23 +62,23 @@ class CallNotificationManager(private val context: Context) {
         // Update or dismiss notification
         when (call) {
             CallState.None, is CallState.Unregistered -> {
-                notificationManager.cancel(TELECOM_NOTIFICATION_ID)
+                notificationManager.cancel(NOTIFICATION_ID)
             }
 
             is CallState.Registered -> {
-                val notification = createNotification(
+                val notification = createCallNotification(
                     call.callAttributes.displayName.toString(),
                     call.callAttributes.address.toString(),
                     call.isActive
                 )
-                notificationManager.cancel(TELECOM_NOTIFICATION_ID)
-                notificationManager.notify(TELECOM_NOTIFICATION_ID, notification)
+                notificationManager.cancel(NOTIFICATION_ID)
+                notificationManager.notify(NOTIFICATION_ID, notification)
             }
         }
     }
 
     fun createForegroundNotification(call: CallState.Registered): Notification {
-        return createNotification(
+        return createCallNotification(
             call.callAttributes.displayName.toString(),
             call.callAttributes.address.toString(),
             call.isActive
@@ -68,14 +86,23 @@ class CallNotificationManager(private val context: Context) {
     }
 
     fun createIdleNotification(): Notification {
-        return NotificationCompat.Builder(context, TELECOM_NOTIFICATION_ONGOING_CHANNEL_ID)
+        return NotificationCompat.Builder(context, ONGOING_CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_round_call_24)
             .setContentTitle("Call in progress")
             .setOngoing(true)
             .build()
     }
 
-    private fun createNotification(
+    private fun createMissedCallNotification(callerName: String): Notification {
+        return NotificationCompat.Builder(context, MISSED_CALLS_CHANNEL_ID)
+            .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
+            .setSmallIcon(R.drawable.ic_round_call_24)
+            .setContentTitle(callerName)
+            .setContentText("Missed call")
+            .build()
+    }
+
+    private fun createCallNotification(
         displayName: String,
         address: String,
         isActive: Boolean
@@ -132,9 +159,9 @@ class CallNotificationManager(private val context: Context) {
             )
         }
         val channelId = if (isIncoming) {
-            TELECOM_NOTIFICATION_INCOMING_CHANNEL_ID
+            INCOMING_CALLS_CHANNEL_ID
         } else {
-            TELECOM_NOTIFICATION_ONGOING_CHANNEL_ID
+            ONGOING_CALLS_CHANNEL_ID
         }
 
         val builder = NotificationCompat.Builder(context, channelId)
@@ -167,8 +194,22 @@ class CallNotificationManager(private val context: Context) {
     }
 
     private fun createNotificationChannels() {
-        val incomingChannel = NotificationChannelCompat.Builder(
-            TELECOM_NOTIFICATION_INCOMING_CHANNEL_ID,
+        val incomingChannel = buildIncomingCallsChannel()
+        val ongoingChannel = buildOngoingCallsChannel()
+        val missedChannel = buildMissedCallsChannel()
+
+        notificationManager.createNotificationChannelsCompat(
+            listOf(
+                incomingChannel,
+                ongoingChannel,
+                missedChannel
+            )
+        )
+    }
+
+    private fun buildIncomingCallsChannel(): NotificationChannelCompat =
+        NotificationChannelCompat.Builder(
+            INCOMING_CALLS_CHANNEL_ID,
             NotificationManagerCompat.IMPORTANCE_HIGH,
         )
             .setName("Incoming calls")
@@ -180,22 +221,32 @@ class CallNotificationManager(private val context: Context) {
             .setVibrationEnabled(false)
             .build()
 
-        val ongoingChannel = NotificationChannelCompat.Builder(
-            TELECOM_NOTIFICATION_ONGOING_CHANNEL_ID,
+    private fun buildOngoingCallsChannel(): NotificationChannelCompat =
+        NotificationChannelCompat.Builder(
+            ONGOING_CALLS_CHANNEL_ID,
             NotificationManagerCompat.IMPORTANCE_DEFAULT,
-        ).setName("Ongoing calls").setDescription("Displays the ongoing call notifications").build()
-
-        notificationManager.createNotificationChannelsCompat(
-            listOf(
-                incomingChannel,
-                ongoingChannel
-            )
         )
-    }
+            .setName("Ongoing calls")
+            .setDescription("Displays the ongoing call notifications")
+            .build()
+
+    private fun buildMissedCallsChannel(): NotificationChannelCompat =
+        NotificationChannelCompat.Builder(
+            MISSED_CALLS_CHANNEL_ID,
+            NotificationManagerCompat.IMPORTANCE_DEFAULT
+        )
+            .setName("Missed calls")
+            .setDescription("Notifications for calls that were missed")
+            .setSound(null, null)
+            .setVibrationEnabled(false)
+            .build()
+
 
     internal companion object {
-        const val TELECOM_NOTIFICATION_ID = 200
-        const val TELECOM_NOTIFICATION_INCOMING_CHANNEL_ID = "telecom_incoming_channel"
-        const val TELECOM_NOTIFICATION_ONGOING_CHANNEL_ID = "telecom_ongoing_channel"
+        const val NOTIFICATION_ID = 200
+        const val INCOMING_CALLS_CHANNEL_ID = "incoming_calls_channel"
+        const val ONGOING_CALLS_CHANNEL_ID = "ongoing_calls_channel"
+        const val MISSED_CALLS_CHANNEL_ID = "missed_calls_channel"
+        const val MISSED_CALLS_GROUP_ID_PREFIX = "missed_calls_group_id_"
     }
 }

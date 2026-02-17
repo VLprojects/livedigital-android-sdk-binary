@@ -67,7 +67,7 @@ internal fun CallScreen(
         is CallState.Registered -> {
             CallScreenContent(
                 name = callState.callAttributes.displayName.toString(),
-                info = callState.callAttributes.address.toString(),
+                info = callState.callAttributes.address.schemeSpecificPart,
                 incoming = callState.isIncoming(),
                 isActive = callState.isActive,
                 isMuted = callState.isMuted,

@@ -1,12 +1,13 @@
 package space.livedigital.example.calls.telecom.repositories
 
+import android.telecom.DisconnectCause
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
 import space.livedigital.example.calls.telecom.entities.CallConnection
-import space.livedigital.example.calls.telecom.entities.CallFromPush
 
 class TelecomCallRepository private constructor() : CallConnection.CallStateListener {
 
@@ -14,6 +15,22 @@ class TelecomCallRepository private constructor() : CallConnection.CallStateList
         get() = _currentCallState.asStateFlow()
 
     private val _currentCallState: MutableStateFlow<CallState> = MutableStateFlow(CallState.None)
+
+    fun endCall() {
+        val call = _currentCallState.value
+        if (call is CallState.Registered) {
+            if (call.isActive) {
+                call.actionSource.trySend(
+                    CallAction.Disconnect(DisconnectCause(DisconnectCause.REMOTE))
+                )
+            } else {
+                call.actionSource.trySend(
+                    CallAction.Disconnect(DisconnectCause(DisconnectCause.MISSED))
+                )
+            }
+
+        }
+    }
 
     override fun onStateChanged(callState: CallState) {
         _currentCallState.value = callState
@@ -30,11 +47,6 @@ class TelecomCallRepository private constructor() : CallConnection.CallStateList
     }
 
     override fun onAnswer() {}
-
-    interface CallObserver {
-
-        fun onCallEnded(call: CallFromPush)
-    }
 
     companion object {
         var instance: TelecomCallRepository? = null

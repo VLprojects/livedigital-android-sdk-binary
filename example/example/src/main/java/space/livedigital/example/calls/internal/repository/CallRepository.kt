@@ -61,6 +61,21 @@ class CallRepository private constructor(private val callsManager: CallsManager)
         }
     }
 
+    fun endCall() {
+        val call = _currentCallState.value
+        if (call is CallState.Registered) {
+            if (call.isActive) {
+                call.actionSource.trySend(
+                    CallAction.Disconnect(DisconnectCause(DisconnectCause.REMOTE))
+                )
+            } else {
+                call.actionSource.trySend(
+                    CallAction.Disconnect(DisconnectCause(DisconnectCause.MISSED))
+                )
+            }
+        }
+    }
+
     /**
      * Collect the action source to handle client actions inside the call scope
      */

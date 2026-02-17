@@ -55,6 +55,26 @@ class CallConnection(
     override fun onStateChanged(state: Int) {
         super.onStateChanged(state)
 
+        if (state == STATE_INITIALIZING) {
+            listeners.forEach {
+                it.onStateChanged(
+                    CallState.Registered(
+                        callAttributes = CallAttributesCompat(
+                            displayName = call.caller,
+                            address = call.callerNumber.toUri(),
+                            direction = CallAttributesCompat.DIRECTION_INCOMING
+                        ),
+                        isMuted = true,
+                        roomAlias = call.roomAlias,
+                        errorCode = null,
+                        isOnHold = false,
+                        isActive = false,
+                        actionSource = actionSource
+                    )
+                )
+            }
+        }
+
         if (state == STATE_RINGING) {
             listeners.forEach {
                 it.onStateChanged(

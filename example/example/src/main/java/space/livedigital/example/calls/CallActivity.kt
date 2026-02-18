@@ -4,6 +4,7 @@ import android.app.KeyguardManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.telecom.DisconnectCause
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.core.content.getSystemService
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,6 +57,20 @@ class CallActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
+
+                LaunchedEffect(viewModel.events) {
+                    viewModel.events.collect { event ->
+                        when (event) {
+
+                            is ScreenEvent.CreateContact -> {
+                                openContacts(event.callerName, event.phone)
+                            }
+
+                            ScreenEvent.CloseCall -> finishAndRemoveTask()
+                        }
+                    }
+                }
+
                 val state = viewModel.state.collectAsStateWithLifecycle()
 
                 Surface(
@@ -77,9 +93,22 @@ class CallActivity : ComponentActivity() {
         super.onDestroy()
 
         if (isFinishing) {
-            viewModel.onCallEnded(DisconnectCause(DisconnectCause.LOCAL))
+            viewModel.onCallFinishedBySystem(DisconnectCause(DisconnectCause.LOCAL))
             stopService(Intent(this, CallService::class.java))
         }
+    }
+
+    private fun openContacts(caller: String, number: String) {
+        val intent = Intent(Intent.ACTION_INSERT).apply {
+            type = ContactsContract.Contacts.CONTENT_TYPE
+            putExtra(ContactsContract.Intents.Insert.NAME, caller)
+            putExtra(ContactsContract.Intents.Insert.PHONE, number)
+            putExtra(
+                ContactsContract.Intents.Insert.PHONE_TYPE,
+                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
+            )
+        }
+        startActivity(intent)
     }
 
     private fun setupCallActivity() {

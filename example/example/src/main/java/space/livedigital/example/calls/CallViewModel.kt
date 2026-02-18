@@ -5,7 +5,9 @@ import android.telecom.DisconnectCause
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -13,8 +15,10 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import space.livedigital.example.bson.BSONObjectIdGenerator
 import space.livedigital.example.calls.entities.CallState
+import space.livedigital.example.calls.repositories.HasContactResult
 import space.livedigital.example.calls.use_cases.EndCallUseCase
 import space.livedigital.example.calls.use_cases.GetCallStateUseCase
+import space.livedigital.example.calls.use_cases.HasContactUseCase
 import space.livedigital.example.entities.MoodhoodParticipant
 import space.livedigital.example.entities.PeerAppData
 import space.livedigital.example.entities.Room
@@ -49,14 +53,20 @@ import kotlin.time.TimeSource.Monotonic.markNow
 
 class CallViewModel(
     private val getCallStateUseCase: GetCallStateUseCase,
-    private val endCallUseCase: EndCallUseCase
+    private val endCallUseCase: EndCallUseCase,
+    private val hasContactUseCase: HasContactUseCase
 ) : ViewModel(), KoinComponent {
 
 
     val state
         get() = mutableState
 
+    val events
+        get() = eventsChannel.receiveAsFlow()
+
     private val mutableState = MutableStateFlow(ScreenState())
+
+    private val eventsChannel = Channel<ScreenEvent>(Channel.UNLIMITED)
     private val apiClient = MoodHoodApiClient(MOODHOOD_API_URL)
 
     private var localParticipantId: String? = null
@@ -68,51 +78,17 @@ class CallViewModel(
         viewModelScope.launch {
             getCallStateUseCase.invoke().collect { callState ->
                 val wasMuted = (state.value.callState as? CallState.Registered)?.isMuted
+                val wasActive = (state.value.callState as? CallState.Registered)?.isActive
                 mutableState.update {
                     mutableState.value.copy(callState = callState)
                 }
 
-                when (callState) {
-                    CallState.None -> {}
-
-                    is CallState.Registered -> {
-                        val isIncomingCall = session == null && callState.isActive
-
-                        if (isIncomingCall) {
-                            roomAlias = callState.roomAlias
-                            startConference()
-                        }
-
-                        if (wasMuted == null) return@collect
-
-                        val isMuted = callState.isMuted
-
-                        if (wasMuted != isMuted) {
-                            if (mutableState.value.isLocalAudioOn) {
-                                stopLocalAudio()
-                            } else {
-                                startLocalAudio()
-                            }
-                        }
-                    }
-
-                    is CallState.Unregistered -> {
-                        liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
-                            override fun onDestroyed() {
-                                viewModelScope.launch {
-                                    stopLocalAudio()
-                                    session = null
-                                    apiClient.logout()
-                                }
-                            }
-                        })
-                    }
-                }
+                handleCallState(callState, wasMuted, wasActive)
             }
         }
     }
 
-    fun onCallEnded(cause: DisconnectCause) {
+    fun onCallFinishedBySystem(cause: DisconnectCause) {
         endCallUseCase.invoke(cause)
         liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
             override fun onDestroyed() {
@@ -123,6 +99,51 @@ class CallViewModel(
                 }
             }
         })
+    }
+
+    private suspend fun handleCallState(
+        callState: CallState,
+        wasMuted: Boolean?,
+        wasActive: Boolean?
+    ) {
+        when (callState) {
+            CallState.None -> {}
+
+            is CallState.Registered -> {
+                val isIncomingCall = session == null && callState.isActive
+
+                if (isIncomingCall) {
+                    roomAlias = callState.roomAlias
+                    startConference()
+                }
+
+                if (wasMuted == null) return
+
+                val isMuted = callState.isMuted
+
+                if (wasMuted != isMuted) {
+                    if (mutableState.value.isLocalAudioOn) {
+                        stopLocalAudio()
+                    } else {
+                        startLocalAudio()
+                    }
+                }
+            }
+
+            is CallState.Unregistered -> {
+                createContactIfMissing(wasActive, callState)
+
+                liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
+                    override fun onDestroyed() {
+                        viewModelScope.launch {
+                            stopLocalAudio()
+                            session = null
+                            apiClient.logout()
+                        }
+                    }
+                })
+            }
+        }
     }
 
     private suspend fun startConference() {
@@ -558,6 +579,31 @@ class CallViewModel(
         })
     }
 
+    private suspend fun createContactIfMissing(
+        wasActive: Boolean?,
+        callState: CallState.Unregistered
+    ) {
+        if (wasActive == true) {
+            val phone = callState.callAttributes.address.schemeSpecificPart
+            val callerName = callState.callAttributes.displayName.toString()
+            createContactIfMissing(phone = phone, callerName = callerName)
+        }
+    }
+
+    private suspend fun createContactIfMissing(phone: String, callerName: String) {
+        val hasContactResult =
+            hasContactUseCase.invoke(phone)
+
+        if (hasContactResult == HasContactResult.MISSED) {
+            eventsChannel.send(
+                ScreenEvent.CreateContact(
+                    callerName = callerName,
+                    phone = phone
+                )
+            )
+        }
+    }
+
     companion object {
         const val MOODHOOD_API_URL = "https://moodhood-api.livedigital.space/"
         const val MOODHOOD_CLIENT_ID = "moodhood-demo"
@@ -577,5 +623,11 @@ data class ScreenState(
     val localAudioSource: AudioSource? = null,
     val callState: CallState = CallState.None,
 )
+
+sealed interface ScreenEvent {
+
+    data class CreateContact(val callerName: String, val phone: String) : ScreenEvent
+    data object CloseCall : ScreenEvent
+}
 
 data class PeerWithUpdateTime(val peer: Peer, val updateTimeMark: TimeMark)

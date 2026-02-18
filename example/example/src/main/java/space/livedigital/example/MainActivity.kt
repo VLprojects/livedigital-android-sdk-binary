@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.provider.ContactsContract
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -76,21 +75,6 @@ class MainActivity : AppCompatActivity() {
 //            }
 //        }
 
-    }
-
-    private fun openContacts(caller: String, number: String) {
-
-
-        val intent = Intent(Intent.ACTION_INSERT).apply {
-            type = ContactsContract.Contacts.CONTENT_TYPE
-            putExtra(ContactsContract.Intents.Insert.NAME, caller)
-            putExtra(ContactsContract.Intents.Insert.PHONE, number)
-            putExtra(
-                ContactsContract.Intents.Insert.PHONE_TYPE,
-                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
-            )
-        }
-        startActivity(intent)
     }
 
 

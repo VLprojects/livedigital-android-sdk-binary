@@ -51,9 +51,7 @@ internal fun CallScreen(
     state: State<ScreenState>,
     onCallFinished: () -> Unit
 ) {
-    val callState = state.value.callState
-
-    when (callState) {
+    when (val callState = state.value.callState) {
         is CallState.Unregistered, CallState.None -> {
             // If there is no call invoke finish after a small delay
             LaunchedEffect(Unit) {

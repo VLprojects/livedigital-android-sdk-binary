@@ -33,6 +33,7 @@ sealed interface CallState {
     data class Unregistered(
         val callAttributes: CallAttributesCompat,
         val disconnectCause: DisconnectCause,
+        val roomAlias: String,
     ) : CallState
 }
 

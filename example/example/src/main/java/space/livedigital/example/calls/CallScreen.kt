@@ -108,12 +108,13 @@ private fun CallScreenContent(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CallInfoCard(name, info, isActive)
+        CallInfoCard(name, info)
         if (incoming && !isActive) {
             IncomingCallActions(onCallAction)
         } else {
             OngoingCallActions(
                 isMuted = isMuted,
+                isActive = isActive,
                 onCallAction = onCallAction,
             )
         }
@@ -121,7 +122,7 @@ private fun CallScreenContent(
 }
 
 @Composable
-private fun CallInfoCard(name: String, info: String, isActive: Boolean) {
+private fun CallInfoCard(name: String, info: String) {
     Column(
         Modifier
             .fillMaxSize(0.5f),
@@ -131,13 +132,6 @@ private fun CallInfoCard(name: String, info: String, isActive: Boolean) {
         Image(imageVector = Icons.Rounded.Person, contentDescription = null)
         Text(text = name, style = MaterialTheme.typography.titleMedium)
         Text(text = info, style = MaterialTheme.typography.bodyMedium)
-
-        if (!isActive) {
-            Text(text = "Connecting...", style = MaterialTheme.typography.titleSmall)
-        } else {
-            Text(text = "Connected", style = MaterialTheme.typography.titleSmall)
-        }
-
     }
 }
 
@@ -183,6 +177,7 @@ private fun IncomingCallActions(onCallAction: (CallAction) -> Unit) {
 @Composable
 private fun OngoingCallActions(
     isMuted: Boolean,
+    isActive: Boolean,
     onCallAction: (CallAction) -> Unit,
 ) {
     Column(
@@ -196,6 +191,7 @@ private fun OngoingCallActions(
     ) {
         CallControls(
             isMuted = isMuted,
+            isActive = isActive,
             onCallAction = onCallAction,
         )
         FloatingActionButton(
@@ -223,6 +219,7 @@ private fun OngoingCallActions(
 @Composable
 private fun CallControls(
     isMuted: Boolean,
+    isActive: Boolean,
     onCallAction: (CallAction) -> Unit,
 ) {
     val micPermission = rememberPermissionState(permission = Manifest.permission.RECORD_AUDIO)
@@ -239,6 +236,7 @@ private fun CallControls(
         if (micPermission.status.isGranted) {
             IconToggleButton(
                 checked = isMuted,
+                enabled = isActive,
                 onCheckedChange = {
                     onCallAction(CallAction.ToggleMute(it))
                 },

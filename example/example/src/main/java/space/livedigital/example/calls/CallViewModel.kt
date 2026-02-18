@@ -627,7 +627,6 @@ data class ScreenState(
 sealed interface ScreenEvent {
 
     data class CreateContact(val callerName: String, val phone: String) : ScreenEvent
-    data object CloseCall : ScreenEvent
 }
 
 data class PeerWithUpdateTime(val peer: Peer, val updateTimeMark: TimeMark)

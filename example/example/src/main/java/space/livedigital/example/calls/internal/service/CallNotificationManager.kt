@@ -14,6 +14,7 @@ import androidx.core.app.Person
 import androidx.core.content.PermissionChecker
 import space.livedigital.example.R
 import space.livedigital.example.calls.CallActivity
+import space.livedigital.example.calls.CallActivityAction
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
@@ -24,7 +25,7 @@ class CallNotificationManager(private val context: Context) {
     private val notificationManager: NotificationManagerCompat =
         NotificationManagerCompat.from(context)
 
-    fun notifyAboutMissedCall(callerName: String) {
+    fun notifyAboutMissedCall(callerName: String, phoneNumber: String, roomAlias: String) {
         // If notifications are not granted, skip it.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             PermissionChecker.checkSelfPermission(
@@ -37,8 +38,15 @@ class CallNotificationManager(private val context: Context) {
 
         // Ensure that the channel is created
         createNotificationChannels()
+
+        val contentIntent = PendingIntent.getActivity(
+            /* context = */ context,
+            /* requestCode = */ 0,
+            /* intent = */ createOutgoingCallIntent(callerName, phoneNumber, roomAlias),
+            /* flags = */ PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
         val notificationId = System.currentTimeMillis().toInt()
-        val notification = createMissedCallNotification(callerName)
+        val notification = createMissedCallNotification(callerName, contentIntent)
         notificationManager.notify(notificationId, notification)
     }
 
@@ -93,12 +101,35 @@ class CallNotificationManager(private val context: Context) {
             .build()
     }
 
-    private fun createMissedCallNotification(callerName: String): Notification {
+    private fun createOutgoingCallIntent(
+        callerName: String,
+        phoneNumber: String,
+        roomAlias: String
+    ): Intent {
+        val newOutgoingCallIntent = Intent(context, CallActivity::class.java).apply {
+            putExtra(
+                CallConstants.EXTRA_ACTION,
+                CallActivityAction.OutgoingCall(
+                    callerName = callerName,
+                    phoneNumber = phoneNumber,
+                    roomAlias = roomAlias
+                )
+            )
+        }
+        return newOutgoingCallIntent
+    }
+
+    private fun createMissedCallNotification(
+        callerName: String,
+        contentIntent: PendingIntent
+    ): Notification {
         return NotificationCompat.Builder(context, MISSED_CALLS_CHANNEL_ID)
             .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
+            .setContentIntent(contentIntent)
             .setSmallIcon(R.drawable.ic_round_call_24)
             .setContentTitle(callerName)
             .setContentText("Missed call")
+            .setAutoCancel(true)
             .build()
     }
 
@@ -123,11 +154,10 @@ class CallNotificationManager(private val context: Context) {
             /* flags = */ PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        // Define the call style based on the call state and set the right actions
         val callIntent = Intent(context, CallActivity::class.java)
         callIntent.putExtra(
             CallConstants.EXTRA_ACTION,
-            CallAction.Answer,
+            CallActivityAction.Answer,
         )
 
         val answerIntent = PendingIntent.getActivity(

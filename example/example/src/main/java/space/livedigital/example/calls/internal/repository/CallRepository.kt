@@ -24,14 +24,22 @@ class CallRepository private constructor(private val callsManager: CallsManager)
         get() = _currentCallState.asStateFlow()
     private val _currentCallState: MutableStateFlow<CallState> = MutableStateFlow(CallState.None)
 
-    suspend fun registerCall(displayName: String, roomAlias: String, phoneNumber: Uri) {
-
+    suspend fun registerCall(
+        displayName: String,
+        roomAlias: String,
+        phoneNumber: Uri,
+        isIncoming: Boolean
+    ) {
         val actionSource = Channel<CallAction>()
 
         val callAttributes = CallAttributesCompat(
             displayName = displayName,
             address = phoneNumber,
-            direction = CallAttributesCompat.DIRECTION_INCOMING
+            direction = if (isIncoming) {
+                CallAttributesCompat.DIRECTION_INCOMING
+            } else {
+                CallAttributesCompat.DIRECTION_OUTGOING
+            }
         )
 
         try {
@@ -55,6 +63,12 @@ class CallRepository private constructor(private val callsManager: CallsManager)
                     isOnHold = false,
                     actionSource = actionSource,
                 )
+
+                if (!isIncoming) {
+                    launch {
+                        actionSource.send(CallAction.Activate)
+                    }
+                }
             }
         } finally {
             _currentCallState.value = CallState.None
@@ -124,6 +138,7 @@ class CallRepository private constructor(private val callsManager: CallsManager)
                     CallState.Unregistered(
                         callAttributes = callAttributes,
                         disconnectCause = DisconnectCause(DisconnectCause.BUSY),
+                        roomAlias = roomAlias
                     )
                 }
             }
@@ -152,7 +167,7 @@ class CallRepository private constructor(private val callsManager: CallsManager)
      */
     val onIsCallDisconnected: suspend (cause: DisconnectCause) -> Unit = {
         updateCurrentCall {
-            CallState.Unregistered(callAttributes, it)
+            CallState.Unregistered(callAttributes, it, roomAlias)
         }
     }
 
@@ -161,6 +176,7 @@ class CallRepository private constructor(private val callsManager: CallsManager)
      *  Other calls and state might stop us from activating the call
      */
     val onIsCallActive: suspend () -> Unit = {
+        Log.d("xd", "onIsCallActive")
         updateCurrentCall {
             copy(
                 errorCode = null,

@@ -124,7 +124,8 @@ class CallConnection(
                             address = call.callerNumber.toUri(),
                             direction = CallAttributesCompat.DIRECTION_INCOMING
                         ),
-                        disconnectCause = disconnectCause
+                        disconnectCause = disconnectCause,
+                        roomAlias = call.roomAlias
                     )
                 )
             }

@@ -8,5 +8,6 @@ object CallConstants {
     const val EXTRA_ACTION = "space.livedigital.extra.ACTION"
 
     const val ACTION_INCOMING_CALL = "space.livedigital.action.INCOMING_CALL"
+    const val ACTION_OUTGOING_CALL = "space.livedigital.action.OUTGOING_CALL"
     const val ACTION_UPDATE_CALL = "space.livedigital.action.UPDATE_CALL"
 }

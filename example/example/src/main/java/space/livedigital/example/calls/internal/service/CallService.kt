@@ -101,7 +101,8 @@ class CallService : Service() {
 
         if (intent != null) {
             when (intent.action) {
-                CallConstants.ACTION_INCOMING_CALL -> registerCall(intent)
+                CallConstants.ACTION_INCOMING_CALL -> registerCall(intent, isIncoming = true)
+                CallConstants.ACTION_OUTGOING_CALL -> registerCall(intent, isIncoming = false)
             }
         }
 
@@ -128,7 +129,7 @@ class CallService : Service() {
         return FOREGROUND_SERVICE_TYPE_PHONE_CALL
     }
 
-    private fun registerCall(intent: Intent) {
+    private fun registerCall(intent: Intent, isIncoming: Boolean) {
         // If we have an ongoing call ignore command
         if (repository?.currentCallState?.value is CallState.Registered) {
             return
@@ -145,7 +146,7 @@ class CallService : Service() {
             val roomAlias = intent.getStringExtra(CallConstants.EXTRA_ROOM_ALIAS) ?: return
 
             scope.launch {
-                repository?.registerCall(name, roomAlias, phoneNumberUri)
+                repository?.registerCall(name, roomAlias, phoneNumberUri, isIncoming)
             }
         }.onFailure {
             return
@@ -167,7 +168,9 @@ class CallService : Service() {
             is CallState.Unregistered -> {
                 if (needToShowMissedCallNotification(call)) {
                     notificationManager?.notifyAboutMissedCall(
-                        call.callAttributes.displayName.toString()
+                        callerName = call.callAttributes.displayName.toString(),
+                        phoneNumber = call.callAttributes.address.schemeSpecificPart,
+                        roomAlias = call.roomAlias
                     )
                 }
 

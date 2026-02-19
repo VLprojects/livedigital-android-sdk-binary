@@ -62,19 +62,6 @@ class MainActivity : AppCompatActivity() {
         binding?.addPhoneAccountButton?.setOnClickListener {
             startActivity(Intent(TelecomManager.ACTION_CHANGE_PHONE_ACCOUNTS))
         }
-
-//        lifecycleScope.launch {
-//            viewModel.eventFlow.collect { callEvent ->
-//                delay(500L)
-//                when (callEvent) {
-//                    is MainViewModel.Event.OnContactMissing -> openContacts(
-//                        callEvent.caller,
-//                        callEvent.number
-//                    )
-//                }
-//            }
-//        }
-
     }
 
 

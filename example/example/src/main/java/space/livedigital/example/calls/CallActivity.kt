@@ -34,7 +34,15 @@ class CallActivity : ComponentActivity() {
         val action = extractAction()
         handleAnswerAction(action)
         handleOutgoingCallAction(action)
+        updateCallService()
         setupContent()
+    }
+
+    private fun updateCallService() {
+        val intent = Intent(this, CallService::class.java).apply {
+            this.action = CallConstants.ACTION_UPDATE_CALL
+        }
+        startForegroundService(intent)
     }
 
     override fun onDestroy() {
@@ -77,10 +85,6 @@ class CallActivity : ComponentActivity() {
                 CallAction.Answer,
             )
             sendBroadcast(callIntent)
-            val intent = Intent(this, CallService::class.java).apply {
-                this.action = CallConstants.ACTION_UPDATE_CALL
-            }
-            startForegroundService(intent)
         }
     }
 

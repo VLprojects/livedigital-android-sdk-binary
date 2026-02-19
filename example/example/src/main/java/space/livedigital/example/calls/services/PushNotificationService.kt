@@ -16,6 +16,7 @@ class PushNotificationService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        // In production app we have to make check more strict
         val isEndCallPushType = remoteMessage.data.getValue("type") == CALL_END
 
         if (isEndCallPushType) {

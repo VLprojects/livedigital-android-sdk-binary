@@ -39,6 +39,8 @@ class CallConnectionService : ConnectionService() {
                         CallAction.Answer,
                     )
                 }
+                // We need to add a delay to prevent our app from being overlaid by the system
+                // dialer
                 Handler(Looper.getMainLooper()).postDelayed({
                     startActivity(intent)
                 }, 500)

@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
 
+// In real app we need to put all android related logic in service
 class CallRepository private constructor(private val callsManager: CallsManager) {
 
     val currentCallState

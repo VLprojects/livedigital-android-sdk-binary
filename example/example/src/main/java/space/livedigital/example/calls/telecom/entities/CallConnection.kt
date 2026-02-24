@@ -32,7 +32,7 @@ class CallConnection(
 
                     is CallAction.ToggleMute -> {
                         listeners.forEach {
-                            it.onMuteStatusChanged()
+                            it.onMuteStatusChanged(action.isMute)
                         }
                     }
 
@@ -174,7 +174,7 @@ class CallConnection(
 
         fun onStateChanged(callState: CallState)
 
-        fun onMuteStatusChanged()
+        fun onMuteStatusChanged(isMuted: Boolean)
 
         fun onAnswer()
     }

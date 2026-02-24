@@ -36,12 +36,12 @@ class TelecomCallRepository private constructor() : CallConnection.CallStateList
         _currentCallState.value = callState
     }
 
-    override fun onMuteStatusChanged() {
+    override fun onMuteStatusChanged(isMuted: Boolean) {
         val currentState = _currentCallState.value
 
         if (currentState is CallState.Registered) {
             _currentCallState.update {
-                currentState.copy(isMuted = !currentState.isMuted)
+                currentState.copy(isMuted = isMuted)
             }
         }
     }

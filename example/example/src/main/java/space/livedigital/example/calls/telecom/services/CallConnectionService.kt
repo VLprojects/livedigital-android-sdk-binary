@@ -29,7 +29,7 @@ class CallConnectionService : ConnectionService() {
         object : CallConnection.CallStateListener {
             override fun onStateChanged(callState: CallState) {}
 
-            override fun onMuteStatusChanged() {}
+            override fun onMuteStatusChanged(isMuted: Boolean) {}
 
             override fun onAnswer() {
                 val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {

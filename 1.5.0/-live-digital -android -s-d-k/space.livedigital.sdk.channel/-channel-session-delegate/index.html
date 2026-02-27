@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>ChannelSessionDelegate</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
+                    LiveDigital Android SDK
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
+                        data-filter=":sdk/main">androidJvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":sdk/main"
+                                       data-filter=":sdk/main"/>
+                                <span class="checkbox--icon"></span>
+                                androidJvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    LiveDigital Android SDK
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="LiveDigital Android SDK::space.livedigital.sdk.channel/ChannelSessionDelegate///PointingToDeclaration//-1715042111">
+  <div class="breadcrumbs"><a href="../../../index.html">LiveDigital Android SDK</a><span class="delimiter">/</span><a href="../index.html">space.livedigital.sdk.channel</a><span class="delimiter">/</span><span class="current">ChannelSessionDelegate</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Channel</span><wbr></wbr><span>Session</span><wbr></wbr><span><span>Delegate</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">ChannelSessionDelegate</a></div><p class="paragraph">Session event callbacks</p><h4 class="tableheader">Inheritors</h4><div class="table"><div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-stock-channel-session-notifier/index.html">StockChannelSessionNotifier</a></div></span></div><div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="1104325470%2FFunctions%2F-1715042111" anchor-label="activityConfirmationAcquired" id="1104325470%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="activity-confirmation-acquired.html"><span>activity</span><wbr></wbr><span>Confirmation</span><wbr></wbr><span><span>Acquired</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1104325470%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="activity-confirmation-acquired.html"><span class="token function">activityConfirmationAcquired</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-412176343%2FFunctions%2F-1715042111" anchor-label="activityConfirmationExpired" id="-412176343%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="activity-confirmation-expired.html"><span>activity</span><wbr></wbr><span>Confirmation</span><wbr></wbr><span><span>Expired</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-412176343%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="activity-confirmation-expired.html"><span class="token function">activityConfirmationExpired</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-125631272%2FFunctions%2F-1715042111" anchor-label="activityConfirmationRequired" id="-125631272%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="activity-confirmation-required.html"><span>activity</span><wbr></wbr><span>Confirmation</span><wbr></wbr><span><span>Required</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-125631272%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="activity-confirmation-required.html"><span class="token function">activityConfirmationRequired</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">data<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-activity-confirmation-data/index.html">ActivityConfirmationData</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1193147921%2FFunctions%2F-1715042111" anchor-label="connectedToChannel" id="1193147921%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="connected-to-channel.html"><span>connected</span><wbr></wbr><span>To</span><wbr></wbr><span><span>Channel</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1193147921%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="connected-to-channel.html"><span class="token function">connectedToChannel</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-675661268%2FFunctions%2F-1715042111" anchor-label="disconnectedFromChannel" id="-675661268%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="disconnected-from-channel.html"><span>disconnected</span><wbr></wbr><span>From</span><wbr></wbr><span><span>Channel</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-675661268%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="disconnected-from-channel.html"><span class="token function">disconnectedFromChannel</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1033905982%2FFunctions%2F-1715042111" anchor-label="forceStoppedLocalMedia" id="1033905982%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="force-stopped-local-media.html"><span>force</span><wbr></wbr><span>Stopped</span><wbr></wbr><span>Local</span><wbr></wbr><span><span>Media</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1033905982%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="force-stopped-local-media.html"><span class="token function">forceStoppedLocalMedia</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1252413776%2FFunctions%2F-1715042111" anchor-label="gotChannelStateConsistencyIssues" id="1252413776%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="got-channel-state-consistency-issues.html"><span>got</span><wbr></wbr><span>Channel</span><wbr></wbr><span>State</span><wbr></wbr><span>Consistency</span><wbr></wbr><span><span>Issues</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1252413776%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="got-channel-state-consistency-issues.html"><span class="token function">gotChannelStateConsistencyIssues</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">issues<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../space.livedigital.sdk.data.entities.channel_state_consistency/-channel-state-consistency-issue/index.html">ChannelStateConsistencyIssue</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1256008755%2FFunctions%2F-1715042111" anchor-label="gotDominantSpeaker" id="-1256008755%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="got-dominant-speaker.html"><span>got</span><wbr></wbr><span>Dominant</span><wbr></wbr><span><span>Speaker</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1256008755%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="got-dominant-speaker.html"><span class="token function">gotDominantSpeaker</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">dominantSpeaker<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-dominant-speaker/index.html">DominantSpeaker</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1608619769%2FFunctions%2F-1715042111" anchor-label="onChannelErrorOccurred" id="1608619769%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-channel-error-occurred.html"><span>on</span><wbr></wbr><span>Channel</span><wbr></wbr><span>Error</span><wbr></wbr><span><span>Occurred</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1608619769%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="on-channel-error-occurred.html"><span class="token function">onChannelErrorOccurred</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">error<span class="token operator">: </span><a href="../-channel-error/index.html">ChannelError</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1511707489%2FFunctions%2F-1715042111" anchor-label="onCustomEventReceived" id="1511707489%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-custom-event-received.html"><span>on</span><wbr></wbr><span>Custom</span><wbr></wbr><span>Event</span><wbr></wbr><span><span>Received</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1511707489%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="on-custom-event-received.html"><span class="token function">onCustomEventReceived</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">event<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-custom-event/index.html">CustomEvent</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1819219367%2FFunctions%2F-1715042111" anchor-label="onStatusChanged" id="-1819219367%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-status-changed.html"><span>on</span><wbr></wbr><span>Status</span><wbr></wbr><span><span>Changed</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1819219367%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="on-status-changed.html"><span class="token function">onStatusChanged</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">status<span class="token operator">: </span><a href="../-channel-session-status/index.html">ChannelSessionStatus</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1298590074%2FFunctions%2F-1715042111" anchor-label="peerAppDataUpdated" id="1298590074%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-app-data-updated.html"><span>peer</span><wbr></wbr><span>App</span><wbr></wbr><span>Data</span><wbr></wbr><span><span>Updated</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1298590074%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-app-data-updated.html"><span class="token function">peerAppDataUpdated</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peerId<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer-id/index.html">PeerId</a><span class="token punctuation">, </span></span><span class="parameter ">appData<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/org/json/JSONObject.html">JSONObject</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-428373867%2FFunctions%2F-1715042111" anchor-label="peerCanPauseAudio" id="-428373867%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-can-pause-audio.html"><span>peer</span><wbr></wbr><span>Can</span><wbr></wbr><span>Pause</span><wbr></wbr><span><span>Audio</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-428373867%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-can-pause-audio.html"><span class="token function">peerCanPauseAudio</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1189962950%2FFunctions%2F-1715042111" anchor-label="peerCanPauseVideo" id="-1189962950%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-can-pause-video.html"><span>peer</span><wbr></wbr><span>Can</span><wbr></wbr><span>Pause</span><wbr></wbr><span><span>Video</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1189962950%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-can-pause-video.html"><span class="token function">peerCanPauseVideo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-986417380%2FFunctions%2F-1715042111" anchor-label="peerCanResumeAudio" id="-986417380%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-can-resume-audio.html"><span>peer</span><wbr></wbr><span>Can</span><wbr></wbr><span>Resume</span><wbr></wbr><span><span>Audio</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-986417380%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-can-resume-audio.html"><span class="token function">peerCanResumeAudio</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1748006463%2FFunctions%2F-1715042111" anchor-label="peerCanResumeVideo" id="-1748006463%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-can-resume-video.html"><span>peer</span><wbr></wbr><span>Can</span><wbr></wbr><span>Resume</span><wbr></wbr><span><span>Video</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1748006463%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-can-resume-video.html"><span class="token function">peerCanResumeVideo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1028814249%2FFunctions%2F-1715042111" anchor-label="peerCanStartAudio" id="1028814249%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-can-start-audio.html"><span>peer</span><wbr></wbr><span>Can</span><wbr></wbr><span>Start</span><wbr></wbr><span><span>Audio</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1028814249%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-can-start-audio.html"><span class="token function">peerCanStartAudio</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="267225166%2FFunctions%2F-1715042111" anchor-label="peerCanStartVideo" id="267225166%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-can-start-video.html"><span>peer</span><wbr></wbr><span>Can</span><wbr></wbr><span>Start</span><wbr></wbr><span><span>Video</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="267225166%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-can-start-video.html"><span class="token function">peerCanStartVideo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-214716945%2FFunctions%2F-1715042111" anchor-label="peerDisconnected" id="-214716945%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-disconnected.html"><span>peer</span><wbr></wbr><span><span>Disconnected</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-214716945%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-disconnected.html"><span class="token function">peerDisconnected</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peerId<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer-id/index.html">PeerId</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-784598867%2FFunctions%2F-1715042111" anchor-label="peerPausedAudio" id="-784598867%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-paused-audio.html"><span>peer</span><wbr></wbr><span>Paused</span><wbr></wbr><span><span>Audio</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-784598867%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-paused-audio.html"><span class="token function">peerPausedAudio</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1546187950%2FFunctions%2F-1715042111" anchor-label="peerPausedVideo" id="-1546187950%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-paused-video.html"><span>peer</span><wbr></wbr><span>Paused</span><wbr></wbr><span><span>Video</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1546187950%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-paused-video.html"><span class="token function">peerPausedVideo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1399464903%2FFunctions%2F-1715042111" anchor-label="peerPermissionsUpdated" id="1399464903%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-permissions-updated.html"><span>peer</span><wbr></wbr><span>Permissions</span><wbr></wbr><span><span>Updated</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1399464903%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-permissions-updated.html"><span class="token function">peerPermissionsUpdated</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peerId<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer-id/index.html">PeerId</a><span class="token punctuation">, </span></span><span class="parameter ">permissions<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1185218914%2FFunctions%2F-1715042111" anchor-label="peerResumedAudio" id="1185218914%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-resumed-audio.html"><span>peer</span><wbr></wbr><span>Resumed</span><wbr></wbr><span><span>Audio</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1185218914%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-resumed-audio.html"><span class="token function">peerResumedAudio</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="423629831%2FFunctions%2F-1715042111" anchor-label="peerResumedVideo" id="423629831%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-resumed-video.html"><span>peer</span><wbr></wbr><span>Resumed</span><wbr></wbr><span><span>Video</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="423629831%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-resumed-video.html"><span class="token function">peerResumedVideo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="699353877%2FFunctions%2F-1715042111" anchor-label="peersJoined" id="699353877%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peers-joined.html"><span>peers</span><wbr></wbr><span><span>Joined</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="699353877%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peers-joined.html"><span class="token function">peersJoined</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peers<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="545039608%2FFunctions%2F-1715042111" anchor-label="peerStartedAudio" id="545039608%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-started-audio.html"><span>peer</span><wbr></wbr><span>Started</span><wbr></wbr><span><span>Audio</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="545039608%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-started-audio.html"><span class="token function">peerStartedAudio</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-216549475%2FFunctions%2F-1715042111" anchor-label="peerStartedVideo" id="-216549475%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-started-video.html"><span>peer</span><wbr></wbr><span>Started</span><wbr></wbr><span><span>Video</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-216549475%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-started-video.html"><span class="token function">peerStartedVideo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="774302508%2FFunctions%2F-1715042111" anchor-label="peerStoppedAudio" id="774302508%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-stopped-audio.html"><span>peer</span><wbr></wbr><span>Stopped</span><wbr></wbr><span><span>Audio</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="774302508%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-stopped-audio.html"><span class="token function">peerStoppedAudio</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="12713425%2FFunctions%2F-1715042111" anchor-label="peerStoppedVideo" id="12713425%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-stopped-video.html"><span>peer</span><wbr></wbr><span>Stopped</span><wbr></wbr><span><span>Video</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="12713425%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-stopped-video.html"><span class="token function">peerStoppedVideo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">peer<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-peer/index.html">Peer</a><span class="token punctuation">, </span></span><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="646848819%2FFunctions%2F-1715042111" anchor-label="peerVolumesUpdated" id="646848819%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="peer-volumes-updated.html"><span>peer</span><wbr></wbr><span>Volumes</span><wbr></wbr><span><span>Updated</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="646848819%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="peer-volumes-updated.html"><span class="token function">peerVolumesUpdated</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">volumes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../space.livedigital.sdk.data.entities/-peer-volume/index.html">PeerVolume</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="445209918%2FFunctions%2F-1715042111" anchor-label="reconnectedToChannel" id="445209918%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="reconnected-to-channel.html"><span>reconnected</span><wbr></wbr><span>To</span><wbr></wbr><span><span>Channel</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="445209918%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="reconnected-to-channel.html"><span class="token function">reconnectedToChannel</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="26499437%2FFunctions%2F-1715042111" anchor-label="silenceHasBeenSet" id="26499437%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="silence-has-been-set.html"><span>silence</span><wbr></wbr><span>Has</span><wbr></wbr><span>Been</span><wbr></wbr><span><span>Set</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="26499437%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="silence-has-been-set.html"><span class="token function">silenceHasBeenSet</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-399298548%2FFunctions%2F-1715042111" anchor-label="stoppedLocalAudio" id="-399298548%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="stopped-local-audio.html"><span>stopped</span><wbr></wbr><span>Local</span><wbr></wbr><span><span>Audio</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-399298548%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="stopped-local-audio.html"><span class="token function">stoppedLocalAudio</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a><span class="token punctuation">, </span></span><span class="parameter ">mediaSourceId<span class="token operator">: </span><a href="../../space.livedigital.sdk.media/-media-source-id/index.html">MediaSourceId</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1761243655%2FFunctions%2F-1715042111" anchor-label="stoppedLocalVideo" id="1761243655%2FFunctions%2F-1715042111" data-filterable-set=":sdk/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="stopped-local-video.html"><span>stopped</span><wbr></wbr><span>Local</span><wbr></wbr><span><span>Video</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1761243655%2FFunctions%2F-1715042111"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="stopped-local-video.html"><span class="token function">stoppedLocalVideo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">label<span class="token operator">: </span><a href="../../space.livedigital.sdk.data.entities/-media-label/index.html">MediaLabel</a><span class="token punctuation">, </span></span><span class="parameter ">mediaSourceId<span class="token operator">: </span><a href="../../space.livedigital.sdk.media/-media-source-id/index.html">MediaSourceId</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

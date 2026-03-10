@@ -6,23 +6,20 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 
 @Composable
-fun AppTheme(
+internal fun AppTheme(
     content: @Composable () -> Unit
 ) {
-    val colorSystem = DefaultColorSystem
-    val typographySystem = createTypographySystem(colorSystem)
-    val buttonSystem = createButtonSystem(colorSystem)
     MaterialTheme {
         CompositionLocalProvider(
-            LocalColorSystem provides colorSystem,
-            LocalTypographySystem provides typographySystem,
-            LocalButtonSystem provides buttonSystem,
+            LocalColorSystem provides DefaultColorSystem,
+            LocalTypographySystem provides createTypographySystem(),
+            LocalButtonSystem provides createButtonSystem(DefaultColorSystem),
             content = content
         )
     }
 }
 
-object AppTheme {
+internal object AppTheme {
     val colorSystem: ColorSystem
         @Composable
         @ReadOnlyComposable

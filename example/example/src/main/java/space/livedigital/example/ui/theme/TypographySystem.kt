@@ -13,20 +13,18 @@ import space.livedigital.example.R
 
 @Immutable
 data class TypographySystem(
-    val mainTextMediumContrast: TextStyle,
-    val mainTextMediumAccentBase: TextStyle
+    val mainTextMedium: TextStyle,
 )
 
 val LocalTypographySystem = staticCompositionLocalOf {
     TypographySystem(
-        mainTextMediumContrast = TextStyle.Default,
-        mainTextMediumAccentBase = TextStyle.Default
+        mainTextMedium = TextStyle.Default
     )
 }
 
 @Composable
 @ReadOnlyComposable
-fun createTypographySystem(colorSystem: ColorSystem): TypographySystem {
+fun createTypographySystem(): TypographySystem {
     val manropeFontFamily = FontFamily(
         Font(R.font.manrope_bold, FontWeight.Bold),
         Font(R.font.manrope_semibold, FontWeight.SemiBold),
@@ -39,8 +37,5 @@ fun createTypographySystem(colorSystem: ColorSystem): TypographySystem {
         lineHeight = 20.sp,
     )
 
-    return TypographySystem(
-        mainTextMediumContrast = appMainMedium.copy(color = colorSystem.contrast),
-        mainTextMediumAccentBase = appMainMedium.copy(color = colorSystem.accentBase),
-    )
+    return TypographySystem(mainTextMedium = appMainMedium)
 }

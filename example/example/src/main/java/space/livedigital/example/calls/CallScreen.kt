@@ -98,7 +98,7 @@ private fun CallScreenContent(
     errorCode: Int?,
     onCallAction: (CallAction) -> Unit,
 ) {
-    if(errorCode != null) {
+    if (errorCode != null) {
         Toast.makeText(LocalContext.current, "errorCode=($errorCode)", Toast.LENGTH_SHORT).show()
     }
 
@@ -242,9 +242,15 @@ private fun CallControls(
                 },
             ) {
                 if (isMuted) {
-                    Icon(painter = painterResource(R.drawable.ic_mic_off_24), contentDescription = "Mic on")
+                    Icon(
+                        painter = painterResource(R.drawable.ic_microphone_off),
+                        contentDescription = "Mic on"
+                    )
                 } else {
-                    Icon(painter = painterResource(R.drawable.ic_mic_24), contentDescription = "Mic off")
+                    Icon(
+                        painter = painterResource(R.drawable.ic_microphone_on),
+                        contentDescription = "Mic off"
+                    )
                 }
             }
         } else {
@@ -258,7 +264,7 @@ private fun CallControls(
                 },
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_mic_off_24),
+                    painter = painterResource(R.drawable.ic_microphone_off),
                     contentDescription = "Missing mic permission",
                     tint = MaterialTheme.colorScheme.error,
                 )

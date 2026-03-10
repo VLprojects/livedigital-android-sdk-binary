@@ -95,7 +95,7 @@ class CallNotificationManager(private val context: Context) {
 
     fun createIdleNotification(): Notification {
         return NotificationCompat.Builder(context, ONGOING_CALLS_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_round_call_24)
+            .setSmallIcon(R.drawable.ic_refresh)
             .setContentTitle("Call in progress")
             .setOngoing(true)
             .build()
@@ -126,7 +126,7 @@ class CallNotificationManager(private val context: Context) {
         return NotificationCompat.Builder(context, MISSED_CALLS_CHANNEL_ID)
             .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
             .setContentIntent(contentIntent)
-            .setSmallIcon(R.drawable.ic_round_call_24)
+            .setSmallIcon(R.drawable.ic_refresh)
             .setContentTitle(callerName)
             .setContentText("Missed call")
             .setAutoCancel(true)
@@ -197,7 +197,7 @@ class CallNotificationManager(private val context: Context) {
         val builder = NotificationCompat.Builder(context, channelId)
             .setContentIntent(contentIntent)
             .setFullScreenIntent(contentIntent, true)
-            .setSmallIcon(R.drawable.ic_round_call_24)
+            .setSmallIcon(R.drawable.ic_refresh)
             .setOngoing(true)
             .setStyle(callStyle)
 

@@ -37,23 +37,8 @@ val LocalColorSystem = staticCompositionLocalOf {
     )
 }
 
-val LightColorSystem = ColorSystem(
+val DefaultColorSystem = ColorSystem(
     primary = Color(0x99060A2D),
-    accentBase = Color(0xFF163498),
-    accent01 = Color(0xFFE8EBF5),
-    accent02 = Color(0xFFD0D6EA),
-    accent03 = Color(0xFF8A99CB),
-    secondary02 = Color(0xFFD4D5DE),
-    secondary03 = Color(0xFFB7B9C9),
-    contrast = Color(0xFFFFFFFF),
-    successBase = Color(0xFF06AA2A),
-    success01 = Color(0xFFCDEED4),
-    errorBase = Color(0xFFE11D08),
-    error01 = Color(0xFFFCE5E2)
-)
-
-val DarkColorSystem = ColorSystem(
-    primary = Color(0x99FFFFFF),
     accentBase = Color(0xFF1D51FE),
     accent01 = Color(0xFF1A2657),
     accent02 = Color(0xFF6185FE),
@@ -66,4 +51,3 @@ val DarkColorSystem = ColorSystem(
     errorBase = Color(0xFFE01C08),
     error01 = Color(0xFF5F0A01)
 )
-

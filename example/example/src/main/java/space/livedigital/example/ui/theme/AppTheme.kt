@@ -11,10 +11,12 @@ fun AppTheme(
 ) {
     val colorSystem = DefaultColorSystem
     val typographySystem = createTypographySystem(colorSystem)
+    val buttonSystem = createButtonSystem(colorSystem)
     MaterialTheme {
         CompositionLocalProvider(
             LocalColorSystem provides colorSystem,
             LocalTypographySystem provides typographySystem,
+            LocalButtonSystem provides buttonSystem,
             content = content
         )
     }
@@ -30,4 +32,9 @@ object AppTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalTypographySystem.current
+
+    val buttonSystem: ButtonSystem
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalButtonSystem.current
 }

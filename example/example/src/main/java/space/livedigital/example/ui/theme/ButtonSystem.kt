@@ -42,10 +42,10 @@ val LocalButtonSystem = staticCompositionLocalOf {
 @ReadOnlyComposable
 fun createButtonSystem(colorSystem: ColorSystem): ButtonSystem {
     return ButtonSystem(
-        acceptButtonStyle = ButtonSystem.ButtonStyle.unspecified,
-        rejectButtonStyle = ButtonSystem.ButtonStyle.unspecified,
-        primaryButtonStyle = ButtonSystem.ButtonStyle.unspecified,
-        tertiaryButtonStyle = ButtonSystem.ButtonStyle.unspecified,
+        acceptButtonStyle = createAcceptButtonStyle(colorSystem),
+        rejectButtonStyle = createRejectButtonStyle(colorSystem),
+        primaryButtonStyle = createPrimaryButtonStyle(colorSystem),
+        tertiaryButtonStyle = createTertiaryButtonStyle(colorSystem),
     )
 }
 

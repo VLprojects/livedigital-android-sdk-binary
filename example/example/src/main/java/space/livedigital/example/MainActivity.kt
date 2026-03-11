@@ -5,53 +5,73 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.FirebaseMessaging
-import com.sequenia.permissionchecker.check
-import com.sequenia.permissionchecker.registerPermissionChecker
 import space.livedigital.example.ui.screens.MainScreen
 import space.livedigital.example.ui.theme.AppTheme
 
 class MainActivity : AppCompatActivity() {
 
-    private val permissionChecker = registerPermissionChecker()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                checkPermissions(
-                    listOf(
-                        Manifest.permission.POST_NOTIFICATIONS,
-                        Manifest.permission.READ_PHONE_STATE,
-                        Manifest.permission.WRITE_CONTACTS,
-                        Manifest.permission.READ_CONTACTS
-                    ),
-                    {}
-                )
-            } else {
-                checkPermissions(
-                    listOf(
-                        Manifest.permission.READ_PHONE_STATE,
-                        Manifest.permission.WRITE_CONTACTS,
-                        Manifest.permission.READ_CONTACTS
-                    ),
-                    {}
-                )
-            }
-        }
-
         setContent {
             AppTheme {
+                PermissionChecker()
                 MainScreen(
                     onCopyButtonClicked = ::copyPushTokenToClipboards,
                     onOpenCallAccountSettingsButtonClicked = ::openPhoneAccountsSettings
                 )
+            }
+        }
+    }
+
+    @Composable
+    fun PermissionChecker() {
+        val context = LocalContext.current
+
+        val permissions = remember {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                arrayOf(
+                    Manifest.permission.POST_NOTIFICATIONS,
+                    Manifest.permission.READ_PHONE_STATE,
+                    Manifest.permission.WRITE_CONTACTS,
+                    Manifest.permission.READ_CONTACTS
+                )
+            } else {
+                arrayOf(
+                    Manifest.permission.READ_PHONE_STATE,
+                    Manifest.permission.WRITE_CONTACTS,
+                    Manifest.permission.READ_CONTACTS
+                )
+            }
+        }
+
+        val launcher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions()
+        ) { _ ->
+            // Ignore result
+        }
+
+        LaunchedEffect(Unit) {
+            val needsRequest = permissions.any {
+                ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+            }
+
+            if (needsRequest) {
+                launcher.launch(permissions)
             }
         }
     }
@@ -78,17 +98,5 @@ class MainActivity : AppCompatActivity() {
 
     private fun openPhoneAccountsSettings() {
         startActivity(Intent(TelecomManager.ACTION_CHANGE_PHONE_ACCOUNTS))
-    }
-
-    private fun checkPermissions(
-        permissions: List<String>,
-        permissionGrantedAction: () -> Unit,
-        permissionDeniedAction: (() -> Unit)? = null,
-    ) {
-        permissionChecker.check(permissions.toTypedArray()) {
-            onAllGranted(permissionGrantedAction)
-
-            onAnyDenied { permissionDeniedAction?.invoke() }
-        }
     }
 }

@@ -61,7 +61,6 @@ dependencies {
 
     implementation(libs.accompanist.permissions)
 
-    implementation(libs.sequenia.permissionChecker)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
 

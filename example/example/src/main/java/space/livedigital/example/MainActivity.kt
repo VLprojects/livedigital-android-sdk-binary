@@ -9,16 +9,17 @@ import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
 import android.util.Log
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.messaging.FirebaseMessaging
 import com.sequenia.permissionchecker.check
 import com.sequenia.permissionchecker.registerPermissionChecker
-import space.livedigital.example.databinding.MainActivityBinding
+import space.livedigital.example.ui.screens.MainScreen
+import space.livedigital.example.ui.theme.AppTheme
 
 class MainActivity : AppCompatActivity() {
 
     private val permissionChecker = registerPermissionChecker()
-    private var binding: MainActivityBinding? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,30 +46,38 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        binding = MainActivityBinding.inflate(layoutInflater)
-        setContentView(binding?.root)
-
-        binding?.copyButton?.setOnClickListener {
-            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val token = task.result
-                    copyToClipboard(this, token)
-                } else {
-                    Log.d("FCM", "Fetching FCM registration token failed", task.exception)
-                }
+        setContent {
+            AppTheme {
+                MainScreen(
+                    onCopyButtonClicked = ::copyPushTokenToClipboards,
+                    onOpenCallAccountSettingsButtonClicked = ::openPhoneAccountsSettings
+                )
             }
-        }
-
-        binding?.addPhoneAccountButton?.setOnClickListener {
-            startActivity(Intent(TelecomManager.ACTION_CHANGE_PHONE_ACCOUNTS))
         }
     }
 
+    private fun copyPushTokenToClipboards() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                copyToClipboard(this@MainActivity, token)
+            } else {
+                Log.d(
+                    "FCM",
+                    "Fetching FCM registration token failed", task.exception
+                )
+            }
+        }
+    }
 
     private fun copyToClipboard(context: Context, text: String) {
         val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("label", text)
         clipboard.setPrimaryClip(clip)
+    }
+
+    private fun openPhoneAccountsSettings() {
+        startActivity(Intent(TelecomManager.ACTION_CHANGE_PHONE_ACCOUNTS))
     }
 
     private fun checkPermissions(

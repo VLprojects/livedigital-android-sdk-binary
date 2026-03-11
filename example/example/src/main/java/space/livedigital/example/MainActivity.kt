@@ -27,6 +27,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContent()
+    }
+
+    private fun setContent() {
         setContent {
             AppTheme {
                 PermissionChecker()

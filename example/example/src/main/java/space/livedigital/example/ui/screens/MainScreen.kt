@@ -10,7 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import space.livedigital.example.R
 import space.livedigital.example.ui.components.buttons.ButtonComponent
 import space.livedigital.example.ui.components.containers.ContainerComponent
 import space.livedigital.example.ui.extensions.gradientBackground
@@ -47,7 +49,7 @@ private fun CopyButtonContainerComponent(onCopyButtonClicked: () -> Unit) {
         ButtonComponent(
             onClick = onCopyButtonClicked,
             style = AppTheme.buttonSystem.primaryButtonStyle,
-            text = "Скопировать токен firebase для посылки пушей в буфер обмена"
+            text = stringResource(R.string.button_copy_token_to_clipboards)
         )
     }
 }
@@ -58,15 +60,12 @@ private fun OpenCallAccountContainerComponent(onOpenCallAccountSettingsButtonCli
         contentPadding = PaddingValues(all = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            "Включите телефонный аккаунт, чтобы получаемые вызовы были " +
-                    "интегрированы с системным dialer приложением"
-        )
+        Text(text = stringResource(R.string.label_call_accounts))
 
         ButtonComponent(
             onClick = onOpenCallAccountSettingsButtonClicked,
             style = AppTheme.buttonSystem.primaryButtonStyle,
-            text = "Включить телефонный аккаунт"
+            text = stringResource(R.string.button_open_call_accounts_settings)
         )
     }
 }

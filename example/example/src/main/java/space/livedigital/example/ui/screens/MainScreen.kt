@@ -38,7 +38,8 @@ internal fun MainScreen(
     permissionsState: State<PermissionsState>,
     onCopyButtonClicked: () -> Unit,
     onPermissionSwitchClicked: (permission: Permission) -> Unit,
-    onCallAccountSwitchClicked: () -> Unit
+    onCallAccountSwitchClicked: () -> Unit,
+    onXiaomiDialerSettingsButtonClicked: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -55,12 +56,16 @@ internal fun MainScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        CopyButtonContainerComponent(onCopyButtonClicked)
+        CopyButtonContainerComponent(onCopyButtonClicked = onCopyButtonClicked)
 
         PermissionsContainerComponent(
-            permissionsState,
-            onPermissionSwitchClicked,
-            onCallAccountSwitchClicked
+            permissionsState = permissionsState,
+            onPermissionSwitchClicked = onPermissionSwitchClicked,
+            onCallAccountSwitchClicked = onCallAccountSwitchClicked
+        )
+
+        XiaomiPermissionsContainerComponent(
+            onXiaomiDialerSettingsButtonClicked = onXiaomiDialerSettingsButtonClicked
         )
     }
 }
@@ -83,7 +88,7 @@ private fun CopyButtonContainerComponent(onCopyButtonClicked: () -> Unit) {
 @Composable
 private fun PermissionsContainerComponent(
     permissionsState: State<PermissionsState>,
-    onPermissionsSwitchClicked: (permission: Permission) -> Unit,
+    onPermissionSwitchClicked: (permission: Permission) -> Unit,
     onCallAccountSwitchClicked: () -> Unit
 ) {
     val permissionsState = permissionsState.value
@@ -100,7 +105,7 @@ private fun PermissionsContainerComponent(
                 isChecked = permission.isGranted,
                 importance = permission.importance,
                 onSwitchClicked = {
-                    onPermissionsSwitchClicked(permission)
+                    onPermissionSwitchClicked(permission)
                 }
             )
         }
@@ -172,5 +177,21 @@ private fun permissionLabel(permission: String): String {
         Manifest.permission.RECORD_AUDIO -> stringResource(R.string.label_microphone)
         Manifest.permission.BLUETOOTH_CONNECT -> stringResource(R.string.label_bluetooth)
         else -> permission
+    }
+}
+
+@Composable
+private fun XiaomiPermissionsContainerComponent(onXiaomiDialerSettingsButtonClicked: () -> Unit) {
+    ContainerComponent(
+        contentPadding = PaddingValues(all = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(text = stringResource(R.string.label_xiaomi_permissions_info))
+
+        ButtonComponent(
+            onClick = onXiaomiDialerSettingsButtonClicked,
+            style = AppTheme.buttonSystem.primaryButtonStyle,
+            text = stringResource(R.string.button_xiaomi_permissions_button)
+        )
     }
 }

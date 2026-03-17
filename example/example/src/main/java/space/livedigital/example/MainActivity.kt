@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.activity.SystemBarStyle
@@ -79,7 +80,11 @@ class MainActivity : AppCompatActivity() {
                         if (permission.isGranted) return@MainScreen
                         permissionLauncher.launch(permission.name)
                     },
-                    onCallAccountSwitchClicked = ::openPhoneAccountsSettings
+                    onCallAccountSwitchClicked = ::openPhoneAccountsSettings,
+                    onXiaomiDialerSettingsButtonClicked = {
+                        val intent = getPermissionManagerIntent(this)
+                        startActivity(intent)
+                    }
                 )
             }
         }
@@ -135,6 +140,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun openPhoneAccountsSettings() {
         startActivity(Intent(TelecomManager.ACTION_CHANGE_PHONE_ACCOUNTS))
+    }
+
+    private fun getPermissionManagerIntent(context: Context): Intent {
+        val intent = Intent("miui.intent.action.APP_PERM_EDITOR")
+        intent.putExtra("extra_package_uid", Process.myUid())
+        intent.putExtra("extra_pkgname", context.getPackageName())
+        intent.putExtra("extra_package_name", context.getPackageName())
+        return intent
     }
 
     companion object {

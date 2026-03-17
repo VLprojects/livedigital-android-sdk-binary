@@ -15,10 +15,12 @@
     <string name="label_call">Call…</string>
     <string name="label_connection">Connecting…</string>
     <string name="label_missed_call">Missed call</string>
+    <string name="label_xiaomi_permissions_info">On some devices (e.g., Xiaomi), calls may not work unless “Show on lock screen” and “Allow opening windows from background” are enabled.</string>
     <string name="description_copy_token">Copy the Firebase token for sending push notifications</string>
     <string name="description_call_account">Enable the app’s call account so that incoming calls appear in the system phone app</string>
     <string name="button_copy_token_to_clipboards">Copy</string>
     <string name="button_open_call_accounts_settings">Go to phone account settings</string>
     <string name="button_call_redial">Redial</string>
     <string name="button_call_back">Call back</string>
+    <string name="button_xiaomi_permissions_button">Vendor settings</string>
 </resources>

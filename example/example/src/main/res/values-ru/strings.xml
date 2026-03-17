@@ -14,10 +14,12 @@
     <string name="label_call">Вызов…</string>
     <string name="label_connection">Соединение…</string>
     <string name="label_missed_call">Пропущенный вызов</string>
+    <string name="label_xiaomi_permissions_info">На некоторых устройствах (например, Xiaomi) звонки могут не работать, если не включены «Показывать на экране блокировки» и «Разрешить открывать окна из фона».</string>
     <string name="description_call_account">Включите аккаунт звонков приложения, чтобы вызовы отображались в системном приложении для звонков</string>
     <string name="description_copy_token">Скопировать токен Firebase для отправки push-уведомлений</string>
     <string name="button_copy_token_to_clipboards">Скопировать</string>
     <string name="button_open_call_accounts_settings">Перейти в настройки аккаунтов для звонков</string>
     <string name="button_call_redial">Повторить звонок</string>
     <string name="button_call_back">Перезвонить</string>
+    <string name="button_xiaomi_permissions_button">Настройки производителя</string>
 </resources>

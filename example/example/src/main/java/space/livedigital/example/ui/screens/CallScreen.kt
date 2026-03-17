@@ -128,7 +128,7 @@ internal fun ActiveCallContentComponent(
             ) {
                 Text("Соединение...")
             }
-        } else {
+        } else if (callDuration != Duration.ZERO) {
             ContainerComponent(
                 contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp)
             ) {

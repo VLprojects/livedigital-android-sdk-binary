@@ -1,26 +1,46 @@
 package space.livedigital.example.calls.internal.broadcasts
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import org.koin.core.component.KoinComponent
 import space.livedigital.example.calls.constants.CallConstants
+import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.internal.repository.CallRepository
 import space.livedigital.example.calls.internal.service.CallService
+import space.livedigital.example.calls.telecom.CallHandler
 
 class CallBroadcast : BroadcastReceiver(), KoinComponent {
 
+    @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("xd", "onReceive $intent")
         // Get the action or skip if none
         val action = intent.getTelecomCallAction() ?: return
         val repository = CallRepository.instance ?: CallRepository.create()
         repository.dispatchCallAction(action)
-        if (action is CallAction.PlaceIncomingCall || action is CallAction.PlaceOutgoingCall) {
-            context.startCallService()
+        when (action) {
+            is CallAction.PlaceIncomingCall -> {
+                context.startCallService()
+            }
+
+            is CallAction.PlaceOutgoingCall -> {
+                val isStarted = CallHandler(context).tryToStartSystemOutgoingCall(
+                    Call.Actual(
+                        displayName = action.displayName,
+                        phone = action.phone,
+                        roomAlias = action.roomAlias
+                    )
+                )
+
+                if (!isStarted) {
+                    context.startCallService()
+                }
+            }
+
+            else -> Unit
         }
     }
 

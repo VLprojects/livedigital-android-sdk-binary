@@ -130,8 +130,10 @@ class CallViewModel(
                 if (timer?.isActive != true) {
                     timer = viewModelScope.launch {
                         while (true) {
-                            mutableState.update {
-                                it.copy(callDuration = callState.startTimeMark.elapsedNow())
+                            if (session != null) {
+                                mutableState.update {
+                                    it.copy(callDuration = callState.startTimeMark.elapsedNow())
+                                }
                             }
                             delay(1.seconds)
                         }
@@ -140,6 +142,9 @@ class CallViewModel(
             }
 
             is CallState.Answered -> {
+                mutableState.update {
+                    it.copy(callDuration = Duration.ZERO)
+                }
                 if (callState.isMuted) {
                     stopLocalAudio()
                 } else {
@@ -149,6 +154,9 @@ class CallViewModel(
             }
 
             is CallState.Outgoing -> {
+                mutableState.update {
+                    it.copy(callDuration = Duration.ZERO)
+                }
                 if (callState.isMuted) {
                     stopLocalAudio()
                 } else {
@@ -179,6 +187,9 @@ class CallViewModel(
             }
 
             else -> {
+                mutableState.update {
+                    it.copy(callDuration = Duration.ZERO)
+                }
                 timer?.cancel()
                 timer = null
             }

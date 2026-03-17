@@ -20,7 +20,6 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
-import space.livedigital.example.calls.internal.service.CallService
 import space.livedigital.example.ui.screens.CallScreen
 import space.livedigital.example.ui.theme.AppTheme
 
@@ -66,7 +65,6 @@ class CallActivity : ComponentActivity() {
 
         if (isFinishing) {
             viewModel.onCallFinishedBySystem(DisconnectCause(DisconnectCause.LOCAL))
-            stopService(Intent(this, CallService::class.java))
         }
     }
 

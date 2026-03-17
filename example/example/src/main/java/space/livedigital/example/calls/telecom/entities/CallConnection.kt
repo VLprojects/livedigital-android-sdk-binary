@@ -2,43 +2,11 @@ package space.livedigital.example.calls.telecom.entities
 
 import android.telecom.Connection
 import android.telecom.DisconnectCause
-import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
-import space.livedigital.example.calls.entities.CallAction
-import space.livedigital.example.calls.entities.CallState
+import space.livedigital.example.calls.entities.Call
 
-class CallConnection(
-    scope: CoroutineScope,
-    private val call: CallFromPush
-) : Connection() {
-
-    private val TAG = "CallConnection"
+class CallConnection(private val call: Call) : Connection() {
 
     private val listeners = mutableListOf<CallStateListener>()
-    private val actionSource = Channel<CallAction>()
-
-    init {
-//        scope.launch {
-//            actionSource.consumeAsFlow().collect { action ->
-//                when (action) {
-//                    is CallAction.Disconnect -> {
-//                        closeConnection(action.cause)
-//                    }
-//
-//                    is CallAction.ToggleMute -> {
-//                        listeners.forEach {
-//                            it.onMuteStatusChanged(action.isMute)
-//                        }
-//                    }
-//
-//                    CallAction.Activate -> {}
-//
-//                    CallAction.Answer -> {}
-//                }
-//            }
-//        }
-    }
 
     fun addListener(listener: CallStateListener) {
         listeners.add(listener)
@@ -48,133 +16,63 @@ class CallConnection(
         listeners.remove(listener)
     }
 
-    override fun onStateChanged(state: Int) {
-        super.onStateChanged(state)
-
-//        if (state == STATE_INITIALIZING) {
-//            listeners.forEach {
-//                it.onStateChanged(
-//                    CallState.Registered(
-//                        callAttributes = CallAttributesCompat(
-//                            displayName = call.caller,
-//                            address = call.callerNumber.toUri(),
-//                            direction = CallAttributesCompat.DIRECTION_INCOMING
-//                        ),
-//                        isMuted = true,
-//                        roomAlias = call.roomAlias,
-//                        errorCode = null,
-//                        isOnHold = false,
-//                        isActive = false,
-//                        callStartTimeMark = TimeSource.Monotonic.markNow(),
-//                        actionSource = actionSource
-//                    )
-//                )
-//            }
-//        }
-
-//        if (state == STATE_RINGING) {
-//            listeners.forEach {
-//                it.onStateChanged(
-//                    CallState.Registered(
-//                        callAttributes = CallAttributesCompat(
-//                            displayName = call.caller,
-//                            address = call.callerNumber.toUri(),
-//                            direction = CallAttributesCompat.DIRECTION_INCOMING
-//                        ),
-//                        isMuted = true,
-//                        roomAlias = call.roomAlias,
-//                        errorCode = null,
-//                        isOnHold = false,
-//                        isActive = false,
-//                        callStartTimeMark = TimeSource.Monotonic.markNow(),
-//                        actionSource = actionSource
-//                    )
-//                )
-//            }
-//        }
-
-//        if (state == STATE_ACTIVE) {
-//            listeners.forEach {
-//                it.onStateChanged(
-//                    CallState.Registered(
-//                        callAttributes = CallAttributesCompat(
-//                            displayName = call.caller,
-//                            address = call.callerNumber.toUri(),
-//                            direction = CallAttributesCompat.DIRECTION_INCOMING
-//                        ),
-//                        isMuted = true,
-//                        roomAlias = call.roomAlias,
-//                        errorCode = null,
-//                        isOnHold = false,
-//                        isActive = true,
-//                        callStartTimeMark = TimeSource.Monotonic.markNow(),
-//                        actionSource = actionSource
-//                    )
-//                )
-//            }
-//        }
-
-//        if (state == STATE_DISCONNECTED) {
-//            listeners.forEach {
-//                it.onStateChanged(
-//                    CallState.Unregistered(
-//                        callAttributes = CallAttributesCompat(
-//                            displayName = call.caller,
-//                            address = call.callerNumber.toUri(),
-//                            direction = CallAttributesCompat.DIRECTION_INCOMING
-//                        ),
-//                        disconnectCause = disconnectCause,
-//                        roomAlias = call.roomAlias
-//                    )
-//                )
-//            }
-//        }
-    }
-
     override fun onDisconnect() {
         super.onDisconnect()
-        Log.d(TAG, "onDisconnect")
-        closeConnection(DisconnectCause(DisconnectCause.LOCAL, "disconnected"))
+        listeners.forEach {
+            it.onDisconnect(
+                call = call,
+                disconnectCause = DisconnectCause(DisconnectCause.LOCAL)
+            )
+        }
     }
 
     override fun onAnswer() {
-        setActive()
+        super.onAnswer()
         listeners.forEach {
-            it.onAnswer()
+            it.onAnswer(
+                call = call
+            )
         }
     }
 
     override fun onReject() {
-        Log.d(TAG, "onReject without params")
-        closeConnection(DisconnectCause(DisconnectCause.REJECTED, "Rejected"))
-    }
-
-    override fun onAbort() {
-        super.onAbort()
-        Log.e(TAG, "OnAbort")
+        super.onReject()
+        listeners.forEach {
+            it.onDisconnect(
+                call = call,
+                disconnectCause = DisconnectCause(DisconnectCause.REJECTED)
+            )
+        }
     }
 
     override fun onReject(rejectReason: Int) {
         super.onReject(rejectReason)
-        closeConnection(DisconnectCause(DisconnectCause.REJECTED, rejectReason.toString()))
+        listeners.forEach {
+            it.onDisconnect(
+                call = call,
+                disconnectCause = DisconnectCause(DisconnectCause.REJECTED)
+            )
+        }
     }
 
     override fun onReject(replyMessage: String?) {
         super.onReject(replyMessage)
-        closeConnection(DisconnectCause(DisconnectCause.REJECTED, replyMessage))
-    }
-
-    private fun closeConnection(cause: DisconnectCause) {
-        setDisconnected(cause)
-        destroy()
+        listeners.forEach {
+            it.onDisconnect(
+                call = call,
+                disconnectCause = DisconnectCause(DisconnectCause.REJECTED)
+            )
+        }
     }
 
     interface CallStateListener {
 
-        fun onStateChanged(callState: CallState)
+        fun onAnswer(call: Call)
 
-        fun onMuteStatusChanged(isMuted: Boolean)
+        fun onDisconnect(call: Call, disconnectCause: DisconnectCause)
+    }
 
-        fun onAnswer()
+    companion object {
+        private const val TAG = "CallConnection"
     }
 }

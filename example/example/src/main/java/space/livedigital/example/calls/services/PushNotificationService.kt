@@ -4,10 +4,10 @@ import android.telecom.DisconnectCause
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.internal.repository.CallRepository
 import space.livedigital.example.calls.telecom.CallHandler
-import space.livedigital.example.calls.telecom.entities.CallFromPush
 
 class PushNotificationService : FirebaseMessagingService() {
 
@@ -18,10 +18,9 @@ class PushNotificationService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         val pushType = PushType.valueOf(remoteMessage.data.getValue("type").uppercase())
-        val call = CallFromPush(
-            id = remoteMessage.messageId ?: "",
-            caller = remoteMessage.data.getValue("caller"),
-            callerNumber = remoteMessage.data.getValue("callerNumber"),
+        val call = Call.Actual(
+            displayName = remoteMessage.data.getValue("caller"),
+            phone = remoteMessage.data.getValue("callerNumber"),
             roomAlias = remoteMessage.data.getValue("roomAlias")
         )
 
@@ -32,7 +31,7 @@ class PushNotificationService : FirebaseMessagingService() {
         }
     }
 
-    private fun startCall(call: CallFromPush) {
+    private fun startCall(call: Call) {
         runCatching {
             val callHandler = CallHandler(applicationContext)
             callHandler.startIncomingCall(call)
@@ -41,24 +40,24 @@ class PushNotificationService : FirebaseMessagingService() {
         }
     }
 
-    private fun endCall(call: CallFromPush) {
+    private fun endCall(call: Call) {
         val callRepository = CallRepository.instance ?: CallRepository.create()
         callRepository.dispatchCallAction(
             CallAction.Disconnect(
-                displayName = call.caller,
-                phone = call.callerNumber,
+                displayName = call.displayName,
+                phone = call.phone,
                 roomAlias = call.roomAlias,
                 cause = DisconnectCause(DisconnectCause.REMOTE)
             )
         )
     }
 
-    fun onCallAnswered(call: CallFromPush) {
+    fun onCallAnswered(call: Call) {
         val callRepository = CallRepository.instance ?: CallRepository.create()
         callRepository.dispatchCallAction(
             CallAction.Answer(
-                displayName = call.caller,
-                phone = call.callerNumber,
+                displayName = call.displayName,
+                phone = call.phone,
                 roomAlias = call.roomAlias
             )
         )

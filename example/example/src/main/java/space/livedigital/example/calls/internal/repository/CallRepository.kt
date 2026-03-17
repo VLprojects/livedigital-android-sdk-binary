@@ -101,7 +101,6 @@ class CallRepository private constructor() {
                     }
 
                     if (callState is CallState.Outgoing) {
-                        Log.d("xd", "callState $callState")
                         return@update callState.copy(isMuted = callAction.isMute)
                     }
 

@@ -63,13 +63,15 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.POST_NOTIFICATIONS,
                     Manifest.permission.READ_PHONE_STATE,
                     Manifest.permission.WRITE_CONTACTS,
-                    Manifest.permission.READ_CONTACTS
+                    Manifest.permission.READ_CONTACTS,
+                    Manifest.permission.CALL_PHONE
                 )
             } else {
                 arrayOf(
                     Manifest.permission.READ_PHONE_STATE,
                     Manifest.permission.WRITE_CONTACTS,
-                    Manifest.permission.READ_CONTACTS
+                    Manifest.permission.READ_CONTACTS,
+                    Manifest.permission.CALL_PHONE
                 )
             }
         }

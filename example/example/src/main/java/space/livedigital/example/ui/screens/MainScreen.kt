@@ -45,7 +45,11 @@ internal fun MainScreen(
 
 @Composable
 private fun CopyButtonContainerComponent(onCopyButtonClicked: () -> Unit) {
-    ContainerComponent(contentPadding = PaddingValues(all = 12.dp)) {
+    ContainerComponent(
+        contentPadding = PaddingValues(all = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(text = stringResource(R.string.description_copy_token))
         ButtonComponent(
             onClick = onCopyButtonClicked,
             style = AppTheme.buttonSystem.primaryButtonStyle,
@@ -60,7 +64,7 @@ private fun OpenCallAccountContainerComponent(onOpenCallAccountSettingsButtonCli
         contentPadding = PaddingValues(all = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(text = stringResource(R.string.label_call_accounts))
+        Text(text = stringResource(R.string.description_call_accounts))
 
         ButtonComponent(
             onClick = onOpenCallAccountSettingsButtonClicked,

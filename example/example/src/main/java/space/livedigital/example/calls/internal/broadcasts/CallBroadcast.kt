@@ -35,6 +35,7 @@ class CallBroadcast : BroadcastReceiver(), KoinComponent {
                     )
                 )
 
+                // We don't need to start call service if system successfully start outgoing call
                 if (!isStarted) {
                     context.startCallService()
                 }

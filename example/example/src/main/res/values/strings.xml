@@ -1,6 +1,15 @@
 <resources>
-    <string name="app_name">LiveDigitalSDK</string>
-    <string name="label_call_accounts">Enable the app phone account so that incoming calls are integrated with the system dialer app</string>
-    <string name="button_copy_token_to_clipboards">Copy the Firebase token for sending push notifications to the clipboard</string>
+    <string name="app_name" translatable="false">LiveDigitalSDK</string>
+    <string name="label_call_finished">Call finished</string>
+    <string name="label_call_rejected">Call rejected</string>
+    <string name="label_incoming_call">Incoming call…</string>
+    <string name="label_call">Call…</string>
+    <string name="label_connection">Connecting…</string>
+    <string name="label_missed_call">Missed call</string>
+    <string name="description_copy_token">Copy the Firebase token for sending push notifications</string>
+    <string name="description_call_accounts">Enable the app phone account so that incoming calls are integrated with the system dialer app</string>
+    <string name="button_copy_token_to_clipboards">Copy</string>
     <string name="button_open_call_accounts_settings">Go to phone account settings</string>
+    <string name="button_call_redial">Redial</string>
+    <string name="button_call_back">Call back</string>
 </resources>

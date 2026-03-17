@@ -1,0 +1,14 @@
+<resources>
+    <string name="label_call_finished">Звонок завершен</string>
+    <string name="label_call_rejected">Вызов отклонен</string>
+    <string name="label_incoming_call">Входящий вызов…</string>
+    <string name="label_call">Вызов…</string>
+    <string name="label_connection">Соединение…</string>
+    <string name="label_missed_call">Пропущенный вызов</string>
+    <string name="description_call_accounts">Включите аккаунт звонков приложения, чтобы входящие звонки интегрировались с системным приложением телефонии</string>
+    <string name="description_copy_token">Скопировать токен Firebase для отправки push-уведомлений</string>
+    <string name="button_copy_token_to_clipboards">Скопировать</string>
+    <string name="button_open_call_accounts_settings">Перейти в настройки аккаунтов для звонков</string>
+    <string name="button_call_redial">Повторить звонок</string>
+    <string name="button_call_back">Перезвонить</string>
+</resources>

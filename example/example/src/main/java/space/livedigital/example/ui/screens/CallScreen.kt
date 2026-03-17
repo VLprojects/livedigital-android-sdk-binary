@@ -20,6 +20,7 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import space.livedigital.example.R
@@ -126,7 +127,7 @@ internal fun ActiveCallContentComponent(
             ContainerComponent(
                 contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp)
             ) {
-                Text("Соединение...")
+                Text(stringResource(R.string.label_connection))
             }
         } else if (callDuration != Duration.ZERO) {
             ContainerComponent(
@@ -269,7 +270,7 @@ internal fun OutgoingCallContentComponent(
                 vertical = 11.5.dp
             )
         ) {
-            Text("Вызов...")
+            Text(stringResource(R.string.label_call))
         }
 
         Spacer(modifier = Modifier.weight(1.0f))
@@ -366,9 +367,9 @@ internal fun EndedCallContentComponent(
             )
         ) {
             if (callState.wasActive) {
-                Text("Звонок завершен")
+                Text(stringResource(R.string.label_call_finished))
             } else {
-                Text("Вызов отклонен")
+                Text(stringResource(R.string.label_call_rejected))
             }
         }
 
@@ -387,7 +388,7 @@ internal fun EndedCallContentComponent(
                         )
                     },
                     style = AppTheme.buttonSystem.primaryButtonStyle,
-                    text = "Повторить звонок",
+                    text = stringResource(R.string.button_call_redial),
                     icon = ImageVector.vectorResource(R.drawable.ic_refresh)
                 )
                 Spacer(modifier = Modifier.weight(1.0f))
@@ -443,7 +444,7 @@ internal fun IncomingCallContentComponent(
                 vertical = 11.5.dp
             )
         ) {
-            Text("Входящий вызов...")
+            Text(stringResource(R.string.label_incoming_call))
         }
 
         Spacer(modifier = Modifier.weight(1.0f))
@@ -527,7 +528,7 @@ internal fun MissedCallContentComponent(
                 vertical = 11.5.dp
             )
         ) {
-            Text("Пропущенный вызов")
+            Text(stringResource(R.string.label_missed_call))
         }
 
         Spacer(modifier = Modifier.weight(1.0f))
@@ -545,7 +546,7 @@ internal fun MissedCallContentComponent(
                         )
                     },
                     style = AppTheme.buttonSystem.primaryButtonStyle,
-                    text = "Перезвонить"
+                    text = stringResource(R.string.button_call_back)
                 )
                 Spacer(modifier = Modifier.weight(1.0f))
 

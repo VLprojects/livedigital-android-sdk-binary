@@ -553,13 +553,3 @@ class CallViewModel(
         const val TAG = "LivedigitalAndroidSdkExample"
     }
 }
-
-sealed interface CallScreenState {
-    data object MissedCall : CallScreenState
-    data object RejectedOutgoingCall : CallScreenState
-    data object ActiveCall : CallScreenState
-    data object EndedCall : CallScreenState
-    data object IncomingCall : CallScreenState
-    data object OutgoingCall : CallScreenState
-    data object Initial : CallScreenState
-}

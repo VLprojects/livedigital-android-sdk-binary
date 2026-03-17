@@ -2,7 +2,6 @@ package space.livedigital.example.calls.internal.service
 
 import android.Manifest
 import android.app.ForegroundServiceStartNotAllowedException
-import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
@@ -20,105 +19,265 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.telecom.DisconnectCause
 import android.telecom.PhoneAccount
+import android.util.Log
 import androidx.core.app.ServiceCompat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import androidx.core.telecom.CallAttributesCompat
+import androidx.core.telecom.CallControlResult
+import androidx.core.telecom.CallControlScope
+import androidx.core.telecom.CallsManager
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import space.livedigital.example.calls.constants.CallConstants
+import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
+import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
 import space.livedigital.example.calls.internal.repository.CallRepository
 
-class CallService : Service() {
+class CallService : LifecycleService() {
 
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob())
+    /**
+     *  Can the call be successfully answered??
+     *  TIP: We would check the connection/call state to see if we can answer a call
+     *  Example you may need to wait for another call to hold.
+     **/
+    val onIsCallAnswered: suspend (type: Int) -> Unit = {
+        repository?.currentCallState?.value?.let { callState ->
+            repository?.dispatchCallAction(
+                CallAction.Answer(
+                    displayName = callState.call.displayName,
+                    phone = callState.call.phone,
+                    roomAlias = callState.call.roomAlias
+                )
+            )
+        }
+    }
+
+    /**
+     * Can the call perform a disconnect
+     */
+    val onIsCallDisconnected: suspend (cause: DisconnectCause) -> Unit = { disconnectCause ->
+        repository?.currentCallState?.value?.let { callState ->
+            repository?.dispatchCallAction(
+                CallAction.Disconnect(
+                    displayName = callState.call.displayName,
+                    phone = callState.call.phone,
+                    roomAlias = callState.call.roomAlias,
+                    cause = disconnectCause
+                )
+            )
+        }
+    }
+
+    /**
+     *  Check is see if we can make the call active.
+     *  Other calls and state might stop us from activating the call
+     */
+    val onIsCallActive: suspend () -> Unit = {
+        repository?.currentCallState?.value?.let { callState ->
+            repository?.dispatchCallAction(
+                CallAction.Activate(
+                    displayName = callState.call.displayName,
+                    phone = callState.call.phone,
+                    roomAlias = callState.call.roomAlias
+                )
+            )
+        }
+    }
+
+    /**
+     * Check to see if we can make the call inactivate
+     */
+    val onIsCallInactive: suspend () -> Unit = {
+        // Make call inactive
+    }
+
     private var notificationManager: CallNotificationManager? = null
     private var repository: CallRepository? = null
+    private var callsManager: CallsManager? = null
+    private var callControlScope: CallControlScope? = null
 
     private var ringtone: Ringtone? = null
     private var vibrator: Any? = null
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onBind(intent: Intent): IBinder? {
+        return super.onBind(intent)
+    }
 
     override fun onCreate() {
         super.onCreate()
         notificationManager = CallNotificationManager(applicationContext)
-        repository = CallRepository.instance ?: CallRepository.create(applicationContext)
+        repository = CallRepository.instance ?: CallRepository.create()
+        callsManager = CallsManager(applicationContext)
 
-        // Observe call status updates once the call is registered and update the service
         repository?.currentCallState
             ?.onEach { call ->
                 updateServiceState(call)
             }
             ?.onCompletion {
-                // If the scope is completed stop the service
                 stopSelf()
             }
-            ?.launchIn(scope)
+            ?.launchIn(lifecycleScope)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Remove notification and clean resources
-        scope.cancel()
-        notificationManager?.updateCallNotification(CallState.None)
+        repository = null
+        notificationManager = null
+        callsManager = null
+        callControlScope = null
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val call = repository?.currentCallState?.value
-        val notificationManager = notificationManager ?: CallNotificationManager(applicationContext)
-            .also {
-                notificationManager = it
+    private fun updateServiceState(callState: CallState) {
+        lifecycleScope.launch {
+            when (callState) {
+                is CallState.Answered -> {
+                    stopRingtoneAndVibration()
+                    val result = callControlScope?.answer(
+                        callType = CallAttributesCompat.CALL_TYPE_AUDIO_CALL
+                    )
+
+                    if (result is CallControlResult.Success) {
+                        val callIntent = Intent(applicationContext, CallBroadcast::class.java)
+                        callIntent.putExtra(
+                            CallConstants.EXTRA_ACTION,
+                            CallAction.Activate(
+                                displayName = callState.call.displayName,
+                                phone = callState.call.phone,
+                                roomAlias = callState.call.roomAlias
+                            ),
+                        )
+                        sendBroadcast(callIntent)
+                    }
+                }
+
+                is CallState.Active -> {
+                    val notification = notificationManager?.createOngoingCallNotification(callState)
+                        ?: return@launch
+                    val serviceType = getServiceType(callState)
+
+                    try {
+                        ServiceCompat.startForeground(
+                            this@CallService,
+                            CallNotificationManager.NOTIFICATION_ID,
+                            notification,
+                            serviceType
+                        )
+                    } catch (exception: IllegalStateException) {
+                        // Solution from https://issuetracker.google.com/issues/307329994#comment86
+                        @Suppress("InstanceOfCheckForException")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                            exception is ForegroundServiceStartNotAllowedException
+                        ) {
+                            stopSelf()
+                        }
+                    }
+                    stopRingtoneAndVibration()
+                    callControlScope?.setActive()
+                }
+
+
+                is CallState.Ended -> {
+                    stopRingtoneAndVibration()
+                    callControlScope?.disconnect(disconnectCause = callState.disconnectCause)
+                    callControlScope = null
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
+
+                CallState.Idle -> {
+                    stopRingtoneAndVibration()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
+
+                is CallState.Incoming -> {
+                    val notification =
+                        notificationManager?.createIncomingCallNotification(callState)
+                            ?: return@launch
+                    val serviceType = getServiceType(callState)
+
+                    try {
+                        stopForeground(STOP_FOREGROUND_REMOVE)
+                        ServiceCompat.startForeground(
+                            this@CallService,
+                            CallNotificationManager.NOTIFICATION_ID,
+                            notification,
+                            serviceType
+                        )
+                    } catch (exception: IllegalStateException) {
+                        Log.e("xd", "startException $exception")
+                        // Solution from https://issuetracker.google.com/issues/307329994#comment86
+                        @Suppress("InstanceOfCheckForException")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                            exception is ForegroundServiceStartNotAllowedException
+                        ) {
+                            stopSelf()
+                        }
+                    }
+                    startRingtoneAndVibration()
+                    if (callControlScope == null) {
+                        registerCall(
+                            displayName = callState.call.displayName,
+                            phone = callState.call.phone,
+                            isIncoming = true
+                        )
+                    }
+                }
+
+                is CallState.Missed -> {
+                    stopRingtoneAndVibration()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    notificationManager?.showMissedCallNotification(callState)
+                    callControlScope?.disconnect(disconnectCause = callState.disconnectCause)
+                    callControlScope = null
+                    stopSelf()
+                }
+
+                is CallState.Outgoing -> {
+                    val notification = notificationManager?.createOngoingCallNotification(callState)
+                        ?: return@launch
+                    val serviceType = getServiceType(callState)
+
+                    try {
+                        stopForeground(STOP_FOREGROUND_REMOVE)
+                        ServiceCompat.startForeground(
+                            this@CallService,
+                            CallNotificationManager.NOTIFICATION_ID,
+                            notification,
+                            serviceType
+                        )
+                    } catch (exception: IllegalStateException) {
+                        // Solution from https://issuetracker.google.com/issues/307329994#comment86
+                        @Suppress("InstanceOfCheckForException")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                            exception is ForegroundServiceStartNotAllowedException
+                        ) {
+                            stopSelf()
+                        }
+                    }
+                    stopRingtoneAndVibration()
+                    if (callControlScope == null) {
+                        registerCall(
+                            displayName = callState.call.displayName,
+                            phone = callState.call.phone,
+                            isIncoming = true
+                        )
+                    }
+                }
             }
-
-        val notification = if (call != null && call is CallState.Registered) {
-            notificationManager.createForegroundNotification(call)
-        } else {
-            notificationManager.createIdleNotification()
         }
-
-        val serviceType = getServiceType(intent)
-
-        try {
-            ServiceCompat.startForeground(
-                this,
-                CallNotificationManager.NOTIFICATION_ID,
-                notification,
-                serviceType
-            )
-        } catch (exception: IllegalStateException) {
-            // Solution from https://issuetracker.google.com/issues/307329994#comment86
-            @Suppress("InstanceOfCheckForException")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                exception is ForegroundServiceStartNotAllowedException
-            ) {
-                stopSelf()
-            }
-        }
-
-        if (intent != null) {
-            when (intent.action) {
-                CallConstants.ACTION_INCOMING_CALL -> registerCall(intent, isIncoming = true)
-                CallConstants.ACTION_OUTGOING_CALL -> registerCall(intent, isIncoming = false)
-            }
-        }
-
-        return START_STICKY
     }
 
-    private fun getServiceType(intent: Intent?): Int {
+    private fun getServiceType(callState: CallState): Int {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             return 0
         }
 
-        if (intent == null || intent.action == null) {
-            return FOREGROUND_SERVICE_TYPE_PHONE_CALL
-        }
-
-        if (intent.action == CallConstants.ACTION_INCOMING_CALL) {
+        if (callState is CallState.Incoming) {
             return FOREGROUND_SERVICE_TYPE_PHONE_CALL
         }
 
@@ -129,69 +288,45 @@ class CallService : Service() {
         return FOREGROUND_SERVICE_TYPE_PHONE_CALL
     }
 
-    private fun registerCall(intent: Intent, isIncoming: Boolean) {
-        // If we have an ongoing call ignore command
-        if (repository?.currentCallState?.value is CallState.Registered) {
-            return
-        }
-
-        runCatching {
-            val name = intent.getStringExtra(CallConstants.EXTRA_NAME) ?: return
-            val phoneNumber = intent.getStringExtra(CallConstants.EXTRA_NUMBER) ?: return
-            val phoneNumberUri = Uri.fromParts(
-                PhoneAccount.SCHEME_TEL,
-                phoneNumber,   // must be digits or +E.164
-                null
-            )
-            val roomAlias = intent.getStringExtra(CallConstants.EXTRA_ROOM_ALIAS) ?: return
-
-            scope.launch {
-                repository?.registerCall(name, roomAlias, phoneNumberUri, isIncoming)
-            }
-        }.onFailure {
-            return
-        }
-    }
-
     private fun isRecordAudioPermissionGranted(): Boolean {
         val permissionResult =
             applicationContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO)
         return permissionResult == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun updateServiceState(call: CallState?) {
-        if (call == null) return
-
-        notificationManager?.updateCallNotification(call)
-
-        when (call) {
-            is CallState.Unregistered -> {
-                if (needToShowMissedCallNotification(call)) {
-                    notificationManager?.notifyAboutMissedCall(
-                        callerName = call.callAttributes.displayName.toString(),
-                        phoneNumber = call.callAttributes.address.schemeSpecificPart,
-                        roomAlias = call.roomAlias
-                    )
-                }
-
-                stopRingtoneAndVibration()
-                stopSelf()
+    private suspend fun registerCall(
+        displayName: String,
+        phone: String,
+        isIncoming: Boolean
+    ) {
+        val callAttributes = CallAttributesCompat(
+            displayName = displayName,
+            address = Uri.fromParts(
+                PhoneAccount.SCHEME_TEL,
+                phone,   // must be digits or +E.164
+                null
+            ),
+            direction = if (isIncoming) {
+                CallAttributesCompat.DIRECTION_INCOMING
+            } else {
+                CallAttributesCompat.DIRECTION_OUTGOING
             }
+        )
 
-            CallState.None -> {}
-            is CallState.Registered -> {
-                if (call.isIncoming() && !call.isActive) {
-                    startRingtoneAndVibration()
-                } else {
-                    stopRingtoneAndVibration()
-                }
+        try {
+            callsManager?.addCall(
+                callAttributes,
+                onIsCallAnswered,
+                onIsCallDisconnected,
+                onIsCallActive,
+                onIsCallInactive
+            ) {
+                callControlScope = this
             }
+        } catch (exception: Exception) {
+            Log.e("CallService", "add call finished with error $exception")
         }
     }
-
-    private fun needToShowMissedCallNotification(call: CallState.Unregistered): Boolean =
-        call.disconnectCause == DisconnectCause(DisconnectCause.MISSED) ||
-                call.disconnectCause == DisconnectCause(DisconnectCause.REJECTED)
 
     private fun startRingtoneAndVibration() {
         setAudioManagerModeToRingtone()

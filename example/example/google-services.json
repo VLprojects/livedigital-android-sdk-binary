@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "538267970480",
+    "project_id": "livedigital-sdk-example",
+    "storage_bucket": "livedigital-sdk-example.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:538267970480:android:ebbc296412bb7441758475",
+        "android_client_info": {
+          "package_name": "space.livedigital.example"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCo7trMzLNTPy3yAUM3ml3Cc7EcO4KOfNM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

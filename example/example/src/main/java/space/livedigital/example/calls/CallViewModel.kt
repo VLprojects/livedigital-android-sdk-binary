@@ -5,7 +5,9 @@ import android.telecom.DisconnectCause
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -14,11 +16,12 @@ import org.json.JSONObject
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import space.livedigital.example.bson.BSONObjectIdGenerator
+import space.livedigital.example.calls.entities.Call
+import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
+import space.livedigital.example.calls.internal.repository.CallRepository
+import space.livedigital.example.calls.repositories.ContactsRepository
 import space.livedigital.example.calls.repositories.HasContactResult
-import space.livedigital.example.calls.use_cases.EndCallUseCase
-import space.livedigital.example.calls.use_cases.GetCallStateUseCase
-import space.livedigital.example.calls.use_cases.HasContactUseCase
 import space.livedigital.example.entities.MoodhoodParticipant
 import space.livedigital.example.entities.PeerAppData
 import space.livedigital.example.entities.Room
@@ -47,16 +50,13 @@ import space.livedigital.sdk.engine.LiveDigitalEngineDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineDestroyDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineError
 import space.livedigital.sdk.media.MediaSourceId
-import space.livedigital.sdk.media.audio.AudioSource
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource.Monotonic.markNow
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class CallViewModel(
-    private val getCallStateUseCase: GetCallStateUseCase,
-    private val endCallUseCase: EndCallUseCase,
-    private val hasContactUseCase: HasContactUseCase
+    private val callRepository: CallRepository,
+    private val contactsRepository: ContactsRepository
 ) : ViewModel(), KoinComponent {
-
 
     val state
         get() = mutableState
@@ -76,20 +76,26 @@ class CallViewModel(
 
     init {
         viewModelScope.launch {
-            getCallStateUseCase.invoke().collect { callState ->
-                val wasMuted = (state.value.callState as? CallState.Registered)?.isMuted
-                val wasActive = (state.value.callState as? CallState.Registered)?.isActive
+            callRepository.currentCallState.collect { callState ->
+                val wasActive = state.value.callState is CallState.Active
                 mutableState.update {
                     mutableState.value.copy(callState = callState)
                 }
 
-                handleCallState(callState, wasMuted, wasActive)
+                handleCallState(callState, wasActive)
             }
         }
     }
 
     fun onCallFinishedBySystem(cause: DisconnectCause) {
-        endCallUseCase.invoke(cause)
+        callRepository.dispatchCallAction(
+            CallAction.Disconnect(
+                displayName = state.value.callState.call.displayName,
+                phone = state.value.callState.call.phone,
+                roomAlias = state.value.callState.call.roomAlias,
+                cause = cause
+            )
+        )
         liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
             override fun onDestroyed() {
                 viewModelScope.launch {
@@ -101,37 +107,65 @@ class CallViewModel(
         })
     }
 
+    var timer: Job? = null
+
     private suspend fun handleCallState(
         callState: CallState,
-        wasMuted: Boolean?,
         wasActive: Boolean?
     ) {
         when (callState) {
-            CallState.None -> {}
-
-            is CallState.Registered -> {
-                val isIncomingCall = session == null && callState.isActive
-
-                if (isIncomingCall) {
-                    roomAlias = callState.roomAlias
+            is CallState.Active -> {
+                if (session == null) {
+                    roomAlias = callState.call.roomAlias
                     startConference()
                 }
 
-                if (wasMuted == null) return
+                if (callState.isMuted) {
+                    stopLocalAudio()
+                } else {
+                    stopLocalAudio()
+                    startLocalAudio()
+                }
 
-                val isMuted = callState.isMuted
-
-                if (wasMuted != isMuted) {
-                    if (mutableState.value.isLocalAudioOn) {
-                        stopLocalAudio()
-                    } else {
-                        startLocalAudio()
+                if (timer?.isActive != true) {
+                    timer = viewModelScope.launch {
+                        while (true) {
+                            mutableState.update {
+                                it.copy(callDuration = callState.startTimeMark.elapsedNow())
+                            }
+                            delay(1.seconds)
+                        }
                     }
                 }
             }
 
-            is CallState.Unregistered -> {
-                createContactIfMissing(wasActive, callState)
+            is CallState.Answered -> {
+                if (callState.isMuted) {
+                    stopLocalAudio()
+                } else {
+                    stopLocalAudio()
+                    startLocalAudio()
+                }
+            }
+
+            is CallState.Outgoing -> {
+                if (callState.isMuted) {
+                    stopLocalAudio()
+                } else {
+                    stopLocalAudio()
+                    startLocalAudio()
+                }
+            }
+
+            is CallState.Ended -> {
+                createContactIfMissing(wasActive, callState.call)
+
+                timer?.cancel()
+                timer = null
+
+                mutableState.update {
+                    it.copy(callDuration = Duration.ZERO)
+                }
 
                 liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
                     override fun onDestroyed() {
@@ -142,6 +176,11 @@ class CallViewModel(
                         }
                     }
                 })
+            }
+
+            else -> {
+                timer?.cancel()
+                timer = null
             }
         }
     }
@@ -262,8 +301,7 @@ class CallViewModel(
             }
 
             is ExecutionResult.Error -> {
-                val error = signalingTokenResult.error
-                val message = when (error) {
+                val message = when (val error = signalingTokenResult.error) {
                     is ExecutionError.Expected -> error.data.message
                     is ExecutionError.Failure -> error.throwable.message
 
@@ -319,147 +357,43 @@ class CallViewModel(
         roomId: String
     ): ChannelSessionDelegate {
         return object : ChannelSessionDelegate {
-            override fun peersJoined(peers: List<Peer>) {
-                for (peer in peers) {
-                    if (peer.id == session?.myPeerId) {
-                        // TODO: On demand, modify sdk to be able to show your remote peer
-                        break
-                    }
+            override fun peersJoined(peers: List<Peer>) {}
 
-                    Log.d(TAG, "Peer ${peer.id} joined")
-                    val peerWithUpdateTime = PeerWithUpdateTime(
-                        peer = peer,
-                        updateTimeMark = markNow()
-                    )
-                    mutableState.update {
-                        mutableState.value.copy(remotePeers = it.remotePeers + peerWithUpdateTime)
-                    }
-                }
-            }
+            override fun peerDisconnected(peerId: PeerId) {}
 
-            override fun peerDisconnected(peerId: PeerId) {
-                Log.d(TAG, "Peer $peerId disconnected")
-                mutableState.update {
-                    val peers = mutableState.value.remotePeers.toMutableList()
-                    peers.removeIf { it.peer.id == peerId }
-                    mutableState.value.copy(remotePeers = peers.toList())
-                }
-            }
+            override fun peerCanStartVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerCanStartVideo(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} can start video $label")
-                session?.startVideo(peer, label)
-            }
+            override fun peerStartedVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerStartedVideo(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} started video $label")
+            override fun peerCanResumeVideo(peer: Peer, label: MediaLabel) {}
 
-                //Redundant functionality. Should it be removed.
-                peer.setIsVideoConsumerCanBeImmediatelyResumed(label, true)
+            override fun peerResumedVideo(peer: Peer, label: MediaLabel) {}
 
-                session?.proceedVideo(peer, label)
-            }
+            override fun peerCanPauseVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerCanResumeVideo(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} can resume video $label")
-                session?.proceedVideo(peer, label)
-            }
+            override fun peerPausedVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerResumedVideo(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} resumed video $label")
-                val peerWithUpdateTime = PeerWithUpdateTime(peer = peer, updateTimeMark = markNow())
-                mutableState.update {
-                    mutableState.value.copy(
-                        remotePeers = it.remotePeers.replaceBy(peerWithUpdateTime) {
-                            it.peer.id == peer.id
-                        })
-                }
-            }
-
-            override fun peerCanPauseVideo(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} can pause video $label")
-                session?.suspendVideo(peer, label)
-            }
-
-            override fun peerPausedVideo(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} paused video $label")
-                val peerWithUpdateTime = PeerWithUpdateTime(peer = peer, updateTimeMark = markNow())
-                mutableState.update {
-                    mutableState.value.copy(
-                        remotePeers = it.remotePeers.replaceBy(
-                            peerWithUpdateTime
-                        ) {
-                            it.peer.id == peer.id
-                        })
-                }
-            }
-
-            override fun peerStoppedVideo(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} stopped video $label")
-                val peerWithUpdateTime = PeerWithUpdateTime(peer = peer, updateTimeMark = markNow())
-                mutableState.update {
-                    mutableState.value.copy(
-                        remotePeers = it.remotePeers.replaceBy(peerWithUpdateTime) {
-                            it.peer.id == peer.id
-                        }
-                    )
-                }
-            }
+            override fun peerStoppedVideo(peer: Peer, label: MediaLabel) {}
 
             override fun peerCanStartAudio(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} can start audio $label")
                 session?.startAudio(peer, label)
             }
 
-            override fun peerStartedAudio(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} started audio $label")
-            }
+            override fun peerStartedAudio(peer: Peer, label: MediaLabel) {}
 
             override fun peerCanResumeAudio(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} can resumed audio $label")
                 session?.proceedAudio(peer, label)
             }
 
-            override fun peerResumedAudio(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} resumed audio $label")
-                val peerWithUpdateTime = PeerWithUpdateTime(peer = peer, updateTimeMark = markNow())
-                mutableState.update {
-                    mutableState.value.copy(
-                        remotePeers = it.remotePeers.replaceBy(peerWithUpdateTime) {
-                            it.peer.id == peer.id
-                        }
-                    )
-                }
-            }
+            override fun peerResumedAudio(peer: Peer, label: MediaLabel) {}
 
             override fun peerCanPauseAudio(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} can pause audio $label")
                 session?.suspendAudio(peer, label)
             }
 
-            override fun peerPausedAudio(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} paused audio $label")
-                val peerWithUpdateTime = PeerWithUpdateTime(peer = peer, updateTimeMark = markNow())
-                mutableState.update {
-                    mutableState.value.copy(
-                        remotePeers = it.remotePeers.replaceBy(peerWithUpdateTime) {
-                            it.peer.id == peer.id
-                        }
-                    )
-                }
-            }
+            override fun peerPausedAudio(peer: Peer, label: MediaLabel) {}
 
-            override fun peerStoppedAudio(peer: Peer, label: MediaLabel) {
-                Log.d(TAG, "Peer ${peer.id} stopped audio $label")
-                val peerWithUpdateTime = PeerWithUpdateTime(peer = peer, updateTimeMark = markNow())
-                mutableState.update {
-                    mutableState.value.copy(
-                        remotePeers = it.remotePeers.replaceBy(peerWithUpdateTime) {
-                            it.peer.id == peer.id
-                        }
-                    )
-                }
-            }
+            override fun peerStoppedAudio(peer: Peer, label: MediaLabel) {}
 
             override fun peerAppDataUpdated(peerId: PeerId, appData: JSONObject) {}
 
@@ -482,13 +416,11 @@ class CallViewModel(
             override fun disconnectedFromChannel() {}
 
             override fun onStatusChanged(status: ChannelSessionStatus) {
-                when (status) {
-                    ChannelSessionStatus.RESTARTING -> {}
-                    ChannelSessionStatus.STARTING -> {}
-                    ChannelSessionStatus.STARTED -> {}
-                    ChannelSessionStatus.STOPPED -> restartSession()
-                    ChannelSessionStatus.STOPPING -> {}
+                mutableState.update {
+                    it.copy(sessionStatus = status)
                 }
+
+                if (status == ChannelSessionStatus.STOPPED) restartSession()
             }
 
             override fun onChannelErrorOccurred(error: ChannelError) {}
@@ -520,15 +452,13 @@ class CallViewModel(
             return
         }
 
-        val joinRoomResult = apiClient.joinRoom(participantId, spaceId, roomId)
-        when (joinRoomResult) {
+        when (val joinRoomResult = apiClient.joinRoom(participantId, spaceId, roomId)) {
             is ExecutionResult.Success -> {
                 Log.i(TAG, "Joined room")
             }
 
             is ExecutionResult.Error -> {
-                val error = joinRoomResult.error
-                val message = when (error) {
+                val message = when (val error = joinRoomResult.error) {
                     is ExecutionError.Expected -> error.data.message
                     is ExecutionError.Failure -> error.throwable.message
 
@@ -581,18 +511,17 @@ class CallViewModel(
 
     private suspend fun createContactIfMissing(
         wasActive: Boolean?,
-        callState: CallState.Unregistered
+        call: Call,
     ) {
         if (wasActive == true) {
-            val phone = callState.callAttributes.address.schemeSpecificPart
-            val callerName = callState.callAttributes.displayName.toString()
+            val phone = call.phone
+            val callerName = call.displayName
             createContactIfMissing(phone = phone, callerName = callerName)
         }
     }
 
     private suspend fun createContactIfMissing(phone: String, callerName: String) {
-        val hasContactResult =
-            hasContactUseCase.invoke(phone)
+        val hasContactResult = contactsRepository.hasContact(phone)
 
         if (hasContactResult == HasContactResult.MISSED) {
             eventsChannel.send(
@@ -614,19 +543,12 @@ class CallViewModel(
     }
 }
 
-private fun <T> List<T>.replaceBy(item: T, predicate: (T) -> Boolean): List<T> =
-    (filterNot(predicate) + item)
-
-data class ScreenState(
-    val remotePeers: List<PeerWithUpdateTime> = emptyList(),
-    val isLocalAudioOn: Boolean = false,
-    val localAudioSource: AudioSource? = null,
-    val callState: CallState = CallState.None,
-)
-
-sealed interface ScreenEvent {
-
-    data class CreateContact(val callerName: String, val phone: String) : ScreenEvent
+sealed interface CallScreenState {
+    data object MissedCall : CallScreenState
+    data object RejectedOutgoingCall : CallScreenState
+    data object ActiveCall : CallScreenState
+    data object EndedCall : CallScreenState
+    data object IncomingCall : CallScreenState
+    data object OutgoingCall : CallScreenState
+    data object Initial : CallScreenState
 }
-
-data class PeerWithUpdateTime(val peer: Peer, val updateTimeMark: TimeMark)

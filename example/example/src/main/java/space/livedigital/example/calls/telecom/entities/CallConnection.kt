@@ -3,12 +3,8 @@ package space.livedigital.example.calls.telecom.entities
 import android.telecom.Connection
 import android.telecom.DisconnectCause
 import android.util.Log
-import androidx.core.net.toUri
-import androidx.core.telecom.CallAttributesCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.launch
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
 
@@ -23,25 +19,25 @@ class CallConnection(
     private val actionSource = Channel<CallAction>()
 
     init {
-        scope.launch {
-            actionSource.consumeAsFlow().collect { action ->
-                when (action) {
-                    is CallAction.Disconnect -> {
-                        closeConnection(action.cause)
-                    }
-
-                    is CallAction.ToggleMute -> {
-                        listeners.forEach {
-                            it.onMuteStatusChanged(action.isMute)
-                        }
-                    }
-
-                    CallAction.Activate -> {}
-
-                    CallAction.Answer -> {}
-                }
-            }
-        }
+//        scope.launch {
+//            actionSource.consumeAsFlow().collect { action ->
+//                when (action) {
+//                    is CallAction.Disconnect -> {
+//                        closeConnection(action.cause)
+//                    }
+//
+//                    is CallAction.ToggleMute -> {
+//                        listeners.forEach {
+//                            it.onMuteStatusChanged(action.isMute)
+//                        }
+//                    }
+//
+//                    CallAction.Activate -> {}
+//
+//                    CallAction.Answer -> {}
+//                }
+//            }
+//        }
     }
 
     fun addListener(listener: CallStateListener) {
@@ -55,81 +51,84 @@ class CallConnection(
     override fun onStateChanged(state: Int) {
         super.onStateChanged(state)
 
-        if (state == STATE_INITIALIZING) {
-            listeners.forEach {
-                it.onStateChanged(
-                    CallState.Registered(
-                        callAttributes = CallAttributesCompat(
-                            displayName = call.caller,
-                            address = call.callerNumber.toUri(),
-                            direction = CallAttributesCompat.DIRECTION_INCOMING
-                        ),
-                        isMuted = true,
-                        roomAlias = call.roomAlias,
-                        errorCode = null,
-                        isOnHold = false,
-                        isActive = false,
-                        actionSource = actionSource
-                    )
-                )
-            }
-        }
+//        if (state == STATE_INITIALIZING) {
+//            listeners.forEach {
+//                it.onStateChanged(
+//                    CallState.Registered(
+//                        callAttributes = CallAttributesCompat(
+//                            displayName = call.caller,
+//                            address = call.callerNumber.toUri(),
+//                            direction = CallAttributesCompat.DIRECTION_INCOMING
+//                        ),
+//                        isMuted = true,
+//                        roomAlias = call.roomAlias,
+//                        errorCode = null,
+//                        isOnHold = false,
+//                        isActive = false,
+//                        callStartTimeMark = TimeSource.Monotonic.markNow(),
+//                        actionSource = actionSource
+//                    )
+//                )
+//            }
+//        }
 
-        if (state == STATE_RINGING) {
-            listeners.forEach {
-                it.onStateChanged(
-                    CallState.Registered(
-                        callAttributes = CallAttributesCompat(
-                            displayName = call.caller,
-                            address = call.callerNumber.toUri(),
-                            direction = CallAttributesCompat.DIRECTION_INCOMING
-                        ),
-                        isMuted = true,
-                        roomAlias = call.roomAlias,
-                        errorCode = null,
-                        isOnHold = false,
-                        isActive = false,
-                        actionSource = actionSource
-                    )
-                )
-            }
-        }
+//        if (state == STATE_RINGING) {
+//            listeners.forEach {
+//                it.onStateChanged(
+//                    CallState.Registered(
+//                        callAttributes = CallAttributesCompat(
+//                            displayName = call.caller,
+//                            address = call.callerNumber.toUri(),
+//                            direction = CallAttributesCompat.DIRECTION_INCOMING
+//                        ),
+//                        isMuted = true,
+//                        roomAlias = call.roomAlias,
+//                        errorCode = null,
+//                        isOnHold = false,
+//                        isActive = false,
+//                        callStartTimeMark = TimeSource.Monotonic.markNow(),
+//                        actionSource = actionSource
+//                    )
+//                )
+//            }
+//        }
 
-        if (state == STATE_ACTIVE) {
-            listeners.forEach {
-                it.onStateChanged(
-                    CallState.Registered(
-                        callAttributes = CallAttributesCompat(
-                            displayName = call.caller,
-                            address = call.callerNumber.toUri(),
-                            direction = CallAttributesCompat.DIRECTION_INCOMING
-                        ),
-                        isMuted = true,
-                        roomAlias = call.roomAlias,
-                        errorCode = null,
-                        isOnHold = false,
-                        isActive = true,
-                        actionSource = actionSource
-                    )
-                )
-            }
-        }
+//        if (state == STATE_ACTIVE) {
+//            listeners.forEach {
+//                it.onStateChanged(
+//                    CallState.Registered(
+//                        callAttributes = CallAttributesCompat(
+//                            displayName = call.caller,
+//                            address = call.callerNumber.toUri(),
+//                            direction = CallAttributesCompat.DIRECTION_INCOMING
+//                        ),
+//                        isMuted = true,
+//                        roomAlias = call.roomAlias,
+//                        errorCode = null,
+//                        isOnHold = false,
+//                        isActive = true,
+//                        callStartTimeMark = TimeSource.Monotonic.markNow(),
+//                        actionSource = actionSource
+//                    )
+//                )
+//            }
+//        }
 
-        if (state == STATE_DISCONNECTED) {
-            listeners.forEach {
-                it.onStateChanged(
-                    CallState.Unregistered(
-                        callAttributes = CallAttributesCompat(
-                            displayName = call.caller,
-                            address = call.callerNumber.toUri(),
-                            direction = CallAttributesCompat.DIRECTION_INCOMING
-                        ),
-                        disconnectCause = disconnectCause,
-                        roomAlias = call.roomAlias
-                    )
-                )
-            }
-        }
+//        if (state == STATE_DISCONNECTED) {
+//            listeners.forEach {
+//                it.onStateChanged(
+//                    CallState.Unregistered(
+//                        callAttributes = CallAttributesCompat(
+//                            displayName = call.caller,
+//                            address = call.callerNumber.toUri(),
+//                            direction = CallAttributesCompat.DIRECTION_INCOMING
+//                        ),
+//                        disconnectCause = disconnectCause,
+//                        roomAlias = call.roomAlias
+//                    )
+//                )
+//            }
+//        }
     }
 
     override fun onDisconnect() {

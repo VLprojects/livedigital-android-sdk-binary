@@ -8,36 +8,38 @@ import android.telecom.ConnectionRequest
 import android.telecom.ConnectionService
 import android.telecom.DisconnectCause
 import android.telecom.PhoneAccountHandle
-import android.telecom.TelecomManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import space.livedigital.example.calls.CallActivity
 import space.livedigital.example.calls.constants.CallConstants
-import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
+import space.livedigital.example.calls.internal.repository.CallRepository
 import space.livedigital.example.calls.telecom.entities.CallConnection
 import space.livedigital.example.calls.telecom.entities.CallFromPush
 import space.livedigital.example.calls.telecom.entities.EmptyConnection
-import space.livedigital.example.calls.telecom.repositories.TelecomCallRepository
 
 class CallConnectionService : ConnectionService() {
 
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob())
+    private var scope: CoroutineScope? = null
 
     private val listener by lazy {
         object : CallConnection.CallStateListener {
-            override fun onStateChanged(callState: CallState) {}
+            override fun onStateChanged(callState: CallState) {
+            }
 
             override fun onMuteStatusChanged(isMuted: Boolean) {}
 
             override fun onAnswer() {
                 val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    putExtra(
-                        CallConstants.EXTRA_ACTION,
-                        CallAction.Answer,
-                    )
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+//                    putExtra(
+//                        CallConstants.EXTRA_ACTION,
+//                        CallAction.Answer,
+//                    )
                 }
                 // We need to add a delay to prevent our app from being overlaid by the system
                 // dialer
@@ -47,12 +49,23 @@ class CallConnectionService : ConnectionService() {
             }
         }
     }
-    private var repository: TelecomCallRepository? = null
+    private var repository: CallRepository? = null
     private var connection: Connection? = null
 
     override fun onCreate() {
         super.onCreate()
-        repository = TelecomCallRepository.instance ?: TelecomCallRepository.create()
+        repository = CallRepository.instance ?: CallRepository.create()
+        scope = CoroutineScope(SupervisorJob())
+        scope?.let {
+            repository?.currentCallState
+                ?.onEach { callState ->
+                    updateConnectionState(callState)
+                }
+                ?.onCompletion {
+                    stopSelf()
+                }
+                ?.launchIn(it)
+        }
     }
 
     override fun onDestroy() {
@@ -63,7 +76,7 @@ class CallConnectionService : ConnectionService() {
         }
         connection = null
         repository = null
-        scope.cancel()
+        scope?.cancel()
     }
 
     override fun onCreateIncomingConnection(
@@ -80,17 +93,17 @@ class CallConnectionService : ConnectionService() {
             roomAlias = roomAlias,
             callerNumber = request.address.schemeSpecificPart
         )
-        val connection = CallConnection(scope, call).apply {
-            connectionProperties = Connection.PROPERTY_SELF_MANAGED
-            setAddress(request.address, TelecomManager.PRESENTATION_ALLOWED)
-            setCallerDisplayName(caller, TelecomManager.PRESENTATION_ALLOWED)
-            addListener(repository as CallConnection.CallStateListener)
-            addListener(listener)
-            setInitializing()
-        }
+//        val connection = CallConnection(scope, call).apply {
+//            connectionProperties = Connection.PROPERTY_SELF_MANAGED
+//            setAddress(request.address, TelecomManager.PRESENTATION_ALLOWED)
+//            setCallerDisplayName(caller, TelecomManager.PRESENTATION_ALLOWED)
+//            addListener(repository as CallConnection.CallStateListener)
+//            addListener(listener)
+//            setRinging()
+//        }
 
-        this.connection = connection
-        return connection
+//        this.connection = connection
+        return EmptyConnection
     }
 
     override fun onCreateOutgoingConnection(
@@ -100,5 +113,16 @@ class CallConnectionService : ConnectionService() {
         return Connection.createFailedConnection(
             DisconnectCause(DisconnectCause.RESTRICTED)
         )
+    }
+
+    private fun updateConnectionState(callState: CallState) {
+//        when (callState) {
+//            is CallState.Active ->
+//            is CallState.Ended -> TODO()
+//            CallState.Idle -> connection?.destroy()
+//            is CallState.Incoming -> TODO()
+//            is CallState.Missed -> TODO()
+//            is CallState.Outgoing -> TODO()
+//        }
     }
 }

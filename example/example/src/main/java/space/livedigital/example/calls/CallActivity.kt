@@ -1,28 +1,28 @@
 package space.livedigital.example.calls
 
+import android.app.ComponentCaller
 import android.app.KeyguardManager
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.os.Parcelable
 import android.provider.ContactsContract
 import android.telecom.DisconnectCause
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
 import androidx.core.content.getSystemService
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.parcelize.Parcelize
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
 import space.livedigital.example.calls.internal.service.CallService
+import space.livedigital.example.ui.screens.CallScreen
+import space.livedigital.example.ui.theme.AppTheme
 
 class CallActivity : ComponentActivity() {
 
@@ -30,19 +30,35 @@ class CallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge(navigationBarStyle = createNavigationBarStyle())
         setupCallActivity()
         val action = extractAction()
         handleAnswerAction(action)
         handleOutgoingCallAction(action)
-        updateCallService()
-        setupContent()
+        setContent()
     }
 
-    private fun updateCallService() {
-        val intent = Intent(this, CallService::class.java).apply {
-            this.action = CallConstants.ACTION_UPDATE_CALL
-        }
-        startForegroundService(intent)
+    override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
+        super.onNewIntent(intent, caller)
+        setIntent(intent)
+        val action = extractAction()
+        handleAnswerAction(action)
+        handleOutgoingCallAction(action)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val action = extractAction()
+        handleAnswerAction(action)
+        handleOutgoingCallAction(action)
+    }
+
+    private fun createNavigationBarStyle(): SystemBarStyle {
+        return SystemBarStyle.light(
+            scrim = Color.TRANSPARENT,
+            darkScrim = Color.TRANSPARENT
+        )
     }
 
     override fun onDestroy() {
@@ -82,7 +98,11 @@ class CallActivity : ComponentActivity() {
             val callIntent = Intent(applicationContext, CallBroadcast::class.java)
             callIntent.putExtra(
                 CallConstants.EXTRA_ACTION,
-                CallAction.Answer,
+                CallAction.Answer(
+                    displayName = action.call.displayName,
+                    phone = action.call.phone,
+                    roomAlias = action.call.roomAlias
+                ),
             )
             sendBroadcast(callIntent)
         }
@@ -90,42 +110,50 @@ class CallActivity : ComponentActivity() {
 
     private fun handleOutgoingCallAction(action: CallActivityAction?) {
         if (action is CallActivityAction.OutgoingCall) {
-            val intent = Intent(this, CallService::class.java).apply {
-                this.action = CallConstants.ACTION_OUTGOING_CALL
-                putExtra(CallConstants.EXTRA_NAME, action.callerName)
-                putExtra(CallConstants.EXTRA_NUMBER, action.phoneNumber)
-                putExtra(CallConstants.EXTRA_ROOM_ALIAS, action.roomAlias)
-            }
-            startForegroundService(intent)
+            val callIntent = Intent(applicationContext, CallBroadcast::class.java)
+            callIntent.putExtra(
+                CallConstants.EXTRA_ACTION,
+                CallAction.PlaceOutgoingCall(
+                    displayName = action.callerName,
+                    phone = action.phoneNumber,
+                    roomAlias = action.roomAlias
+                ),
+            )
+            sendBroadcast(callIntent)
         }
     }
 
-    private fun setupContent() {
+    private fun setContent() {
         setContent {
-            MaterialTheme {
-                LaunchedEffect(viewModel.events) {
-                    viewModel.events.collect { event ->
-                        when (event) {
-                            is ScreenEvent.CreateContact -> {
-                                openContacts(event.callerName, event.phone)
-                            }
-                        }
-                    }
-                }
+            AppTheme {
+                ScreenEventsObserver()
 
                 val state = viewModel.state.collectAsStateWithLifecycle()
 
-                Surface(
-                    Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    CallScreen(
-                        state = state,
-                        onCallFinished = {
-                            finishAndRemoveTask()
-                        }
-                    )
+                CallScreen(
+                    state = state,
+                    onCallFinished = ::finishAndRemoveTask,
+                    onCallAction = { callAction ->
+                        val callIntent = Intent(applicationContext, CallBroadcast::class.java)
+                        callIntent.putExtra(
+                            CallConstants.EXTRA_ACTION,
+                            callAction,
+                        )
+                        sendBroadcast(callIntent)
+                    }
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun ScreenEventsObserver() {
+        LaunchedEffect(viewModel.events) {
+            viewModel.events.collect { event ->
+                when (event) {
+                    is ScreenEvent.CreateContact -> {
+                        openContacts(event.callerName, event.phone)
+                    }
                 }
             }
         }
@@ -145,17 +173,4 @@ class CallActivity : ComponentActivity() {
     }
 
 
-}
-
-sealed interface CallActivityAction : Parcelable {
-
-    @Parcelize
-    object Answer : CallActivityAction
-
-    @Parcelize
-    data class OutgoingCall(
-        val callerName: String,
-        val phoneNumber: String,
-        val roomAlias: String
-    ) : CallActivityAction
 }

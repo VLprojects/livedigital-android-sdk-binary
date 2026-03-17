@@ -12,7 +12,8 @@ import android.telecom.TelecomManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import space.livedigital.example.calls.constants.CallConstants
-import space.livedigital.example.calls.internal.service.CallService
+import space.livedigital.example.calls.entities.CallAction
+import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
 import space.livedigital.example.calls.telecom.entities.CallFromPush
 import space.livedigital.example.calls.telecom.services.CallConnectionService
 
@@ -29,7 +30,6 @@ class CallHandler(
         // Start self-managed call if we cannon check phone accounts
         if (!hasReadPhoneStatePermission) {
             context.launchCall(
-                action = CallConstants.ACTION_INCOMING_CALL,
                 name = call.caller,
                 phoneNumber = call.callerNumber,
                 roomAlias = call.roomAlias
@@ -45,7 +45,6 @@ class CallHandler(
         // Start self-managed call if our phone account not registered
         if (phoneAccountHandle == null) {
             context.launchCall(
-                action = CallConstants.ACTION_INCOMING_CALL,
                 name = call.caller,
                 phoneNumber = call.callerNumber,
                 roomAlias = call.roomAlias
@@ -75,7 +74,6 @@ class CallHandler(
             Log.d(TAG, "Permission not granted. e = $e")
             // If there no permission to start telecom call, we should start self-managed call
             context.launchCall(
-                action = CallConstants.ACTION_INCOMING_CALL,
                 name = call.caller,
                 phoneNumber = call.callerNumber,
                 roomAlias = call.roomAlias
@@ -89,19 +87,20 @@ class CallHandler(
 
     // Start self-managed call
     private fun Context.launchCall(
-        action: String,
         name: String,
         phoneNumber: String,
         roomAlias: String
     ) {
-        startForegroundService(
-            Intent(this, CallService::class.java).apply {
-                this.action = action
-                putExtra(CallConstants.EXTRA_NAME, name)
-                putExtra(CallConstants.EXTRA_NUMBER, phoneNumber)
-                putExtra(CallConstants.EXTRA_ROOM_ALIAS, roomAlias)
-            },
+        val callIntent = Intent(applicationContext, CallBroadcast::class.java)
+        callIntent.putExtra(
+            CallConstants.EXTRA_ACTION,
+            CallAction.PlaceIncomingCall(
+                displayName = name,
+                phone = phoneNumber,
+                roomAlias = roomAlias
+            ),
         )
+        sendBroadcast(callIntent)
     }
 
     companion object {

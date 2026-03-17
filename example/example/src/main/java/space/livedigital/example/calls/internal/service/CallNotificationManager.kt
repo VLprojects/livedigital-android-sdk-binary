@@ -1,12 +1,16 @@
 package space.livedigital.example.calls.internal.service
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
+import android.net.Uri
 import android.os.Build
 import android.telecom.DisconnectCause
+import android.telecom.PhoneAccount
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -25,258 +29,222 @@ class CallNotificationManager(private val context: Context) {
     private val notificationManager: NotificationManagerCompat =
         NotificationManagerCompat.from(context)
 
-    fun notifyAboutMissedCall(callerName: String, phoneNumber: String, roomAlias: String) {
-        // If notifications are not granted, skip it.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            PermissionChecker.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) != PermissionChecker.PERMISSION_GRANTED
-        ) {
-            return
-        }
-
-        // Ensure that the channel is created
+    fun createIncomingCallNotification(callState: CallState.Incoming): Notification? {
+        if (!hasNotificationPermission()) return null
         createNotificationChannels()
 
-        val contentIntent = PendingIntent.getActivity(
-            /* context = */ context,
-            /* requestCode = */ 0,
-            /* intent = */ createOutgoingCallIntent(callerName, phoneNumber, roomAlias),
-            /* flags = */ PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val notificationId = System.currentTimeMillis().toInt()
-        val notification = createMissedCallNotification(callerName, contentIntent)
-        notificationManager.notify(notificationId, notification)
-    }
-
-    /**
-     * Updates, creates or dismisses a CallStyle notification based on the given [TelecomCall]
-     */
-    fun updateCallNotification(call: CallState) {
-        // If notifications are not granted, skip it.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            PermissionChecker.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) != PermissionChecker.PERMISSION_GRANTED
-        ) {
-            return
+        val contentIntent = Intent(context, CallActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_SINGLE_TOP
         }
 
-        // Ensure that the channel is created
-        createNotificationChannels()
-
-        // Update or dismiss notification
-        when (call) {
-            CallState.None, is CallState.Unregistered -> {
-                notificationManager.cancel(NOTIFICATION_ID)
-            }
-
-            is CallState.Registered -> {
-                val notification = createCallNotification(
-                    call.callAttributes.displayName.toString(),
-                    call.callAttributes.address.toString(),
-                    call.isActive
-                )
-                notificationManager.cancel(NOTIFICATION_ID)
-                notificationManager.notify(NOTIFICATION_ID, notification)
-            }
-        }
-    }
-
-    fun createForegroundNotification(call: CallState.Registered): Notification {
-        return createCallNotification(
-            call.callAttributes.displayName.toString(),
-            call.callAttributes.address.toString(),
-            call.isActive
+        val pendingContentIntent = PendingIntent.getActivity(
+            context,
+            System.currentTimeMillis().toInt(),
+            contentIntent,
+            PendingIntent.FLAG_IMMUTABLE
         )
-    }
 
-    fun createIdleNotification(): Notification {
-        return NotificationCompat.Builder(context, ONGOING_CALLS_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_refresh)
-            .setContentTitle("Call in progress")
-            .setOngoing(true)
-            .build()
-    }
-
-    private fun createOutgoingCallIntent(
-        callerName: String,
-        phoneNumber: String,
-        roomAlias: String
-    ): Intent {
-        val newOutgoingCallIntent = Intent(context, CallActivity::class.java).apply {
+        val answerIntent = Intent(context, CallActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_SINGLE_TOP
             putExtra(
                 CallConstants.EXTRA_ACTION,
-                CallActivityAction.OutgoingCall(
-                    callerName = callerName,
-                    phoneNumber = phoneNumber,
-                    roomAlias = roomAlias
-                )
+                CallActivityAction.Answer(call = callState.call)
             )
         }
-        return newOutgoingCallIntent
-    }
 
-    private fun createMissedCallNotification(
-        callerName: String,
-        contentIntent: PendingIntent
-    ): Notification {
-        return NotificationCompat.Builder(context, MISSED_CALLS_CHANNEL_ID)
-            .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
-            .setContentIntent(contentIntent)
-            .setSmallIcon(R.drawable.ic_refresh)
-            .setContentTitle(callerName)
-            .setContentText("Missed call")
-            .setAutoCancel(true)
-            .build()
-    }
+        val pendingAnswerIntent = PendingIntent.getActivity(
+            context,
+            callState.call.phone.hashCode() + 1, // уникальный requestCode
+            answerIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
-    private fun createCallNotification(
-        displayName: String,
-        address: String,
-        isActive: Boolean
-    ): Notification {
-        // To display the caller information
         val caller = Person.Builder()
-            .setName(displayName)
-            .setUri(address)
+            .setName(callState.call.displayName)
+            .setUri(
+                Uri.fromParts(
+                    PhoneAccount.SCHEME_TEL,
+                    callState.call.phone,   // must be digits or +E.164
+                    null
+                ).toString()
+            )
             .setImportant(true)
             .build()
 
-        // Defines the full screen notification activity or the activity to launch once the user taps
-        // on the notification
-        val contentIntent = PendingIntent.getActivity(
-            /* context = */ context,
-            /* requestCode = */ 0,
-            /* intent = */ Intent(context, CallActivity::class.java),
-            /* flags = */ PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        val style = NotificationCompat.CallStyle.forIncomingCall(
+            caller,
+            getActionPendingIntent(
+                CallAction.Disconnect(
+                    displayName = callState.call.displayName,
+                    phone = callState.call.phone,
+                    roomAlias = callState.call.roomAlias,
+                    cause = DisconnectCause(DisconnectCause.LOCAL)
+                )
+            ),
+            pendingAnswerIntent
         )
 
-        val callIntent = Intent(context, CallActivity::class.java)
-        callIntent.putExtra(
-            CallConstants.EXTRA_ACTION,
-            CallActivityAction.Answer,
-        )
-
-        val answerIntent = PendingIntent.getActivity(
-            context,
-            callIntent.hashCode(),
-            callIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
-        val isIncoming = !isActive
-        val callStyle = if (isIncoming) {
-            NotificationCompat.CallStyle.forIncomingCall(
-                caller,
-                getPendingIntent(
-                    CallAction.Disconnect(
-                        DisconnectCause(DisconnectCause.REJECTED),
-                    ),
-                ),
-                answerIntent,
-            )
-        } else {
-            NotificationCompat.CallStyle.forOngoingCall(
-                caller,
-                getPendingIntent(
-                    CallAction.Disconnect(
-                        DisconnectCause(DisconnectCause.LOCAL),
-                    ),
-                ),
-            )
-        }
-        val channelId = if (isIncoming) {
-            INCOMING_CALLS_CHANNEL_ID
-        } else {
-            ONGOING_CALLS_CHANNEL_ID
-        }
-
-        val builder = NotificationCompat.Builder(context, channelId)
-            .setContentIntent(contentIntent)
-            .setFullScreenIntent(contentIntent, true)
+        val notification = NotificationCompat.Builder(context, INCOMING_CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_refresh)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setContentIntent(pendingContentIntent)
+            .setFullScreenIntent(pendingContentIntent, true)
             .setOngoing(true)
-            .setStyle(callStyle)
+            .setStyle(style)
+            .build()
 
-        return builder.build()
+        return notification
     }
 
-    /**
-     * Creates a PendingIntent for the given [TelecomCallAction]. Since the actions are parcelable
-     * we can directly pass them as extra parameters in the bundle.
-     */
-    private fun getPendingIntent(action: CallAction): PendingIntent {
-        val callIntent = Intent(context, CallBroadcast::class.java)
-        callIntent.putExtra(
-            CallConstants.EXTRA_ACTION,
-            action
+    @SuppressLint("MissingPermission")
+    fun createOngoingCallNotification(callState: CallState): Notification? {
+        if (!hasNotificationPermission()) return null
+        createNotificationChannels()
+
+        val caller = Person.Builder()
+            .setName(callState.call.displayName)
+            .setUri(
+                Uri.fromParts(
+                    PhoneAccount.SCHEME_TEL,
+                    callState.call.phone,   // must be digits or +E.164
+                    null
+                ).toString()
+            )
+            .setImportant(true)
+            .build()
+
+        val style = NotificationCompat.CallStyle.forOngoingCall(
+            caller,
+            getActionPendingIntent(
+                CallAction.Disconnect(
+                    displayName = callState.call.displayName,
+                    phone = callState.call.phone,
+                    roomAlias = callState.call.roomAlias,
+                    cause = DisconnectCause(DisconnectCause.LOCAL)
+                )
+            )
         )
 
+        val contentIntent = Intent(context, CallActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_SINGLE_TOP
+        }
+
+        val pendingContentIntent = PendingIntent.getActivity(
+            context,
+            System.currentTimeMillis().toInt(),
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, ONGOING_CALLS_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_refresh)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setContentIntent(pendingContentIntent)
+            .setOngoing(true)
+            .setStyle(style)
+            .build()
+
+        return notification
+    }
+
+    @SuppressLint("MissingPermission")
+    fun showMissedCallNotification(callState: CallState.Missed) {
+        if (!hasNotificationPermission()) return
+        createNotificationChannels()
+
+        val intent = Intent(context, CallActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            putExtra(
+                CallConstants.EXTRA_ACTION,
+                CallActivityAction.OutgoingCall(
+                    callerName = callState.call.displayName,
+                    phoneNumber = callState.call.phone,
+                    roomAlias = callState.call.roomAlias
+                )
+            )
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            System.currentTimeMillis().toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, MISSED_CALLS_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_refresh)
+            .setContentTitle(callState.call.displayName)
+            .setContentText("Missed call")
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        return !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                PermissionChecker.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PermissionChecker.PERMISSION_GRANTED)
+    }
+
+    private fun getActionPendingIntent(action: CallAction): PendingIntent {
+        val intent = Intent(context, CallBroadcast::class.java).apply {
+            putExtra(CallConstants.EXTRA_ACTION, action)
+        }
         return PendingIntent.getBroadcast(
             context,
-            callIntent.hashCode(),
-            callIntent,
-            PendingIntent.FLAG_IMMUTABLE,
+            intent.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 
     private fun createNotificationChannels() {
-        val incomingChannel = buildIncomingCallsChannel()
-        val ongoingChannel = buildOngoingCallsChannel()
-        val missedChannel = buildMissedCallsChannel()
-
         notificationManager.createNotificationChannelsCompat(
             listOf(
-                incomingChannel,
-                ongoingChannel,
-                missedChannel
+                buildIncomingCallsChannel(),
+                buildOngoingCallsChannel(),
+                buildMissedCallsChannel()
             )
         )
     }
 
-    private fun buildIncomingCallsChannel(): NotificationChannelCompat =
-        NotificationChannelCompat.Builder(
-            INCOMING_CALLS_CHANNEL_ID,
-            NotificationManagerCompat.IMPORTANCE_HIGH,
-        )
-            .setName("Incoming calls")
-            .setDescription("Handles the notifications when receiving a call")
-            .setSound(
-                null,
-                null
-            )
-            .setVibrationEnabled(false)
-            .build()
+    private fun buildIncomingCallsChannel() = NotificationChannelCompat.Builder(
+        INCOMING_CALLS_CHANNEL_ID,
+        NotificationManagerCompat.IMPORTANCE_MAX
+    )
+        .setName("Incoming calls")
+        .setDescription("Notifications for incoming calls")
+        .setSound(null, null)
+        .setVibrationEnabled(false)
+        .build()
 
-    private fun buildOngoingCallsChannel(): NotificationChannelCompat =
-        NotificationChannelCompat.Builder(
-            ONGOING_CALLS_CHANNEL_ID,
-            NotificationManagerCompat.IMPORTANCE_DEFAULT,
-        )
-            .setName("Ongoing calls")
-            .setDescription("Displays the ongoing call notifications")
-            .build()
+    private fun buildOngoingCallsChannel() = NotificationChannelCompat.Builder(
+        ONGOING_CALLS_CHANNEL_ID,
+        NotificationManagerCompat.IMPORTANCE_DEFAULT
+    )
+        .setName("Ongoing calls")
+        .setSound(null, null)
+        .setVibrationEnabled(false)
+        .setDescription("Notifications for active calls")
+        .build()
 
-    private fun buildMissedCallsChannel(): NotificationChannelCompat =
-        NotificationChannelCompat.Builder(
-            MISSED_CALLS_CHANNEL_ID,
-            NotificationManagerCompat.IMPORTANCE_DEFAULT
-        )
-            .setName("Missed calls")
-            .setDescription("Notifications for calls that were missed")
-            .setSound(null, null)
-            .setVibrationEnabled(false)
-            .build()
+    private fun buildMissedCallsChannel() = NotificationChannelCompat.Builder(
+        MISSED_CALLS_CHANNEL_ID,
+        NotificationManagerCompat.IMPORTANCE_DEFAULT
+    )
+        .setName("Missed calls")
+        .setDescription("Notifications for missed calls")
+        .build()
 
 
-    internal companion object {
+    companion object {
         const val NOTIFICATION_ID = 200
         const val INCOMING_CALLS_CHANNEL_ID = "incoming_calls_channel"
         const val ONGOING_CALLS_CHANNEL_ID = "ongoing_calls_channel"
         const val MISSED_CALLS_CHANNEL_ID = "missed_calls_channel"
-        const val MISSED_CALLS_GROUP_ID_PREFIX = "missed_calls_group_id_"
     }
 }

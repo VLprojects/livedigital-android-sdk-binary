@@ -54,7 +54,7 @@ class CallNotificationManager(private val context: Context) {
 
         val pendingAnswerIntent = PendingIntent.getActivity(
             context,
-            callState.call.phone.hashCode() + 1, // уникальный requestCode
+            callState.call.phone.hashCode() + 1,
             answerIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -85,7 +85,7 @@ class CallNotificationManager(private val context: Context) {
         )
 
         val notification = NotificationCompat.Builder(context, INCOMING_CALLS_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_refresh)
+            .setSmallIcon(R.drawable.ic_push_notification)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setContentIntent(pendingContentIntent)
             .setFullScreenIntent(pendingContentIntent, true)
@@ -137,7 +137,7 @@ class CallNotificationManager(private val context: Context) {
         )
 
         val notification = NotificationCompat.Builder(context, ONGOING_CALLS_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_refresh)
+            .setSmallIcon(R.drawable.ic_push_notification)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setContentIntent(pendingContentIntent)
             .setOngoing(true)
@@ -172,7 +172,7 @@ class CallNotificationManager(private val context: Context) {
         )
 
         val notification = NotificationCompat.Builder(context, MISSED_CALLS_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_refresh)
+            .setSmallIcon(R.drawable.ic_push_notification)
             .setContentTitle(callState.call.displayName)
             .setContentText("Missed call")
             .setContentIntent(pendingIntent)

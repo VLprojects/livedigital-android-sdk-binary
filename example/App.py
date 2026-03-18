@@ -118,10 +118,62 @@ def send_call_end_push():
     except Exception as e:
         messagebox.showerror("Ошибка", str(e))
 
+
+def send_call_answered_push():
+    fcm_token = token_entry.get().strip()
+    caller = caller_entry.get().strip()
+    number = number_entry.get().strip()
+    room_alias = room_entry.get().strip()
+
+    if not fcm_token or not caller or not number or not room_alias:
+        messagebox.showerror("Ошибка", "Все поля должны быть заполнены")
+        return
+
+    try:
+        access_token = get_access_token()
+
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json; UTF-8"
+        }
+
+        payload = {
+            "message": {
+                "token": fcm_token,
+                "data": {
+                    "type": "call_answered",
+                    "caller": caller,
+                    "callerNumber": number,
+                    "roomAlias": room_alias
+                },
+                "android": {
+                    "priority": "HIGH",
+                    "ttl": "3600s"
+                }
+            }
+        }
+
+        response = requests.post(
+            f"https://fcm.googleapis.com/v1/projects/{PROJECT_ID}/messages:send",
+            headers=headers,
+            data=json.dumps(payload)
+        )
+
+        if response.status_code == 200:
+            messagebox.showinfo("Успех", "Push отправлен успешно")
+        else:
+            messagebox.showerror(
+                "Ошибка FCM",
+                f"Status: {response.status_code}\n{response.text}"
+            )
+
+    except Exception as e:
+        messagebox.showerror("Ошибка", str(e))
+
 # GUI
 root = tk.Tk()
 root.title("FCM Push Sender")
-root.geometry("500x300")
+root.geometry("500x500")
 
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
@@ -158,5 +210,8 @@ send_call_start_button.grid(row=4, column=0, columnspan=2, pady=15, sticky="ew")
 # Button
 send_call_end_button = tk.Button(frame, text="Send Call End Push", command=send_call_end_push)
 send_call_end_button.grid(row=5, column=0, columnspan=2, pady=15, sticky="ew")
+
+send_call_answered_button = tk.Button(frame, text="Send Call Answered Push", command=send_call_answered_push)
+send_call_answered_button.grid(row=6, column=0, columnspan=2, pady=15, sticky="ew")
 
 root.mainloop()

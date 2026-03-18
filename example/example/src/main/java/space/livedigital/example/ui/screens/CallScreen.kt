@@ -35,7 +35,7 @@ import space.livedigital.sdk.channel.ChannelSessionStatus
 import kotlin.time.Duration
 
 @Composable
-fun CallScreen(
+internal fun CallScreen(
     state: State<ScreenState>,
     onCallFinished: () -> Unit,
     onCallAction: (CallAction) -> Unit
@@ -88,7 +88,7 @@ fun CallScreen(
 }
 
 @Composable
-internal fun ActiveCallContentComponent(
+private fun ActiveCallContentComponent(
     callState: CallState.Active,
     sessionStatus: ChannelSessionStatus,
     callDuration: Duration,
@@ -191,7 +191,7 @@ internal fun ActiveCallContentComponent(
 }
 
 @Composable
-internal fun AnsweredCallContentComponent(callState: CallState.Answered) {
+private fun AnsweredCallContentComponent(callState: CallState.Answered) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -226,7 +226,7 @@ internal fun AnsweredCallContentComponent(callState: CallState.Answered) {
 }
 
 @Composable
-internal fun OutgoingCallContentComponent(
+private fun OutgoingCallContentComponent(
     callState: CallState.Outgoing,
     onCallAction: (CallAction) -> Unit
 ) {
@@ -325,7 +325,7 @@ internal fun OutgoingCallContentComponent(
 }
 
 @Composable
-internal fun EndedCallContentComponent(
+private fun EndedCallContentComponent(
     callState: CallState.Ended,
     onCallAction: (CallAction) -> Unit,
     onCallFinished: () -> Unit
@@ -404,7 +404,7 @@ internal fun EndedCallContentComponent(
 }
 
 @Composable
-internal fun IncomingCallContentComponent(
+private fun IncomingCallContentComponent(
     callState: CallState.Incoming,
     onCallAction: (CallAction) -> Unit
 ) {
@@ -487,7 +487,7 @@ internal fun IncomingCallContentComponent(
 }
 
 @Composable
-internal fun MissedCallContentComponent(
+private fun MissedCallContentComponent(
     callState: CallState.Missed,
     onCallAction: (CallAction) -> Unit,
     onCallFinished: () -> Unit,

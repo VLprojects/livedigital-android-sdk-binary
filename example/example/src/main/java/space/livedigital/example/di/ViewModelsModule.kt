@@ -6,10 +6,10 @@ import org.koin.dsl.module
 import space.livedigital.example.Permission
 import space.livedigital.example.PermissionsViewModel
 import space.livedigital.example.calls.CallViewModel
-import space.livedigital.example.calls.internal.repository.CallRepository
 import space.livedigital.example.calls.repositories.AndroidContactsRepository
+import space.livedigital.example.calls.repositories.CallRepository
 
-val viewModelsModule = module {
+internal val viewModelsModule = module {
     viewModel {
         CallViewModel(
             callRepository = CallRepository.instance ?: CallRepository.create(),

@@ -1,4 +1,4 @@
-package space.livedigital.example.calls.telecom.services
+package space.livedigital.example.calls.services
 
 import android.app.PendingIntent
 import android.content.Intent
@@ -17,16 +17,16 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import space.livedigital.example.calls.CallActivity
-import space.livedigital.example.calls.CallActivityAction
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
+import space.livedigital.example.calls.entities.CallActivityAction
+import space.livedigital.example.calls.entities.CallConnection
 import space.livedigital.example.calls.entities.CallState
-import space.livedigital.example.calls.internal.repository.CallRepository
-import space.livedigital.example.calls.telecom.entities.CallConnection
-import space.livedigital.example.calls.telecom.entities.EmptyConnection
+import space.livedigital.example.calls.entities.EmptyConnection
+import space.livedigital.example.calls.repositories.CallRepository
 
-class CallConnectionService : ConnectionService() {
+internal class CallConnectionService : ConnectionService() {
 
     private val listener = object : CallConnection.CallStateListener {
         override fun onAnswer(call: Call) {

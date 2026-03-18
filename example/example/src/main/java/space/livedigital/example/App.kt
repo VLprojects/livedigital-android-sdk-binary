@@ -7,11 +7,11 @@ import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
-import space.livedigital.example.calls.telecom.services.CallConnectionService
+import space.livedigital.example.calls.services.CallConnectionService
 import space.livedigital.example.di.liveDigitalEngineModule
 import space.livedigital.example.di.viewModelsModule
 
-class App : Application() {
+internal class App : Application() {
 
     override fun onCreate() {
         super.onCreate()

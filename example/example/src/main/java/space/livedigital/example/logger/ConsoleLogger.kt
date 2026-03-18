@@ -4,7 +4,7 @@ import android.util.Log
 import space.livedigital.sdk.debug.logger.Level
 import space.livedigital.sdk.debug.logger.Logger
 
-object ConsoleLogger : Logger {
+internal object ConsoleLogger : Logger {
     private const val LOG_PREFIX = "LD_SDK_"
 
     override fun log(level: Level, tag: String, message: String, payload: Map<String, String?>?) {

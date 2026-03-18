@@ -6,12 +6,12 @@ import android.provider.ContactsContract
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-interface ContactsRepository {
+internal interface ContactsRepository {
 
     suspend fun hasContact(number: String): HasContactResult
 }
 
-class AndroidContactsRepository(
+internal class AndroidContactsRepository(
     private val contentResolver: ContentResolver
 ) : ContactsRepository {
 

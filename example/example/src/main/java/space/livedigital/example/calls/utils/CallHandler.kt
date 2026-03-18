@@ -1,4 +1,4 @@
-package space.livedigital.example.calls.telecom
+package space.livedigital.example.calls.utils
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -13,13 +13,13 @@ import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import space.livedigital.example.calls.broadcasts.CallBroadcast
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
-import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
-import space.livedigital.example.calls.telecom.services.CallConnectionService
+import space.livedigital.example.calls.services.CallConnectionService
 
-class CallHandler(
+internal class CallHandler(
     private val context: Context
 ) {
 

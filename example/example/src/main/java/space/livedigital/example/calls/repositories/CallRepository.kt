@@ -1,4 +1,4 @@
-package space.livedigital.example.calls.internal.repository
+package space.livedigital.example.calls.repositories
 
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,7 +9,7 @@ import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
 import kotlin.time.TimeSource
 
-class CallRepository private constructor() {
+internal class CallRepository private constructor() {
 
     val currentCallState
         get() = _currentCallState.asStateFlow()

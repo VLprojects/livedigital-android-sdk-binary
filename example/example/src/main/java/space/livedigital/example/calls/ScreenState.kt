@@ -5,7 +5,7 @@ import space.livedigital.sdk.channel.ChannelSessionStatus
 import space.livedigital.sdk.media.audio.AudioSource
 import kotlin.time.Duration
 
-data class ScreenState(
+internal data class ScreenState(
     val isLocalAudioOn: Boolean = false,
     val localAudioSource: AudioSource? = null,
     val callState: CallState = CallState.Idle,

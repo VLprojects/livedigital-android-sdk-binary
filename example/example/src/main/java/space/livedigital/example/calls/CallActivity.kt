@@ -17,14 +17,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.getSystemService
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import space.livedigital.example.calls.broadcasts.CallBroadcast
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
-import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
-import space.livedigital.example.calls.telecom.services.CallConnectionAudioService
+import space.livedigital.example.calls.entities.CallActivityAction
+import space.livedigital.example.calls.services.CallConnectionAudioService
 import space.livedigital.example.ui.screens.CallScreen
 import space.livedigital.example.ui.theme.AppTheme
 
-class CallActivity : ComponentActivity() {
+internal class CallActivity : ComponentActivity() {
 
     private val viewModel by viewModel<CallViewModel>()
 

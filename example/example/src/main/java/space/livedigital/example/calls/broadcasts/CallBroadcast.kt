@@ -1,4 +1,4 @@
-package space.livedigital.example.calls.internal.broadcasts
+package space.livedigital.example.calls.broadcasts
 
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
@@ -9,17 +9,17 @@ import org.koin.core.component.KoinComponent
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
-import space.livedigital.example.calls.internal.repository.CallRepository
-import space.livedigital.example.calls.internal.service.CallService
-import space.livedigital.example.calls.telecom.CallHandler
+import space.livedigital.example.calls.repositories.CallRepository
+import space.livedigital.example.calls.services.CallService
+import space.livedigital.example.calls.utils.CallHandler
 
-class CallBroadcast : BroadcastReceiver(), KoinComponent {
+internal class CallBroadcast : BroadcastReceiver(), KoinComponent {
 
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {
         // Get the action or skip if none
         val action = intent.getTelecomCallAction() ?: return
-        val repository = CallRepository.instance ?: CallRepository.create()
+        val repository = CallRepository.Companion.instance ?: CallRepository.Companion.create()
         repository.dispatchCallAction(action)
         when (action) {
             is CallAction.PlaceIncomingCall -> {

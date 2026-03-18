@@ -1,10 +1,9 @@
-package space.livedigital.example.calls.telecom.entities
+package space.livedigital.example.calls.entities
 
 import android.telecom.Connection
 import android.telecom.DisconnectCause
-import space.livedigital.example.calls.entities.Call
 
-class CallConnection(private val call: Call) : Connection() {
+internal class CallConnection(private val call: Call) : Connection() {
 
     private val listeners = mutableListOf<CallStateListener>()
 

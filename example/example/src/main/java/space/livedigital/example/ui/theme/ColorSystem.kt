@@ -5,7 +5,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 @Immutable
-data class ColorSystem(
+internal data class ColorSystem(
     val primary: Color,
     val accentBase: Color,
     val accent01: Color,
@@ -20,7 +20,7 @@ data class ColorSystem(
     val error01: Color,
 )
 
-val LocalColorSystem = staticCompositionLocalOf {
+internal val LocalColorSystem = staticCompositionLocalOf {
     ColorSystem(
         primary = Color.Unspecified,
         accentBase = Color.Unspecified,
@@ -37,7 +37,7 @@ val LocalColorSystem = staticCompositionLocalOf {
     )
 }
 
-val DefaultColorSystem = ColorSystem(
+internal val DefaultColorSystem = ColorSystem(
     primary = Color(0x99060A2D),
     accentBase = Color(0xFF1D51FE),
     accent01 = Color(0xFF1A2657),

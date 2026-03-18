@@ -1,4 +1,4 @@
-package space.livedigital.example.calls.internal.service
+package space.livedigital.example.calls.services
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -18,13 +18,13 @@ import androidx.core.app.Person
 import androidx.core.content.PermissionChecker
 import space.livedigital.example.R
 import space.livedigital.example.calls.CallActivity
-import space.livedigital.example.calls.CallActivityAction
+import space.livedigital.example.calls.broadcasts.CallBroadcast
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
+import space.livedigital.example.calls.entities.CallActivityAction
 import space.livedigital.example.calls.entities.CallState
-import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
 
-class CallNotificationManager(private val context: Context) {
+internal class CallNotificationManager(private val context: Context) {
 
     private val notificationManager: NotificationManagerCompat =
         NotificationManagerCompat.from(context)
@@ -153,7 +153,7 @@ class CallNotificationManager(private val context: Context) {
         createNotificationChannels()
 
         val contentIntent = Intent(context, CallActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_SINGLE_TOP
         }
 
         val pendingContentIntent = PendingIntent.getActivity(

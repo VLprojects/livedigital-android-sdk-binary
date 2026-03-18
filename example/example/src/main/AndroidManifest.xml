@@ -57,7 +57,7 @@
         </service>
 
         <service
-            android:name=".calls.telecom.services.CallConnectionService"
+            android:name=".calls.services.CallConnectionService"
             android:exported="false"
             android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
             android:foregroundServiceType="microphone|phoneCall">
@@ -67,17 +67,17 @@
         </service>
 
         <service
-            android:name=".calls.telecom.services.CallConnectionAudioService"
+            android:name=".calls.services.CallConnectionAudioService"
             android:exported="false"
-            android:foregroundServiceType="microphone"></service>
+            android:foregroundServiceType="microphone" />
 
         <service
-            android:name=".calls.internal.service.CallService"
+            android:name=".calls.services.CallService"
             android:exported="false"
             android:foregroundServiceType="phoneCall|microphone" />
 
         <receiver
-            android:name=".calls.internal.broadcasts.CallBroadcast"
+            android:name=".calls.broadcasts.CallBroadcast"
             android:exported="false" />
     </application>
 </manifest>

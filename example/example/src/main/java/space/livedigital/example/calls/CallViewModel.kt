@@ -19,7 +19,7 @@ import space.livedigital.example.bson.BSONObjectIdGenerator
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
-import space.livedigital.example.calls.internal.repository.CallRepository
+import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.repositories.ContactsRepository
 import space.livedigital.example.calls.repositories.HasContactResult
 import space.livedigital.example.entities.MoodhoodParticipant
@@ -53,7 +53,7 @@ import space.livedigital.sdk.media.MediaSourceId
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-class CallViewModel(
+internal class CallViewModel(
     private val callRepository: CallRepository,
     private val contactsRepository: ContactsRepository
 ) : ViewModel(), KoinComponent {

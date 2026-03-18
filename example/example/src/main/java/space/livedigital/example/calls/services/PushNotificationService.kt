@@ -6,10 +6,10 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
-import space.livedigital.example.calls.internal.repository.CallRepository
-import space.livedigital.example.calls.telecom.CallHandler
+import space.livedigital.example.calls.repositories.CallRepository
+import space.livedigital.example.calls.utils.CallHandler
 
-class PushNotificationService : FirebaseMessagingService() {
+internal class PushNotificationService : FirebaseMessagingService() {
 
     override fun onNewToken(p0: String) {
         super.onNewToken(p0)

@@ -1,4 +1,4 @@
-package space.livedigital.example.calls.internal.service
+package space.livedigital.example.calls.services
 
 import android.Manifest
 import android.app.ForegroundServiceStartNotAllowedException
@@ -31,13 +31,13 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import space.livedigital.example.calls.broadcasts.CallBroadcast
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
-import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
-import space.livedigital.example.calls.internal.repository.CallRepository
+import space.livedigital.example.calls.repositories.CallRepository
 
-class CallService : LifecycleService() {
+internal class CallService : LifecycleService() {
 
     /**
      *  Can the call be successfully answered??

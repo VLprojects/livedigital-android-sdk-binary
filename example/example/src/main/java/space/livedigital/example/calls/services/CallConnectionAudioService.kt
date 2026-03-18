@@ -1,4 +1,4 @@
-package space.livedigital.example.calls.telecom.services
+package space.livedigital.example.calls.services
 
 import android.Manifest
 import android.app.ForegroundServiceStartNotAllowedException
@@ -9,9 +9,8 @@ import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
-import space.livedigital.example.calls.internal.service.CallNotificationManager
 
-class CallConnectionAudioService : Service() {
+internal class CallConnectionAudioService : Service() {
 
     private var notificationManager: CallNotificationManager? = null
 

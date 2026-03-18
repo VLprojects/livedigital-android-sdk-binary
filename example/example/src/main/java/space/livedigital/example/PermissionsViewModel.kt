@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class PermissionsViewModel(
+internal class PermissionsViewModel(
     initialPermissions: List<Permission>,
     isPhoneAccountEnabled: Boolean
 ) : ViewModel() {
@@ -40,23 +40,23 @@ class PermissionsViewModel(
     }
 }
 
-data class PermissionsState(
+internal data class PermissionsState(
     val permissions: List<Permission>,
     val phoneAccountEnabledState: PhoneAccountEnabledState
 )
 
-data class Permission(
+internal data class Permission(
     val name: String,
     val importance: Importance,
     val isGranted: Boolean
 )
 
-data class PhoneAccountEnabledState(
+internal data class PhoneAccountEnabledState(
     val isEnabled: Boolean,
     val importance: Importance = Importance.IMPORTANT_FOR_SYSTEM_CALLS
 )
 
-enum class Importance {
+internal enum class Importance {
     DEFAULT,
     IMPORTANT_FOR_ALL_CALLS,
     IMPORTANT_FOR_SYSTEM_CALLS

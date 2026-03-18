@@ -23,11 +23,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.firebase.messaging.FirebaseMessaging
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
-import space.livedigital.example.calls.telecom.services.CallConnectionService
+import space.livedigital.example.calls.services.CallConnectionService
 import space.livedigital.example.ui.screens.MainScreen
 import space.livedigital.example.ui.theme.AppTheme
 
-class MainActivity : AppCompatActivity() {
+internal class MainActivity : AppCompatActivity() {
 
     private val permissionsViewModel by viewModel<PermissionsViewModel> {
         parametersOf(buildPermissions(), isPhoneAccountEnabled())

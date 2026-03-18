@@ -6,7 +6,7 @@ import space.livedigital.example.logger.ConsoleLogger
 import space.livedigital.sdk.engine.LiveDigitalEngine
 import space.livedigital.sdk.engine.StockLiveDigitalEngine
 
-val liveDigitalEngineModule = module {
+internal val liveDigitalEngineModule = module {
 
     factory<LiveDigitalEngine> {
         StockLiveDigitalEngine(

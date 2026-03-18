@@ -111,7 +111,12 @@ internal class CallService : LifecycleService() {
         super.onCreate()
         notificationManager = CallNotificationManager(applicationContext)
         repository = CallRepository.instance ?: CallRepository.create()
-        callsManager = CallsManager(applicationContext)
+        callsManager = CallsManager(applicationContext).apply {
+            registerAppWithTelecom(
+                capabilities = CallsManager.CAPABILITY_SUPPORTS_CALL_STREAMING and
+                        CallsManager.CAPABILITY_SUPPORTS_VIDEO_CALLING
+            )
+        }
 
         repository?.currentCallState
             ?.onEach { call ->
@@ -132,13 +137,17 @@ internal class CallService : LifecycleService() {
     }
 
     private fun updateServiceState(callState: CallState) {
+        Log.d("xd", "updateServiceState $callState")
         lifecycleScope.launch {
             when (callState) {
                 is CallState.Answered -> {
                     stopRingtoneAndVibration()
+                    Log.d("xd", "callControlScope $callControlScope")
                     val result = callControlScope?.answer(
                         callType = CallAttributesCompat.CALL_TYPE_AUDIO_CALL
                     )
+
+                    Log.d("xd", "result $result")
 
                     if (result is CallControlResult.Success) {
                         val callIntent = Intent(applicationContext, CallBroadcast::class.java)
@@ -176,7 +185,8 @@ internal class CallService : LifecycleService() {
                         }
                     }
                     stopRingtoneAndVibration()
-                    callControlScope?.setActive()
+                    val setActiveResult = callControlScope?.setActive()
+                    Log.d("xd", "setActiveREsult $setActiveResult")
                 }
 
 
@@ -209,7 +219,6 @@ internal class CallService : LifecycleService() {
                             serviceType
                         )
                     } catch (exception: IllegalStateException) {
-                        Log.e("xd", "startException $exception")
                         // Solution from https://issuetracker.google.com/issues/307329994#comment86
                         @Suppress("InstanceOfCheckForException")
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&

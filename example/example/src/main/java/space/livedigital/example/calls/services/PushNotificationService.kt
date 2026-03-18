@@ -52,7 +52,7 @@ internal class PushNotificationService : FirebaseMessagingService() {
         )
     }
 
-    fun onCallAnswered(call: Call) {
+    private fun onCallAnswered(call: Call) {
         val callRepository = CallRepository.instance ?: CallRepository.create()
         callRepository.dispatchCallAction(
             CallAction.Answer(

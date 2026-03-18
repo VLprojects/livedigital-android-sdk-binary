@@ -43,7 +43,6 @@ internal class CallHandler(
             }
 
             try {
-                // Start telecom call
                 telecomManager.addNewIncomingCall(phoneAccountHandle, extras)
             } catch (e: SecurityException) {
                 Log.d(TAG, "Permission not granted. e = $e")
@@ -102,6 +101,11 @@ internal class CallHandler(
             } catch (e: SecurityException) {
                 Log.d(TAG, "Permission not granted. e = $e")
                 // If there no permission to start telecom call, we should start self-managed call
+                context.sendSelfManagedOutgoingCallBroadcast(
+                    displayName = call.displayName,
+                    phone = call.phone,
+                    roomAlias = call.roomAlias
+                )
                 // todo: launch outgoing call
                 return false
             } catch (e: Exception) {
@@ -146,6 +150,23 @@ internal class CallHandler(
         callIntent.putExtra(
             CallConstants.EXTRA_ACTION,
             CallAction.PlaceIncomingCall(
+                displayName = displayName,
+                phone = phone,
+                roomAlias = roomAlias
+            ),
+        )
+        sendBroadcast(callIntent)
+    }
+
+    private fun Context.sendSelfManagedOutgoingCallBroadcast(
+        displayName: String,
+        phone: String,
+        roomAlias: String
+    ) {
+        val callIntent = Intent(applicationContext, CallBroadcast::class.java)
+        callIntent.putExtra(
+            CallConstants.EXTRA_ACTION,
+            CallAction.PlaceOutgoingCall(
                 displayName = displayName,
                 phone = phone,
                 roomAlias = roomAlias

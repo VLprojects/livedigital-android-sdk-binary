@@ -111,6 +111,7 @@ internal class CallService : LifecycleService() {
         super.onCreate()
         notificationManager = CallNotificationManager(applicationContext)
         repository = CallRepository.instance ?: CallRepository.create()
+        // Manager to add call in system (without integration with dialer app)
         callsManager = CallsManager(applicationContext).apply {
             registerAppWithTelecom(
                 capabilities = CallsManager.CAPABILITY_SUPPORTS_CALL_STREAMING and
@@ -137,17 +138,13 @@ internal class CallService : LifecycleService() {
     }
 
     private fun updateServiceState(callState: CallState) {
-        Log.d("xd", "updateServiceState $callState")
         lifecycleScope.launch {
             when (callState) {
                 is CallState.Answered -> {
                     stopRingtoneAndVibration()
-                    Log.d("xd", "callControlScope $callControlScope")
                     val result = callControlScope?.answer(
                         callType = CallAttributesCompat.CALL_TYPE_AUDIO_CALL
                     )
-
-                    Log.d("xd", "result $result")
 
                     if (result is CallControlResult.Success) {
                         val callIntent = Intent(applicationContext, CallBroadcast::class.java)
@@ -185,8 +182,7 @@ internal class CallService : LifecycleService() {
                         }
                     }
                     stopRingtoneAndVibration()
-                    val setActiveResult = callControlScope?.setActive()
-                    Log.d("xd", "setActiveREsult $setActiveResult")
+                    callControlScope?.setActive()
                 }
 
 

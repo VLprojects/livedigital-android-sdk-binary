@@ -42,7 +42,7 @@
 
         <activity
             android:name=".calls.CallActivity"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleTask"
             android:showOnLockScreen="true"
             android:showWhenLocked="true"
@@ -58,13 +58,18 @@
 
         <service
             android:name=".calls.telecom.services.CallConnectionService"
-            android:exported="true"
+            android:exported="false"
             android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
             android:foregroundServiceType="microphone|phoneCall">
             <intent-filter>
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
         </service>
+
+        <service
+            android:name=".calls.telecom.services.CallConnectionAudioService"
+            android:exported="false"
+            android:foregroundServiceType="microphone"></service>
 
         <service
             android:name=".calls.internal.service.CallService"

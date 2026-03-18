@@ -20,6 +20,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.internal.broadcasts.CallBroadcast
+import space.livedigital.example.calls.telecom.services.CallConnectionAudioService
 import space.livedigital.example.ui.screens.CallScreen
 import space.livedigital.example.ui.theme.AppTheme
 
@@ -31,26 +32,20 @@ class CallActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(navigationBarStyle = createNavigationBarStyle())
         setupCallActivity()
-        val action = extractAction()
-        handleAnswerAction(action)
-        handleOutgoingCallAction(action)
+        handleIntent()
         setContent()
     }
 
     override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
         super.onNewIntent(intent, caller)
         setIntent(intent)
-        val action = extractAction()
-        handleAnswerAction(action)
-        handleOutgoingCallAction(action)
+        handleIntent()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        val action = extractAction()
-        handleAnswerAction(action)
-        handleOutgoingCallAction(action)
+        handleIntent()
     }
 
     private fun createNavigationBarStyle(): SystemBarStyle {
@@ -76,6 +71,23 @@ class CallActivity : ComponentActivity() {
         keyguardManager?.requestDismissKeyguard(this, null)
     }
 
+    private fun handleIntent() {
+        val action = extractAction() ?: return
+        when (action) {
+            is CallActivityAction.Answer -> {
+                handleAnswerAction(action)
+            }
+
+            is CallActivityAction.PlaceOutgoingCall -> {
+                handlePlaceOutgoingCallAction(action)
+            }
+
+            CallActivityAction.StartBackgroundAudioService -> {
+                handleStartBackgroundAudioServiceAction()
+            }
+        }
+    }
+
     private fun extractAction(): CallActivityAction? {
         val action = with(intent) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -91,34 +103,36 @@ class CallActivity : ComponentActivity() {
         return action
     }
 
-    private fun handleAnswerAction(action: CallActivityAction?) {
-        if (action is CallActivityAction.Answer) {
-            val callIntent = Intent(applicationContext, CallBroadcast::class.java)
-            callIntent.putExtra(
-                CallConstants.EXTRA_ACTION,
-                CallAction.Answer(
-                    displayName = action.call.displayName,
-                    phone = action.call.phone,
-                    roomAlias = action.call.roomAlias
-                ),
-            )
-            sendBroadcast(callIntent)
-        }
+    private fun handleAnswerAction(action: CallActivityAction.Answer) {
+        val callIntent = Intent(applicationContext, CallBroadcast::class.java)
+        callIntent.putExtra(
+            CallConstants.EXTRA_ACTION,
+            CallAction.Answer(
+                displayName = action.call.displayName,
+                phone = action.call.phone,
+                roomAlias = action.call.roomAlias
+            ),
+        )
+        sendBroadcast(callIntent)
     }
 
-    private fun handleOutgoingCallAction(action: CallActivityAction?) {
-        if (action is CallActivityAction.OutgoingCall) {
-            val callIntent = Intent(applicationContext, CallBroadcast::class.java)
-            callIntent.putExtra(
-                CallConstants.EXTRA_ACTION,
-                CallAction.PlaceOutgoingCall(
-                    displayName = action.callerName,
-                    phone = action.phoneNumber,
-                    roomAlias = action.roomAlias
-                ),
-            )
-            sendBroadcast(callIntent)
-        }
+    private fun handlePlaceOutgoingCallAction(action: CallActivityAction.PlaceOutgoingCall) {
+        val callIntent = Intent(applicationContext, CallBroadcast::class.java)
+        callIntent.putExtra(
+            CallConstants.EXTRA_ACTION,
+            CallAction.PlaceOutgoingCall(
+                displayName = action.callerName,
+                phone = action.phoneNumber,
+                roomAlias = action.roomAlias
+            ),
+        )
+        sendBroadcast(callIntent)
+    }
+
+    private fun handleStartBackgroundAudioServiceAction() {
+        val serviceIntent =
+            Intent(applicationContext, CallConnectionAudioService::class.java)
+        startForegroundService(serviceIntent)
     }
 
     private fun setContent() {

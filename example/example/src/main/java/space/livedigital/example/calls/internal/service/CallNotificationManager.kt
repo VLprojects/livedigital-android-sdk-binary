@@ -148,6 +148,34 @@ class CallNotificationManager(private val context: Context) {
     }
 
     @SuppressLint("MissingPermission")
+    fun createCallAudioServiceNotification(): Notification? {
+        if (!hasNotificationPermission()) return null
+        createNotificationChannels()
+
+        val contentIntent = Intent(context, CallActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+
+        val pendingContentIntent = PendingIntent.getActivity(
+            context,
+            0,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return NotificationCompat.Builder(context, ONGOING_CALLS_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_push_notification)
+            .setContentTitle("Microphone is active")
+            .setContentText("Call is using audio in background")
+            .setContentIntent(pendingContentIntent)
+            .setOngoing(true)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+    }
+
+    @SuppressLint("MissingPermission")
     fun showMissedCallNotification(callState: CallState.Missed) {
         if (!hasNotificationPermission()) return
         createNotificationChannels()
@@ -156,7 +184,7 @@ class CallNotificationManager(private val context: Context) {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
             putExtra(
                 CallConstants.EXTRA_ACTION,
-                CallActivityAction.OutgoingCall(
+                CallActivityAction.PlaceOutgoingCall(
                     callerName = callState.call.displayName,
                     phoneNumber = callState.call.phone,
                     roomAlias = callState.call.roomAlias

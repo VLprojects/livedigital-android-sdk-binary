@@ -61,6 +61,6 @@ class CallBroadcast : BroadcastReceiver(), KoinComponent {
 
     private fun Context.startCallService() {
         val intent = Intent(this, CallService::class.java)
-        startService(intent)
+        startForegroundService(intent)
     }
 }

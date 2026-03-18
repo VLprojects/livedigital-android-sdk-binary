@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import space.livedigital.example.calls.CallActivity
+import space.livedigital.example.calls.CallActivityAction
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
@@ -38,6 +39,10 @@ class CallConnectionService : ConnectionService() {
             )
             val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra(
+                    CallConstants.EXTRA_ACTION,
+                    CallActivityAction.StartBackgroundAudioService
+                )
             }
             val pendingIntent = PendingIntent.getActivity(
                 this@CallConnectionService,
@@ -156,14 +161,35 @@ class CallConnectionService : ConnectionService() {
         when (callState) {
             is CallState.Active -> {
                 connection?.setActive()
+                val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    putExtra(
+                        CallConstants.EXTRA_ACTION,
+                        CallActivityAction.StartBackgroundAudioService
+                    )
+                }
+                val pendingIntent = PendingIntent.getActivity(
+                    this@CallConnectionService,
+                    System.currentTimeMillis().toInt(),
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                // We need to add a delay to prevent our app from being overlaid by the system
+                // dialer
+                Handler(Looper.getMainLooper()).postDelayed({
+                    pendingIntent.send()
+                }, 500)
             }
 
             is CallState.Ended -> {
+                stopService(Intent(applicationContext, CallConnectionAudioService::class.java))
                 connection?.setDisconnected(callState.disconnectCause)
                 connection?.destroy()
             }
 
             is CallState.Missed -> {
+                stopService(Intent(applicationContext, CallConnectionAudioService::class.java))
                 connection?.setDisconnected(DisconnectCause(DisconnectCause.MISSED))
                 connection?.destroy()
             }
@@ -176,20 +202,6 @@ class CallConnectionService : ConnectionService() {
                         roomAlias = callState.call.roomAlias
                     )
                 )
-                val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                }
-                val pendingIntent = PendingIntent.getActivity(
-                    this@CallConnectionService,
-                    System.currentTimeMillis().toInt(),
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                // We need to add a delay to prevent our app from being overlaid by the system
-                // dialer
-                Handler(Looper.getMainLooper()).postDelayed({
-                    pendingIntent.send()
-                }, 500)
             }
 
             else -> Unit

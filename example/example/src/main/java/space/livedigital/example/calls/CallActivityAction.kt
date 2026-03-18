@@ -10,9 +10,12 @@ sealed interface CallActivityAction : Parcelable {
     data class Answer(val call: Call) : CallActivityAction
 
     @Parcelize
-    data class OutgoingCall(
+    data class PlaceOutgoingCall(
         val callerName: String,
         val phoneNumber: String,
         val roomAlias: String
     ) : CallActivityAction
+
+    @Parcelize
+    data object StartBackgroundAudioService : CallActivityAction
 }

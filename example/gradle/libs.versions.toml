@@ -11,14 +11,13 @@ livedigitalSdk = "1.5.0"
 appcompat = "1.7.0"
 material = "1.12.0"
 recyclerview = "1.4.0"
+lifecycleService = "2.10.0"
 activityCompose = "1.10.0"
 composeBom = "2025.02.00"
 
 retrofit = "2.11.0"
 loggingInterceptor = "4.12.0"
 koin = "4.0.2"
-
-permissionChecker = "0.1"
 
 [libraries]
 androidx-core-telecom = { module = "androidx.core:core-telecom", version.ref = "coreTelecom" }
@@ -29,6 +28,7 @@ livedigital-sdk = { group = "com.github.vlprojects", name = "livedigital-android
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+androidx-lifecycle-service = { group = "androidx.lifecycle", name = "lifecycle-service", version.ref = "lifecycleService" }
 
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -39,15 +39,12 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
 
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 retrofit2-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit2-kotlinx-serialization-converter = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 okhttp3-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "loggingInterceptor" }
 koin = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
-
-sequenia-permissionChecker = { group = "com.github.sequenia", name = "Permission-Checker", version.ref = "permissionChecker" }
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

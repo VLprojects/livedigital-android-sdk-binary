@@ -12,11 +12,11 @@ import androidx.compose.ui.unit.sp
 import space.livedigital.example.R
 
 @Immutable
-data class TypographySystem(
+internal data class TypographySystem(
     val mainTextMedium: TextStyle,
 )
 
-val LocalTypographySystem = staticCompositionLocalOf {
+internal val LocalTypographySystem = staticCompositionLocalOf {
     TypographySystem(
         mainTextMedium = TextStyle.Default
     )
@@ -24,7 +24,7 @@ val LocalTypographySystem = staticCompositionLocalOf {
 
 @Composable
 @ReadOnlyComposable
-fun createTypographySystem(): TypographySystem {
+internal fun createTypographySystem(): TypographySystem {
     val manropeFontFamily = FontFamily(
         Font(R.font.manrope_bold, FontWeight.Bold),
         Font(R.font.manrope_semibold, FontWeight.SemiBold),

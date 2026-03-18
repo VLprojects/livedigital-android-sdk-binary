@@ -1,14 +1,15 @@
 package space.livedigital.example.calls.services
 
+import android.telecom.DisconnectCause
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import space.livedigital.example.calls.internal.repository.CallRepository
-import space.livedigital.example.calls.telecom.CallHandler
-import space.livedigital.example.calls.telecom.entities.CallFromPush
-import space.livedigital.example.calls.telecom.repositories.TelecomCallRepository
+import space.livedigital.example.calls.entities.Call
+import space.livedigital.example.calls.entities.CallAction
+import space.livedigital.example.calls.repositories.CallRepository
+import space.livedigital.example.calls.utils.CallHandler
 
-class PushNotificationService : FirebaseMessagingService() {
+internal class PushNotificationService : FirebaseMessagingService() {
 
     override fun onNewToken(p0: String) {
         super.onNewToken(p0)
@@ -16,36 +17,21 @@ class PushNotificationService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        // In production app we have to make check more strict
-        val isEndCallPushType = remoteMessage.data.getValue("type") == CALL_END
+        val pushType = PushType.valueOf(remoteMessage.data.getValue("type").uppercase())
+        val call = Call.Actual(
+            displayName = remoteMessage.data.getValue("caller"),
+            phone = remoteMessage.data.getValue("callerNumber"),
+            roomAlias = remoteMessage.data.getValue("roomAlias")
+        )
 
-        if (isEndCallPushType) {
-            endCall()
-        } else {
-            startCall(remoteMessage)
+        when (pushType) {
+            PushType.CALL_START -> startCall(call)
+            PushType.CALL_END -> endCall(call)
+            PushType.CALL_ANSWERED -> onCallAnswered(call)
         }
     }
 
-    private fun endCall() {
-        val callRepository = CallRepository.instance ?: CallRepository.create(this)
-        val telecomCallRepository =
-            TelecomCallRepository.instance ?: TelecomCallRepository.create()
-
-        callRepository.endCall()
-        telecomCallRepository.endCall()
-    }
-
-    private fun startCall(remoteMessage: RemoteMessage) {
-        val call = CallFromPush(
-            id = remoteMessage.messageId ?: "",
-            caller = remoteMessage.data.getValue("caller"),
-            callerNumber = remoteMessage.data.getValue("callerNumber"),
-            roomAlias = remoteMessage.data.getValue("roomAlias")
-        )
-        initiateCallService(call)
-    }
-
-    private fun initiateCallService(call: CallFromPush) {
+    private fun startCall(call: Call) {
         runCatching {
             val callHandler = CallHandler(applicationContext)
             callHandler.startIncomingCall(call)
@@ -54,8 +40,36 @@ class PushNotificationService : FirebaseMessagingService() {
         }
     }
 
+    private fun endCall(call: Call) {
+        val callRepository = CallRepository.instance ?: CallRepository.create()
+        callRepository.dispatchCallAction(
+            CallAction.Disconnect(
+                displayName = call.displayName,
+                phone = call.phone,
+                roomAlias = call.roomAlias,
+                cause = DisconnectCause(DisconnectCause.REMOTE)
+            )
+        )
+    }
+
+    private fun onCallAnswered(call: Call) {
+        val callRepository = CallRepository.instance ?: CallRepository.create()
+        callRepository.dispatchCallAction(
+            CallAction.Answer(
+                displayName = call.displayName,
+                phone = call.phone,
+                roomAlias = call.roomAlias
+            )
+        )
+    }
+
     companion object {
         private const val TAG = "PushNotificationService"
-        private const val CALL_END = "call_end"
+    }
+
+    private enum class PushType() {
+        CALL_START,
+        CALL_END,
+        CALL_ANSWERED
     }
 }

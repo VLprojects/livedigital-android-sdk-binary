@@ -1,52 +1,41 @@
 package space.livedigital.example.calls.entities
 
-import android.os.Parcelable
 import android.telecom.DisconnectCause
-import androidx.core.telecom.CallAttributesCompat
-import kotlinx.coroutines.channels.Channel
-import kotlinx.parcelize.Parcelize
+import kotlin.time.TimeMark
 
-sealed interface CallState {
-    object None : CallState
+internal sealed class CallState(open val call: Call) {
 
-    /**
-     * Represents a registered call with the telecom stack with the values provided by the
-     * Telecom SDK
-     */
-    data class Registered(
-        val callAttributes: CallAttributesCompat,
+    data object Idle : CallState(call = Call.Idle)
+
+    data class Incoming(
+        override val call: Call
+    ) : CallState(call)
+
+    data class Outgoing(
+        override val call: Call,
         val isMuted: Boolean,
-        val roomAlias: String,
-        val errorCode: Int?,
-        val isOnHold: Boolean,
-        val isActive: Boolean,
-        internal val actionSource: Channel<CallAction>,
-    ) : CallState {
-        fun isIncoming() = callAttributes.direction == CallAttributesCompat.DIRECTION_INCOMING
+    ) : CallState(call)
 
-        fun processAction(action: CallAction): Boolean = actionSource.trySend(action).isSuccess
-    }
+    data class Active(
+        override val call: Call,
+        val isMuted: Boolean,
+        val startTimeMark: TimeMark
+    ) : CallState(call)
 
-    /**
-     * Represent a previously registered call that was disconnected
-     */
-    data class Unregistered(
-        val callAttributes: CallAttributesCompat,
-        val disconnectCause: DisconnectCause,
-        val roomAlias: String,
-    ) : CallState
+    data class Answered(
+        override val call: Call,
+        val isMuted: Boolean,
+    ) : CallState(call)
+
+    data class Missed(
+        override val call: Call,
+        val disconnectCause: DisconnectCause
+    ) : CallState(call)
+
+    data class Ended(
+        override val call: Call,
+        val wasActive: Boolean,
+        val disconnectCause: DisconnectCause
+    ) : CallState(call)
 }
 
-sealed interface CallAction : Parcelable {
-    @Parcelize
-    object Answer : CallAction
-
-    @Parcelize
-    data class Disconnect(val cause: DisconnectCause) : CallAction
-
-    @Parcelize
-    object Activate : CallAction
-
-    @Parcelize
-    data class ToggleMute(val isMute: Boolean) : CallAction
-}

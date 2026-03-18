@@ -1,9 +1,8 @@
 package space.livedigital.example.utils
 
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-object JsonUtils {
+internal object JsonUtils {
 
     inline fun <reified T> encodeToJsonString(value: T): String {
         return getKotlinSerializationJson().encodeToString(value)

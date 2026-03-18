@@ -4,11 +4,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -16,11 +16,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
-
-
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
 
     <uses-feature
         android:name="android.hardware.telephony"
@@ -45,6 +40,14 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".calls.CallActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
         <service
             android:name=".calls.services.PushNotificationService"
             android:exported="false">
@@ -54,29 +57,27 @@
         </service>
 
         <service
-            android:name=".calls.telecom.services.CallConnectionService"
-            android:exported="true"
-            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
+            android:name=".calls.services.CallConnectionService"
+            android:exported="false"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+            android:foregroundServiceType="microphone|phoneCall">
             <intent-filter>
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
         </service>
 
-        <activity
-            android:name=".calls.CallActivity"
-            android:exported="true"
-            android:launchMode="singleInstance"
-            android:showOnLockScreen="true"
-            android:showWhenLocked="true"
-            android:turnScreenOn="true" />
+        <service
+            android:name=".calls.services.CallConnectionAudioService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
 
         <service
-            android:name=".calls.internal.service.CallService"
+            android:name=".calls.services.CallService"
             android:exported="false"
             android:foregroundServiceType="phoneCall|microphone" />
 
         <receiver
-            android:name=".calls.internal.broadcasts.CallBroadcast"
+            android:name=".calls.broadcasts.CallBroadcast"
             android:exported="false" />
     </application>
 </manifest>

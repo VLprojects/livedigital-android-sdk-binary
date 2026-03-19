@@ -165,8 +165,10 @@ internal class CallNotificationManager(private val context: Context) {
 
         return NotificationCompat.Builder(context, ONGOING_CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_push_notification)
-            .setContentTitle("Microphone is active")
-            .setContentText("Call is using audio in background")
+            .setContentTitle(context.getString(R.string.label_microphone_is_active))
+            .setContentText(
+                context.getString(R.string.description_call_is_using_audio_in_background)
+            )
             .setContentIntent(pendingContentIntent)
             .setOngoing(true)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)

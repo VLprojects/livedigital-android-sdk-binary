@@ -19,7 +19,31 @@ internal class CallRepository private constructor() {
         _currentCallState.update { callState ->
             when (callAction) {
                 is CallAction.Activate -> {
-                    val wasMuted = (callState as? CallState.Answered)?.isMuted
+                    val wasMuted = (callState as? CallState.Outgoing)?.isMuted
+                    CallState.Activated(
+                        call = Call.Actual(
+                            displayName = callAction.displayName,
+                            phone = callAction.phone,
+                            roomAlias = callAction.roomAlias
+                        ),
+                        isMuted = wasMuted ?: true
+                    )
+                }
+
+                is CallAction.Answer -> {
+                    CallState.Answered(
+                        call = Call.Actual(
+                            displayName = callAction.displayName,
+                            phone = callAction.phone,
+                            roomAlias = callAction.roomAlias
+                        ),
+                        isMuted = true
+                    )
+                }
+
+                is CallAction.PlaceActiveCall -> {
+                    val wasMuted = (callState as? CallState.Activated)?.isMuted
+
                     CallState.Active(
                         call = Call.Actual(
                             displayName = callAction.displayName,
@@ -28,19 +52,6 @@ internal class CallRepository private constructor() {
                         ),
                         isMuted = wasMuted ?: true,
                         startTimeMark = TimeSource.Monotonic.markNow()
-                    )
-                }
-
-                is CallAction.Answer -> {
-                    val wasMuted = (callState as? CallState.Outgoing)?.isMuted
-
-                    CallState.Answered(
-                        call = Call.Actual(
-                            displayName = callAction.displayName,
-                            phone = callAction.phone,
-                            roomAlias = callAction.roomAlias
-                        ),
-                        isMuted = wasMuted ?: true
                     )
                 }
 

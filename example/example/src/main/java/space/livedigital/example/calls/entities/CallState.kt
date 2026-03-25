@@ -22,6 +22,11 @@ internal sealed class CallState(open val call: Call) {
         val startTimeMark: TimeMark
     ) : CallState(call)
 
+    data class Activated(
+        override val call: Call,
+        val isMuted: Boolean
+    ) : CallState(call)
+
     data class Answered(
         override val call: Call,
         val isMuted: Boolean,

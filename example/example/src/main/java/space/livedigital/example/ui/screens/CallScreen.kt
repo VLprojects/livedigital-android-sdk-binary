@@ -52,6 +52,10 @@ internal fun CallScreen(
             )
         }
 
+        is CallState.Activated -> {
+            ActivatedCallContentComponent(callState = callState)
+        }
+
         is CallState.Answered -> {
             AnsweredCallContentComponent(callState = callState)
         }
@@ -187,6 +191,41 @@ private fun ActiveCallContentComponent(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ActivatedCallContentComponent(callState: CallState.Activated) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .gradientBackground(
+                listOf(
+                    AppTheme.colorSystem.accent02,
+                    AppTheme.colorSystem.accent01
+                )
+            )
+            .safeDrawingPadding()
+            .padding(vertical = 24.dp, horizontal = 16.dp)
+    ) {
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 22.dp)
+        )
+
+        ContainerComponent(
+            contentPadding = PaddingValues(
+                horizontal = 32.dp,
+                vertical = 16.dp
+            )
+        ) {
+            Text(text = callState.call.displayName)
+        }
+
+        Spacer(modifier = Modifier.weight(1.0f))
     }
 }
 

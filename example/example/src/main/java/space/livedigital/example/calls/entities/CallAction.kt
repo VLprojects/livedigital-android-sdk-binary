@@ -28,6 +28,13 @@ internal sealed interface CallAction : Parcelable {
     ) : CallAction
 
     @Parcelize
+    data class PlaceActiveCall(
+        val displayName: String,
+        val phone: String,
+        val roomAlias: String
+    ) : CallAction
+
+    @Parcelize
     data class ToggleMute(val isMute: Boolean) : CallAction
 
     @Parcelize

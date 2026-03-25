@@ -33,7 +33,10 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import space.livedigital.example.calls.broadcasts.CallBroadcast
 import space.livedigital.example.calls.constants.CallConstants
-import space.livedigital.example.calls.entities.CallAction
+import space.livedigital.example.calls.entities.CallAction.Activate
+import space.livedigital.example.calls.entities.CallAction.Answer
+import space.livedigital.example.calls.entities.CallAction.Disconnect
+import space.livedigital.example.calls.entities.CallAction.PlaceActiveCall
 import space.livedigital.example.calls.entities.CallState
 import space.livedigital.example.calls.repositories.CallRepository
 
@@ -47,7 +50,7 @@ internal class CallService : LifecycleService() {
     val onIsCallAnswered: suspend (type: Int) -> Unit = {
         repository?.currentCallState?.value?.let { callState ->
             repository?.dispatchCallAction(
-                CallAction.Answer(
+                Answer(
                     displayName = callState.call.displayName,
                     phone = callState.call.phone,
                     roomAlias = callState.call.roomAlias
@@ -62,7 +65,7 @@ internal class CallService : LifecycleService() {
     val onIsCallDisconnected: suspend (cause: DisconnectCause) -> Unit = { disconnectCause ->
         repository?.currentCallState?.value?.let { callState ->
             repository?.dispatchCallAction(
-                CallAction.Disconnect(
+                Disconnect(
                     displayName = callState.call.displayName,
                     phone = callState.call.phone,
                     roomAlias = callState.call.roomAlias,
@@ -79,7 +82,7 @@ internal class CallService : LifecycleService() {
     val onIsCallActive: suspend () -> Unit = {
         repository?.currentCallState?.value?.let { callState ->
             repository?.dispatchCallAction(
-                CallAction.Activate(
+                Activate(
                     displayName = callState.call.displayName,
                     phone = callState.call.phone,
                     roomAlias = callState.call.roomAlias
@@ -150,7 +153,25 @@ internal class CallService : LifecycleService() {
                         val callIntent = Intent(applicationContext, CallBroadcast::class.java)
                         callIntent.putExtra(
                             CallConstants.EXTRA_ACTION,
-                            CallAction.Activate(
+                            PlaceActiveCall(
+                                displayName = callState.call.displayName,
+                                phone = callState.call.phone,
+                                roomAlias = callState.call.roomAlias
+                            ),
+                        )
+                        sendBroadcast(callIntent)
+                    }
+                }
+
+                is CallState.Activated -> {
+                    stopRingtoneAndVibration()
+                    val result = callControlScope?.setActive()
+
+                    if (result is CallControlResult.Success) {
+                        val callIntent = Intent(applicationContext, CallBroadcast::class.java)
+                        callIntent.putExtra(
+                            CallConstants.EXTRA_ACTION,
+                            PlaceActiveCall(
                                 displayName = callState.call.displayName,
                                 phone = callState.call.phone,
                                 roomAlias = callState.call.roomAlias

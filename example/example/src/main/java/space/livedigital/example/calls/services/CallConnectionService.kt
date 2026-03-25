@@ -31,7 +31,7 @@ internal class CallConnectionService : ConnectionService() {
     private val listener = object : CallConnection.CallStateListener {
         override fun onAnswer(call: Call) {
             repository?.dispatchCallAction(
-                CallAction.Activate(
+                CallAction.Answer(
                     displayName = call.displayName,
                     phone = call.phone,
                     roomAlias = call.roomAlias
@@ -159,8 +159,29 @@ internal class CallConnectionService : ConnectionService() {
 
     private fun updateConnectionState(callState: CallState) {
         when (callState) {
-            is CallState.Active -> {
+            is CallState.Answered -> {
                 connection?.setActive()
+                repository?.dispatchCallAction(
+                    CallAction.PlaceActiveCall(
+                        displayName = callState.call.displayName,
+                        phone = callState.call.phone,
+                        roomAlias = callState.call.roomAlias
+                    )
+                )
+            }
+
+            is CallState.Activated -> {
+                connection?.setActive()
+                repository?.dispatchCallAction(
+                    CallAction.PlaceActiveCall(
+                        displayName = callState.call.displayName,
+                        phone = callState.call.phone,
+                        roomAlias = callState.call.roomAlias
+                    )
+                )
+            }
+
+            is CallState.Active -> {
                 val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     putExtra(
@@ -192,16 +213,6 @@ internal class CallConnectionService : ConnectionService() {
                 stopService(Intent(applicationContext, CallConnectionAudioService::class.java))
                 connection?.setDisconnected(DisconnectCause(DisconnectCause.MISSED))
                 connection?.destroy()
-            }
-
-            is CallState.Answered -> {
-                repository?.dispatchCallAction(
-                    CallAction.Activate(
-                        displayName = callState.call.displayName,
-                        phone = callState.call.phone,
-                        roomAlias = callState.call.roomAlias
-                    )
-                )
             }
 
             else -> Unit

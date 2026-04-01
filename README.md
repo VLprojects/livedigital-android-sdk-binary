@@ -35,6 +35,7 @@ SDK использует зависимости:
 | Kotlinx Serialization JSON | `org.jetbrains.kotlinx:kotlinx-serialization-json` | 1.8.0 |
 | Retrofit | `com.squareup.retrofit2:retrofit` | 2.11.0 |
 | Retrofit Serialization Converter | `com.squareup.retrofit2:converter-kotlinx-serialization` | 2.11.0 |
+| OkHttp3 Logging Interceptor | `com.squareup.okhttp3:logging-interceptor` | 4.12.0 |
 | Socket.IO Client | `io.socket:socket.io-client` | 2.1.2 |
 | ML Kit Segmentation Selfie | `com.google.mlkit:segmentation-selfie` | 16.0.0-beta6 |
 

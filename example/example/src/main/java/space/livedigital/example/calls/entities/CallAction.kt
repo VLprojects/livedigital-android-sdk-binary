@@ -50,4 +50,11 @@ internal sealed interface CallAction : Parcelable {
         val phone: String,
         val roomAlias: String
     ) : CallAction
+
+    @Parcelize
+    data class PlaceMissedCall(
+        val displayName: String,
+        val phone: String,
+        val roomAlias: String
+    ) : CallAction
 }

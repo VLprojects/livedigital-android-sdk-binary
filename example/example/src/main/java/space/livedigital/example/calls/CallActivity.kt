@@ -79,7 +79,7 @@ internal class CallActivity : ComponentActivity() {
                 handleAnswerAction(action)
             }
 
-            is CallActivityAction.PlaceOutgoingCall -> {
+            is CallActivityAction.PlaceMissedCall -> {
                 handlePlaceOutgoingCallAction(action)
             }
 
@@ -117,11 +117,11 @@ internal class CallActivity : ComponentActivity() {
         sendBroadcast(callIntent)
     }
 
-    private fun handlePlaceOutgoingCallAction(action: CallActivityAction.PlaceOutgoingCall) {
+    private fun handlePlaceOutgoingCallAction(action: CallActivityAction.PlaceMissedCall) {
         val callIntent = Intent(applicationContext, CallBroadcast::class.java)
         callIntent.putExtra(
             CallConstants.EXTRA_ACTION,
-            CallAction.PlaceOutgoingCall(
+            CallAction.PlaceMissedCall(
                 displayName = action.callerName,
                 phone = action.phoneNumber,
                 roomAlias = action.roomAlias

@@ -186,6 +186,25 @@ internal class CallViewModel(
                 })
             }
 
+            is CallState.Missed -> {
+                timer?.cancel()
+                timer = null
+
+                mutableState.update {
+                    it.copy(callDuration = Duration.ZERO)
+                }
+
+                liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
+                    override fun onDestroyed() {
+                        viewModelScope.launch {
+                            stopLocalAudio()
+                            session = null
+                            apiClient.logout()
+                        }
+                    }
+                })
+            }
+
             else -> {
                 mutableState.update {
                     it.copy(callDuration = Duration.ZERO)

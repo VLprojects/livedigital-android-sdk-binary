@@ -186,7 +186,7 @@ internal class CallNotificationManager(private val context: Context) {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
             putExtra(
                 CallConstants.EXTRA_ACTION,
-                CallActivityAction.PlaceOutgoingCall(
+                CallActivityAction.PlaceMissedCall(
                     callerName = callState.call.displayName,
                     phoneNumber = callState.call.phone,
                     roomAlias = callState.call.roomAlias

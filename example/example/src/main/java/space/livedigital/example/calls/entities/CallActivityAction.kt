@@ -9,7 +9,7 @@ internal sealed interface CallActivityAction : Parcelable {
     data class Answer(val call: Call) : CallActivityAction
 
     @Parcelize
-    data class PlaceOutgoingCall(
+    data class PlaceMissedCall(
         val callerName: String,
         val phoneNumber: String,
         val roomAlias: String

@@ -1,5 +1,6 @@
 package space.livedigital.example.calls.repositories
 
+import android.telecom.DisconnectCause
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -116,6 +117,17 @@ internal class CallRepository private constructor() {
                     }
 
                     callState
+                }
+
+                is CallAction.PlaceMissedCall -> {
+                    CallState.Missed(
+                        call = Call.Actual(
+                            displayName = callAction.displayName,
+                            phone = callAction.phone,
+                            roomAlias = callAction.roomAlias
+                        ),
+                        disconnectCause = DisconnectCause(DisconnectCause.MISSED)
+                    )
                 }
             }
         }

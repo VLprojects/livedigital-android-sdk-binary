@@ -38,6 +38,7 @@ SDK использует зависимости:
 | OkHttp3 Logging Interceptor | `com.squareup.okhttp3:logging-interceptor` | 4.12.0 |
 | Socket.IO Client | `io.socket:socket.io-client` | 2.1.2 |
 | ML Kit Segmentation Selfie | `com.google.mlkit:segmentation-selfie` | 16.0.0-beta6 |
+| Protobuf Kotlin Lite | `com.google.protobuf:protobuf-kotlin-lite` | 4.33.3 |
 
 ## Подключение
 
@@ -59,7 +60,7 @@ dependencyResolutionManagement {
 
 ```
 dependencies {
-    implementation("com.github.vlprojects:livedigital-android-sdk:1.5.0")
+    implementation("com.github.vlprojects:livedigital-android-sdk:1.6.0")
 }
 ```
 

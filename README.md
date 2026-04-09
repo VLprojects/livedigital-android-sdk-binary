@@ -60,7 +60,7 @@ dependencyResolutionManagement {
 
 ```
 dependencies {
-    implementation("com.github.vlprojects:livedigital-android-sdk:1.6.0")
+    implementation("com.github.vlprojects:livedigital-android-sdk:1.6.1")
 }
 ```
 

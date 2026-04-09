@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>LiveDigital Android SDK</title>
+    <link href="images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="scripts/sourceset_dependencies.js" async="async"></script>
+<link href="styles/style.css" rel="Stylesheet">
+<link href="styles/main.css" rel="Stylesheet">
+<link href="styles/prism.css" rel="Stylesheet">
+<link href="styles/logo-styles.css" rel="Stylesheet">
+<link href="ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="ui-kit/ui-kit.min.js" defer="defer"></script>
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="index.html" tabindex="1">
+                    LiveDigital Android SDK
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
+                        data-filter=":sdk/main">androidJvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":sdk/main"
+                                       data-filter=":sdk/main"/>
+                                <span class="checkbox--icon"></span>
+                                androidJvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    LiveDigital Android SDK
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" id="content" pageIds="LiveDigital Android SDK::////PointingToDeclaration//-1715042111">
+  <div class="breadcrumbs"></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Live</span><wbr></wbr><span><span>Digital</span></span> <span><span>Android</span></span> <span><span>SDK</span></span></h1>
+    <div class="platform-hinted UnderCoverText" data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sdk/main"><h2 class="">Введение</h2><p class="paragraph">livedigital SDK — клиент сервиса <a href="https://docs.livedigital.space">livedigital</a>, поставляемый в формате толстого бинарного файла. SDK реализует:</p><ul><li><p class="paragraph">сигналинг (подключение, обмен командами с медиа-сервером)</p></li><li><p class="paragraph">логику восстановления соединения при реконнекте</p></li><li><p class="paragraph">анализ качества соединения</p></li><li><p class="paragraph">работу с входящими и исходящими медиа-треками</p></li><li><p class="paragraph">работу с видео-слоями</p></li><li><p class="paragraph">размытие и замену фона для исходящего видео</p></li><li><p class="paragraph">логику выделения активного спикера</p></li><li><p class="paragraph">транспорт для передачи команд и мета-данных специфичных для приложения</p></li></ul><h2 class="">Совместимость</h2><ul><li><p class="paragraph">устройства Android / Android 9+</p></li><li><p class="paragraph">эмуляторы Android / Android 9+</p></li></ul><p class="paragraph">Android target sdk = 15 (35 api)</p><p class="paragraph">SDK поддерживает работу на эмуляторах, однако полноценное тестирование следует проводить на реальном устройстве, т.к. имплементация работы с камерой, размытие фона, набор поддерживаемых кодеков и видео-форматов могут отличаться.</p></div></div>
+  </div>
+  <h2 class="">Packages</h2>
+  <div class="table"><a data-name="1117958898%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk" id="1117958898%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk/index.html">space.livedigital.sdk</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1117958898%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="-1454288953%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.channel" id="-1454288953%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.channel/index.html">space.livedigital.sdk.channel</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1454288953%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="-2011374519%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.data.entities" id="-2011374519%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.data.entities/index.html">space.livedigital.sdk.data.entities</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2011374519%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="497800265%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.data.entities.channel_state_consistency" id="497800265%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.data.entities.channel_state_consistency/index.html">space.livedigital.sdk.data.entities.channel_state_consistency</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="497800265%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="675549528%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.data.entities.permission" id="675549528%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.data.entities.permission/index.html">space.livedigital.sdk.data.entities.permission</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="675549528%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="-430500721%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.data.entities.video_layers" id="-430500721%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.data.entities.video_layers/index.html">space.livedigital.sdk.data.entities.video_layers</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-430500721%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="75853899%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.debug.logger" id="75853899%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.debug.logger/index.html">space.livedigital.sdk.debug.logger</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="75853899%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="2101190850%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.engine" id="2101190850%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.engine/index.html">space.livedigital.sdk.engine</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2101190850%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="303823848%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.media" id="303823848%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.media/index.html">space.livedigital.sdk.media</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="303823848%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="1795978704%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.media.audio" id="1795978704%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.media.audio/index.html">space.livedigital.sdk.media.audio</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1795978704%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="1455995445%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.media.video" id="1455995445%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.media.video/index.html">space.livedigital.sdk.media.video</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1455995445%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="99867296%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.media.video.visual_effects" id="99867296%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.media.video.visual_effects/index.html">space.livedigital.sdk.media.video.visual_effects</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="99867296%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="1172490981%2FPackages%2F-1715042111" anchor-label="space.livedigital.sdk.view" id="1172490981%2FPackages%2F-1715042111" data-filterable-set=":sdk/main"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":sdk/main" data-filterable-set=":sdk/main">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-live-digital -android -s-d-k/space.livedigital.sdk.view/index.html">space.livedigital.sdk.view</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1172490981%2FPackages%2F-1715042111"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

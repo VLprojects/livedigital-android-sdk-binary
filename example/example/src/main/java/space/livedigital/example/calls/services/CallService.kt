@@ -396,6 +396,7 @@ internal class CallService : LifecycleService() {
         } else {
             val vib = getSystemService(Vibrator::class.java)
                 ?: getSystemService(VIBRATOR_SERVICE) as Vibrator
+            vibrator = vib
             vib.vibrate(effect, vibrationAttributes)
         }
     }

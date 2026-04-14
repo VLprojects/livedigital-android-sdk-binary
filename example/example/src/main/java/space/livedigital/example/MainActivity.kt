@@ -83,7 +83,16 @@ internal class MainActivity : AppCompatActivity() {
                     onCallAccountSwitchClicked = ::openPhoneAccountsSettings,
                     onXiaomiDialerSettingsButtonClicked = {
                         val intent = getPermissionManagerIntent(this)
-                        startActivity(intent)
+                        try {
+                            if (packageManager.resolveActivity(
+                                    intent,
+                                    PackageManager.MATCH_DEFAULT_ONLY
+                                ) != null
+                            ) {
+                                startActivity(intent)
+                            }
+                        } catch (e: Exception) {
+                        }
                     }
                 )
             }

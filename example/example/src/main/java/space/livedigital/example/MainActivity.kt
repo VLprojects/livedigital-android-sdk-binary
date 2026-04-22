@@ -17,9 +17,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.LifecycleStartEffect
+import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.ui.theme.AppTheme
 import space.livedigital.sdk.data.entities.MediaLabel
@@ -69,9 +70,15 @@ internal class MainActivity : AppCompatActivity() {
                 }
             }
 
-            LaunchedEffect(Unit) {
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
+            val scope = rememberCoroutineScope()
+
+            LifecycleStartEffect(Unit) {
+                val eventsJob = scope.launch {
                     observeEvents()
+                }
+
+                onStopOrDispose {
+                    eventsJob.cancel()
                 }
             }
 

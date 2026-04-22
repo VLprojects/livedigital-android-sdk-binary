@@ -2,10 +2,13 @@ package space.livedigital.example
 
 import android.Manifest
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.widget.ArrayAdapter
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.collectAsState
@@ -17,6 +20,7 @@ import com.sequenia.permissionchecker.check
 import com.sequenia.permissionchecker.registerPermissionChecker
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import space.livedigital.example.ui.theme.AppTheme
 import space.livedigital.sdk.data.entities.MediaLabel
 
 // To check example, you can use link in browser:
@@ -30,6 +34,12 @@ internal class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            navigationBarStyle = SystemBarStyle.light(
+                Color.TRANSPARENT,
+                Color.TRANSPARENT
+            )
+        )
         checkPostNotificationPermission(savedInstanceState)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -40,34 +50,36 @@ internal class MainActivity : AppCompatActivity() {
         }
         setContent {
             val state by viewModel.state.collectAsState()
-            MainScreen(
-                state = state,
-                onRestartClicked = { viewModel.onRestartButtonClicked() },
-                onCameraClicked = {
-                    checkPermission(
-                        listOf(Manifest.permission.CAMERA),
-                        viewModel::onCameraButtonClicked
-                    )
-                },
-                onMicrophoneClicked = {
-                    checkPermission(
-                        listOf(Manifest.permission.RECORD_AUDIO),
-                        viewModel::onMicrophoneButtonClicked
-                    )
-                },
-                onFlipCameraClick = viewModel::onFlipCameraButtonClicked,
-                onAudioDeviceClick = {
-                    val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        listOf(Manifest.permission.BLUETOOTH_CONNECT)
-                    } else {
-                        emptyList()
-                    }
+            AppTheme {
+                MainScreen(
+                    state = state,
+                    onRestartClicked = { viewModel.onRestartButtonClicked() },
+                    onCameraClicked = {
+                        checkPermission(
+                            listOf(Manifest.permission.CAMERA),
+                            viewModel::onCameraButtonClicked
+                        )
+                    },
+                    onMicrophoneClicked = {
+                        checkPermission(
+                            listOf(Manifest.permission.RECORD_AUDIO),
+                            viewModel::onMicrophoneButtonClicked
+                        )
+                    },
+                    onFlipCameraClick = viewModel::onFlipCameraButtonClicked,
+                    onAudioDeviceClick = {
+                        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            listOf(Manifest.permission.BLUETOOTH_CONNECT)
+                        } else {
+                            emptyList()
+                        }
 
-                    checkPermission(permissions, viewModel::onAudioDeviceChooseRequired)
-                },
-                onAudioDeviceSelected = viewModel::onAudioDeviceSelected,
-                onAudioDeviceDismiss = viewModel::onAudioDeviceChooseDismissed
-            )
+                        checkPermission(permissions, viewModel::onAudioDeviceChooseRequired)
+                    },
+                    onAudioDeviceSelected = viewModel::onAudioDeviceSelected,
+                    onAudioDeviceDismiss = viewModel::onAudioDeviceChooseDismissed
+                )
+            }
         }
     }
 

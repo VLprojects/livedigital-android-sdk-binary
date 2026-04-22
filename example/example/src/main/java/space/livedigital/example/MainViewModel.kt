@@ -50,6 +50,10 @@ import space.livedigital.sdk.media.video.CameraManagerDelegate
 import space.livedigital.sdk.media.video.CameraPosition
 import space.livedigital.sdk.media.video.VideoSource
 import space.livedigital.sdk.media.video.visual_effects.VideoSourceType
+import java.util.Timer
+import kotlin.concurrent.timer
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource.Monotonic.markNow
 
@@ -70,6 +74,7 @@ class MainViewModel() : ViewModel(), KoinComponent {
     private var session: ChannelSession? = null
     private var liveDigitalEngine: LiveDigitalEngine? = null
     private var isLocalVideoPaused = false
+    private var currentTimer: Timer? = null
 
     fun onPostNotificationsPermissionGranted() {
         viewModelScope.launch {
@@ -156,6 +161,11 @@ class MainViewModel() : ViewModel(), KoinComponent {
         authorize()
 
         val room = getRoom() ?: return
+
+        mutableState.update {
+            it.copy(roomName = room.name)
+        }
+
         val channelId = room.channelId
         if (channelId == null) {
             Log.e(TAG, "Error getting channelId from: $room")
@@ -495,10 +505,24 @@ class MainViewModel() : ViewModel(), KoinComponent {
             override fun disconnectedFromChannel() {}
 
             override fun onStatusChanged(status: ChannelSessionStatus) {
+                mutableState.update {
+                    it.copy(isSessionStarted = status == ChannelSessionStatus.STARTED)
+                }
+
                 when (status) {
                     ChannelSessionStatus.RESTARTING -> {}
                     ChannelSessionStatus.STARTING -> {}
-                    ChannelSessionStatus.STARTED -> {}
+                    ChannelSessionStatus.STARTED -> {
+                        currentTimer?.cancel()
+                        val callStartTime = markNow()
+                        currentTimer =
+                            timer(name = "call timer", period = 1.seconds.inWholeMilliseconds) {
+                                mutableState.update {
+                                    mutableState.value.copy(callDuration = callStartTime.elapsedNow())
+                                }
+                            }
+                    }
+
                     ChannelSessionStatus.STOPPED -> restartSession()
                     ChannelSessionStatus.STOPPING -> {}
                 }
@@ -623,6 +647,14 @@ class MainViewModel() : ViewModel(), KoinComponent {
                     stopLocalVideo()
                     stopLocalAudio()
                     session = null
+                    currentTimer?.cancel()
+                    currentTimer = null
+                    mutableState.update {
+                        it.copy(
+                            callDuration = null,
+                            remotePeers = emptyList()
+                        )
+                    }
                     apiClient.logout()
                     startConference()
                 }
@@ -655,7 +687,10 @@ data class ScreenState(
     val isAudioDevicePickerShown: Boolean = false,
     val availableAudioDeviceNames: List<String> = emptyList(),
     val audioDeviceIndex: Int = 0,
-    val localCameraPosition: CameraPosition = CameraPosition.BACK
+    val localCameraPosition: CameraPosition = CameraPosition.BACK,
+    val roomName: String? = null,
+    val callDuration: Duration? = null,
+    val isSessionStarted: Boolean = false
 )
 
 sealed interface ScreenEvent {

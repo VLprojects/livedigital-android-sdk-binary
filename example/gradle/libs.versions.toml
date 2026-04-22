@@ -6,7 +6,7 @@ accompanist = "0.32.0"
 livedigitalSdk = "1.6.1"
 
 activityCompose = "1.10.0"
-composeBom = "2025.02.00"
+composeBom = "2026.03.01"
 
 retrofit = "2.11.0"
 loggingInterceptor = "4.12.0"

@@ -1,7 +1,6 @@
 package space.livedigital.example
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,22 +25,27 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onVisibilityChanged
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import space.livedigital.example.ui.components.buttons.ButtonComponent
+import space.livedigital.example.ui.components.containers.ContainerComponent
+import space.livedigital.example.ui.extensions.gradientBackground
+import space.livedigital.example.ui.theme.AppTheme
 import space.livedigital.sdk.data.entities.MediaLabel
 import space.livedigital.sdk.data.entities.Peer
-import space.livedigital.sdk.media.video.CameraPosition
 import space.livedigital.sdk.view.PeerView
+import kotlin.time.Duration
 
 @Composable
 fun MainScreen(
@@ -54,143 +58,184 @@ fun MainScreen(
     onAudioDeviceSelected: (String) -> Unit,
     onAudioDeviceDismiss: () -> Unit
 ) {
-    val listState = rememberLazyListState()
+    val peers = remember(state.remotePeers) {
+        buildPeersList(state)
+    }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .background(Color.Black)
-        ) {
-            val peers = remember(state.remotePeers) {
-                buildPeersList(state)
-            }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .gradientBackground(
+                listOf(
+                    AppTheme.colorSystem.accent02,
+                    AppTheme.colorSystem.accent01
+                )
+            )
+    ) {
+        val pagerState = rememberPagerState {
+            peers.size
+        }
+        HorizontalPager(
+            state = pagerState,
+            key = { index ->
+                "${peers[index].peerWithUpdateTime.peer.id.value}:${peers[index].videoContentType}"
+            }) { pageIndex ->
+            RemotePeerComponent(peers[pageIndex])
+        }
 
-            val visiblePeerIndices by remember {
-                derivedStateOf {
-                    val layoutInfo = listState.layoutInfo
-                    val viewportStart = layoutInfo.viewportStartOffset
-                    val viewportEnd = layoutInfo.viewportEndOffset
+        if (state.roomName != null) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .safeDrawingPadding()
+                    .padding(top = 46.dp, start = 16.dp, end = 16.dp)
+            ) {
+                ContainerComponent(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    val peer = peers.getOrNull(pagerState.currentPage)?.peerWithUpdateTime?.peer
+                    val text = peer?.let {
+                        "${state.roomName}\n" +
+                                "${peer.appData.optString("name", "User")}\n" +
+                                "ID: ${peer.id.value}"
+                    } ?: state.roomName
 
-                    layoutInfo.visibleItemsInfo.filter { item ->
-                        val itemStart = item.offset
-                        val itemEnd = item.offset + item.size
+                    Text(text = text, textAlign = TextAlign.Center)
+                }
 
-                        val visibleWidth =
-                            minOf(itemEnd, viewportEnd) - maxOf(itemStart, viewportStart)
-                        val visibilityRatio = visibleWidth.toFloat() / item.size
+                when {
+                    !state.isSessionStarted -> {
+                        ContainerComponent(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            Text(
+                                text = "Connecting.."
+                            )
+                        }
+                    }
 
-                        visibilityRatio > 0.1f
-                    }.map { it.index }
+                    state.callDuration != null -> {
+                        ContainerComponent(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            Text(
+                                text = formatDuration(state.callDuration)
+                            )
+                        }
+                    }
                 }
             }
+        }
 
-            LazyRow(
-                state = listState,
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                itemsIndexed(
-                    items = peers,
-                    key = { _, peer ->
-                        "${peer.peerWithUpdateTime.peer.id}:${peer.videoContentType}"
-                    }) { index, peer ->
-                    RemotePeerItem(
-                        peerWithMedia = peer,
-                        isVisibleOnScreen = index in visiblePeerIndices,
-                        modifier = Modifier.fillParentMaxSize()
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 16.dp, vertical = 24.dp)
+                .safeDrawingPadding()
+        ) {
+            if (state.isLocalVideoOn) {
+                Box(modifier = Modifier.align(Alignment.End)) {
+                    AndroidView(
+                        factory = { context ->
+                            PeerView(context).apply {
+                                scaleType = PeerView.ScaleType.CENTER_CROP
+                            }
+                        },
+                        update = { view ->
+                            if (state.localVideoSource != null && state.isLocalVideoOn) {
+                                view.renderVideoSource(state.localVideoSource)
+                            }
+                        },
+                        onRelease = { view ->
+                            if (state.localVideoSource != null) {
+                                view.stopRenderingVideoSource(state.localVideoSource)
+                            }
+                            view.release()
+                        },
+                        modifier = Modifier
+                            .size(120.dp, 180.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .border(
+                                2.dp,
+                                shape = RoundedCornerShape(20.dp),
+                                color = AppTheme.colorSystem.contrast
+                            )
+                    )
+
+                    ButtonComponent(
+                        onClick = onFlipCameraClick,
+                        style = AppTheme.buttonSystem.tertiaryButtonStyle.copy(
+                            normalContentColor = AppTheme.colorSystem.contrast
+                        ),
+                        icon = ImageVector.vectorResource(R.drawable.ic_swap_camera),
+                        contentPaddingValues = PaddingValues(all = 8.dp),
+                        modifier = Modifier.align(Alignment.TopEnd)
                     )
                 }
             }
 
-            AndroidView(
-                factory = { context ->
-                    PeerView(context)
-                },
-                update = { view ->
-                    state.localVideoSource?.let { videoSource ->
-                        if (state.isLocalVideoOn) {
-                            view.renderVideoSource(videoSource)
+            ContainerComponent(contentPadding = PaddingValues(all = 12.dp)) {
+                Row {
+                    ButtonComponent(
+                        onClick = onAudioDeviceClick,
+                        style = if (!state.isAudioDevicePickerShown) {
+                            AppTheme.buttonSystem.tertiaryButtonStyle.copy(
+                                normalContentColor = AppTheme.colorSystem.contrast
+                            )
                         } else {
-                            view.stopRenderingVideoSource(videoSource)
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(24.dp)
-                    .size(110.dp, 200.dp),
-                onRelease = { it.release() }
-            )
-        }
+                            AppTheme.buttonSystem.primaryButtonStyle
+                        },
+                        icon = ImageVector.vectorResource(R.drawable.ic_sound)
+                    )
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFFA8072))
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(72.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ControlButton(
-                    iconRes = R.drawable.ic_outline_autorenew_24,
-                    text = "Restart",
-                    onClick = onRestartClicked
-                )
+                    Spacer(modifier = Modifier.weight(1.0f))
 
-                val cameraIcon = if (state.isLocalVideoOn)
-                    R.drawable.ic_baseline_videocam_24 else R.drawable.ic_baseline_videocam_off_24
-                ControlButton(
-                    iconRes = cameraIcon,
-                    text = "Camera",
-                    onClick = onCameraClicked
-                )
+                    ButtonComponent(
+                        onClick = onCameraClicked,
+                        style = if (!state.isLocalVideoOn) {
+                            AppTheme.buttonSystem.tertiaryButtonStyle
+                        } else {
+                            AppTheme.buttonSystem.primaryButtonStyle
+                        },
+                        icon = ImageVector.vectorResource(
+                            if (!state.isLocalVideoOn) {
+                                R.drawable.ic_camera_off
+                            } else {
+                                R.drawable.ic_camera_on
+                            }
+                        )
+                    )
 
-                val micIcon = if (state.isLocalAudioOn)
-                    R.drawable.ic_baseline_mic_24 else R.drawable.ic_baseline_mic_off_24
-                ControlButton(
-                    iconRes = micIcon,
-                    text = "Mic",
-                    onClick = onMicrophoneClicked
-                )
-            }
+                    Spacer(modifier = Modifier.weight(1.0f))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(72.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ControlButton(
-                    iconRes = R.drawable.ic_outline_audiotrack_24,
-                    text = "Switch audio",
-                    textSize = 15.sp,
-                    onClick = onAudioDeviceClick
-                )
+                    ButtonComponent(
+                        onClick = onMicrophoneClicked,
+                        style = if (!state.isLocalAudioOn) {
+                            AppTheme.buttonSystem.tertiaryButtonStyle
+                        } else {
+                            AppTheme.buttonSystem.primaryButtonStyle
+                        },
+                        icon = ImageVector.vectorResource(
+                            if (!state.isLocalAudioOn) {
+                                R.drawable.ic_microphone_off
+                            } else {
+                                R.drawable.ic_microphone_on
+                            }
+                        )
+                    )
 
-                val flipIcon = when (state.localCameraPosition) {
-                    CameraPosition.BACK -> R.drawable.ic_outline_photo_camera_back_24
-                    CameraPosition.FRONT -> R.drawable.ic_outline_photo_camera_front_24
+                    Spacer(modifier = Modifier.weight(1.0f))
+
+                    ButtonComponent(
+                        onClick = onRestartClicked,
+                        style = AppTheme.buttonSystem.tertiaryButtonStyle.copy(
+                            normalContentColor = AppTheme.colorSystem.contrast
+                        ),
+                        icon = ImageVector.vectorResource(R.drawable.ic_refresh)
+                    )
                 }
-                ControlButton(
-                    iconRes = flipIcon,
-                    text = "Switch camera",
-                    textSize = 15.sp,
-                    onClick = onFlipCameraClick
-                )
             }
         }
     }
 
     if (state.isAudioDevicePickerShown) {
-        AudioDevicePicker(
+        AudioDevicePickerComponent(
             devices = state.availableAudioDeviceNames,
             selectedIndex = state.audioDeviceIndex,
             onDeviceSelected = onAudioDeviceSelected,
@@ -200,7 +245,7 @@ fun MainScreen(
 }
 
 @Composable
-fun AudioDevicePicker(
+private fun AudioDevicePickerComponent(
     devices: List<String>,
     selectedIndex: Int,
     onDeviceSelected: (String) -> Unit,
@@ -244,42 +289,14 @@ fun AudioDevicePicker(
 }
 
 @Composable
-fun ControlButton(
-    iconRes: Int,
-    text: String,
-    onClick: () -> Unit,
-    textSize: TextUnit = 20.sp
-) {
-    Row(
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            painter = painterResource(id = iconRes),
-            contentDescription = text,
-            tint = Color.White,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = text,
-            color = Color.White,
-            fontSize = textSize
-        )
-    }
-}
-
-@Composable
-fun RemotePeerItem(
+private fun RemotePeerComponent(
     peerWithMedia: PeerWithMediaContentType,
-    isVisibleOnScreen: Boolean,
     modifier: Modifier = Modifier
 ) {
     val peer = peerWithMedia.peerWithUpdateTime.peer
     val contentType = peerWithMedia.videoContentType
+
+    val isVisibleState = remember { mutableStateOf(false) }
 
     val isConsumingAudio = remember(peerWithMedia) {
         when (contentType) {
@@ -310,9 +327,8 @@ fun RemotePeerItem(
                     }
                 }
             },
-            modifier = Modifier.fillMaxSize(),
             update = { view ->
-                if (isConsumingVideo && isVisibleOnScreen) {
+                if (isConsumingVideo && isVisibleState.value) {
                     view.renderPeerVideo(peer, contentType.videoMediaLabel)
                 } else {
                     view.stopRenderingPeerVideo(peer, contentType.videoMediaLabel)
@@ -321,63 +337,65 @@ fun RemotePeerItem(
             onRelease = { view ->
                 view.stopRenderingPeerVideo(peer, contentType.videoMediaLabel)
                 view.release()
-            }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .onVisibilityChanged(minFractionVisible = 0.1f, minDurationMs = 300) { isVisible ->
+                    isVisibleState.value = isVisible
+                }
         )
 
-        Text(
-            text = peer.id.value,
+        Row(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .background(Color(0xFF035397))
-                .padding(4.dp),
-            color = Color(0xFFFFAA4C),
-            fontSize = 12.sp
-        )
-
-        Text(
-            text = peer.appData.optString("name"),
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .background(Color(0xFF035397))
-                .padding(4.dp),
-            color = Color(0xFFFFAA4C),
-            fontSize = 12.sp
-        )
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .background(Color(0xFF035397))
-                .padding(4.dp),
-            horizontalAlignment = Alignment.End
+                .safeDrawingPadding()
+                .padding(12.dp)
+                .align(Alignment.TopEnd),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = "video is ${if (isConsumingVideo) "on" else "off"}",
-                color = Color(0xFFFFAA4C),
-                fontSize = 12.sp
-            )
-            Text(
-                text = "audio is ${if (isConsumingAudio) "on" else "off"}",
-                color = Color(0xFFFFAA4C),
-                fontSize = 12.sp
-            )
+            ContainerComponent(contentPadding = PaddingValues(6.dp)) {
+                Icon(
+                    painter = painterResource(
+                        id = if (isConsumingVideo) R.drawable.ic_camera_on else R.drawable.ic_camera_off
+                    ),
+                    contentDescription = null,
+                    tint = if (isConsumingVideo) AppTheme.colorSystem.contrast else AppTheme.colorSystem.errorBase,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            ContainerComponent(contentPadding = PaddingValues(6.dp)) {
+                Icon(
+                    painter = painterResource(
+                        id = if (isConsumingAudio) R.drawable.ic_microphone_on else R.drawable.ic_microphone_off
+                    ),
+                    contentDescription = null,
+                    tint = if (isConsumingAudio) AppTheme.colorSystem.contrast else AppTheme.colorSystem.errorBase,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }
 
 private fun buildPeersList(state: ScreenState): List<PeerWithMediaContentType> = buildList {
     state.remotePeers.forEach { peer ->
-        if (peer.peer.hasMedia(MediaLabel.CUSTOM_VIDEO)) {
-            add(PeerWithMediaContentType(peer, PeerVideoContentType.CUSTOM_VIDEO))
-        }
+        add(PeerWithMediaContentType(peer, PeerVideoContentType.CAMERA))
         if (peer.peer.hasMedia(MediaLabel.SCREEN_VIDEO)) {
             add(PeerWithMediaContentType(peer, PeerVideoContentType.SCREEN_VIDEO))
         }
-        add(PeerWithMediaContentType(peer, PeerVideoContentType.CAMERA))
+        if (peer.peer.hasMedia(MediaLabel.CUSTOM_VIDEO)) {
+            add(PeerWithMediaContentType(peer, PeerVideoContentType.CUSTOM_VIDEO))
+        }
     }
 }
 
 private fun Peer.hasMedia(label: MediaLabel): Boolean {
     return (this.hasConsumer(label) || this.hasProducerDataInStock(label)) &&
             this.isRemoteProducerResumed(label)
+}
+
+private fun formatDuration(duration: Duration): String {
+    val totalSeconds = duration.inWholeMilliseconds / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%02d:%02d".format(minutes, seconds)
 }

@@ -2,22 +2,27 @@ package space.livedigital.example
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.sequenia.permissionchecker.check
-import com.sequenia.permissionchecker.registerPermissionChecker
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.ui.theme.AppTheme
@@ -28,7 +33,6 @@ import space.livedigital.sdk.data.entities.MediaLabel
 internal class MainActivity : AppCompatActivity() {
 
     private val viewModel by viewModel<MainViewModel>()
-    private val permissionChecker = registerPermissionChecker()
     private var chooseAudioDeviceAlertDialog: AlertDialog? = null
 
 
@@ -40,7 +44,6 @@ internal class MainActivity : AppCompatActivity() {
                 Color.TRANSPARENT
             )
         )
-        checkPostNotificationPermission(savedInstanceState)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -50,21 +53,58 @@ internal class MainActivity : AppCompatActivity() {
         }
         setContent {
             val state by viewModel.state.collectAsState()
+
+            var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+            val permissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestMultiplePermissions()
+            ) { results ->
+                val allGranted = results.values.all { it }
+
+                if (allGranted) {
+                    pendingAction?.invoke()
+                }
+                pendingAction = null
+            }
+
+            val requestPermission = remember {
+                { permissions: List<String>, onGranted: () -> Unit ->
+                    val missingPermissions = permissions.filter {
+                        checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
+                    }
+
+                    if (missingPermissions.isEmpty()) {
+                        onGranted()
+                    } else {
+                        pendingAction = onGranted
+                        permissionLauncher.launch(missingPermissions.toTypedArray())
+                    }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    requestPermission(listOf(Manifest.permission.POST_NOTIFICATIONS)) {
+                        viewModel.onPostNotificationsPermissionGranted()
+                    }
+                } else {
+                    viewModel.onPostNotificationsPermissionGranted()
+                }
+            }
+
             AppTheme {
                 MainScreen(
                     state = state,
                     onRestartClicked = { viewModel.onRestartButtonClicked() },
                     onCameraClicked = {
-                        checkPermission(
-                            listOf(Manifest.permission.CAMERA),
-                            viewModel::onCameraButtonClicked
-                        )
+                        requestPermission(listOf(Manifest.permission.CAMERA)) {
+                            viewModel.onCameraButtonClicked()
+                        }
                     },
                     onMicrophoneClicked = {
-                        checkPermission(
-                            listOf(Manifest.permission.RECORD_AUDIO),
-                            viewModel::onMicrophoneButtonClicked
-                        )
+                        requestPermission(listOf(Manifest.permission.RECORD_AUDIO)) {
+                            viewModel.onMicrophoneButtonClicked()
+                        }
                     },
                     onFlipCameraClick = viewModel::onFlipCameraButtonClicked,
                     onAudioDeviceClick = {
@@ -73,8 +113,9 @@ internal class MainActivity : AppCompatActivity() {
                         } else {
                             emptyList()
                         }
-
-                        checkPermission(permissions, viewModel::onAudioDeviceChooseRequired)
+                        requestPermission(permissions) {
+                            viewModel.onAudioDeviceChooseRequired()
+                        }
                     },
                     onAudioDeviceSelected = viewModel::onAudioDeviceSelected,
                     onAudioDeviceDismiss = viewModel::onAudioDeviceChooseDismissed
@@ -102,22 +143,6 @@ internal class MainActivity : AppCompatActivity() {
         if (isFinishing) stopService(Intent(this, CallService::class.java))
     }
 
-    private fun showAudioDeviceChooseAlertDialog() {
-        viewModel.onAudioDeviceChooseRequired()
-    }
-
-    private fun checkPermission(
-        permissions: List<String>,
-        permissionGrantedAction: () -> Unit,
-        permissionDeniedAction: (() -> Unit)? = null,
-    ) {
-        permissionChecker.check(permissions.toTypedArray()) {
-            onAllGranted(permissionGrantedAction)
-
-            onAnyDenied { permissionDeniedAction?.invoke() }
-        }
-    }
-
     private suspend fun observeEvents() {
         viewModel.eventFlow.collect { event ->
             when (event) {
@@ -128,19 +153,6 @@ internal class MainActivity : AppCompatActivity() {
                         }
                     startForegroundService(serviceIntent)
                 }
-            }
-        }
-    }
-
-    private fun checkPostNotificationPermission(savedInstanceState: Bundle?) {
-        if (savedInstanceState == null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                checkPermission(
-                    listOf(Manifest.permission.POST_NOTIFICATIONS),
-                    viewModel::onPostNotificationsPermissionGranted
-                )
-            } else {
-                viewModel.onPostNotificationsPermissionGranted()
             }
         }
     }

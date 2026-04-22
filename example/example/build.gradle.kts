@@ -50,7 +50,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.retrofit2.kotlinx.serialization.converter)
     implementation(libs.koin)
-    implementation(libs.sequenia.permissionChecker)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))

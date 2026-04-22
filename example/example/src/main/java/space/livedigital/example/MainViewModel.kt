@@ -110,7 +110,11 @@ class MainViewModel() : ViewModel(), KoinComponent {
 
     fun onAudioDeviceChooseRequired() {
         mutableState.update {
-            mutableState.value.copy(isAudioDevicePickerShown = true)
+            mutableState.value.copy(
+                isAudioDevicePickerShown = true,
+                availableAudioDeviceNames = liveDigitalEngine?.audioRouter?.getAvailableRoutes()
+                    ?.map { it.kind.name }.orEmpty()
+            )
         }
     }
 

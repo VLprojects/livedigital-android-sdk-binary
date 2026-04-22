@@ -63,13 +63,13 @@ class MainViewModel() : ViewModel(), KoinComponent {
     private val mutableState = MutableStateFlow(ScreenState())
     private val eventChannel = Channel<ScreenEvent>(Channel.UNLIMITED)
     private val apiClient = MoodHoodApiClient(MOODHOOD_API_URL)
+
+    // Need to save reference of delegate (because in sdk delegate is Weak Reference)
     private val availableRoutesChangedDelegate = createAvailableRoutesChangedDelegate()
     private var localParticipantId: String? = null
     private var session: ChannelSession? = null
     private var liveDigitalEngine: LiveDigitalEngine? = null
     private var isLocalVideoPaused = false
-
-    // Need to save reference of delegate (because in sdk delegate is Weak Reference)
 
     fun onPostNotificationsPermissionGranted() {
         viewModelScope.launch {

@@ -6,13 +6,11 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.widget.ArrayAdapter
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -21,9 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import space.livedigital.example.ui.theme.AppTheme
 import space.livedigital.sdk.data.entities.MediaLabel
@@ -33,8 +29,6 @@ import space.livedigital.sdk.data.entities.MediaLabel
 internal class MainActivity : AppCompatActivity() {
 
     private val viewModel by viewModel<MainViewModel>()
-    private var chooseAudioDeviceAlertDialog: AlertDialog? = null
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,13 +38,6 @@ internal class MainActivity : AppCompatActivity() {
                 Color.TRANSPARENT
             )
         )
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    observeEvents()
-                }
-            }
-        }
         setContent {
             val state by viewModel.state.collectAsState()
 
@@ -79,6 +66,12 @@ internal class MainActivity : AppCompatActivity() {
                         pendingAction = onGranted
                         permissionLauncher.launch(missingPermissions.toTypedArray())
                     }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    observeEvents()
                 }
             }
 
@@ -133,9 +126,6 @@ internal class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.onAppBecameFocused()
-        chooseAudioDeviceAlertDialog?.listView?.let { alertDialogListView ->
-            (alertDialogListView.adapter as? ArrayAdapter<String>)?.apply { notifyDataSetChanged() }
-        }
     }
 
     override fun onDestroy() {

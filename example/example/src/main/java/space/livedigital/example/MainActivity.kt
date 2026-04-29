@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.LifecycleStartEffect
 import kotlinx.coroutines.launch
@@ -82,13 +83,19 @@ internal class MainActivity : AppCompatActivity() {
                 }
             }
 
+            var hasCheckedPermission by rememberSaveable { mutableStateOf(false) }
+
             LaunchedEffect(Unit) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    requestPermission(listOf(Manifest.permission.POST_NOTIFICATIONS)) {
+                if (!hasCheckedPermission) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        requestPermission(listOf(Manifest.permission.POST_NOTIFICATIONS)) {
+                            viewModel.onPostNotificationsPermissionGranted()
+                        }
+                    } else {
                         viewModel.onPostNotificationsPermissionGranted()
                     }
-                } else {
-                    viewModel.onPostNotificationsPermissionGranted()
+
+                    hasCheckedPermission = true
                 }
             }
 

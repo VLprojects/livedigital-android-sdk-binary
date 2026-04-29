@@ -139,7 +139,7 @@ fun MainScreen(
 
                 val context = LocalContext.current
 
-                val peerView = remember {
+                val peerView = remember(context) {
                     PeerView(context).apply {
                         scaleType = PeerView.ScaleType.CENTER_CROP
                         setRenderEventsListener(
@@ -352,7 +352,7 @@ private fun RemotePeerComponent(
 
     val context = LocalContext.current
 
-    val peerView = remember {
+    val peerView = remember(context, peer.id, contentType) {
         PeerView(context).apply {
             scaleType = when (contentType) {
                 PeerVideoContentType.CUSTOM_VIDEO ->

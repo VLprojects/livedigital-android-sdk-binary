@@ -163,8 +163,10 @@ class MainViewModel() : ViewModel(), KoinComponent {
         val room = getRoom() ?: return
 
         mutableState.update {
-            it.copy(roomName = room.name)
+            it.copy(roomName = room.name, callDuration = Duration.ZERO)
         }
+        currentTimer?.cancel()
+        currentTimer = null
 
         val channelId = room.channelId
         if (channelId == null) {
@@ -513,14 +515,17 @@ class MainViewModel() : ViewModel(), KoinComponent {
                     ChannelSessionStatus.RESTARTING -> {}
                     ChannelSessionStatus.STARTING -> {}
                     ChannelSessionStatus.STARTED -> {
-                        currentTimer?.cancel()
-                        val callStartTime = markNow()
-                        currentTimer =
-                            timer(name = "call timer", period = 1.seconds.inWholeMilliseconds) {
-                                mutableState.update {
-                                    mutableState.value.copy(callDuration = callStartTime.elapsedNow())
+                        if (currentTimer == null) {
+                            val callStartTime = markNow()
+                            currentTimer =
+                                timer(name = "call timer", period = 1.seconds.inWholeMilliseconds) {
+                                    mutableState.update {
+                                        mutableState.value.copy(
+                                            callDuration = callStartTime.elapsedNow()
+                                        )
+                                    }
                                 }
-                            }
+                        }
                     }
 
                     ChannelSessionStatus.STOPPED -> restartSession()

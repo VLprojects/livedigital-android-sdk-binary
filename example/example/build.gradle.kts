@@ -15,6 +15,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        signingConfig = signingConfigs.getByName("debug")
     }
 
     buildTypes {
@@ -27,15 +28,9 @@ android {
         }
     }
 
-    val javaVersion = JavaVersion.VERSION_21
 
-    compileOptions {
-        sourceCompatibility = javaVersion
-        targetCompatibility = javaVersion
-    }
-
-    kotlinOptions {
-        jvmTarget = javaVersion.toString()
+    kotlin {
+        jvmToolchain(21)
     }
 
     buildFeatures {

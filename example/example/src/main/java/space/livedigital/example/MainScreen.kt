@@ -19,20 +19,24 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onVisibilityChanged
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -129,32 +133,63 @@ fun MainScreen(
                 .padding(horizontal = 16.dp, vertical = 24.dp)
                 .safeDrawingPadding()
         ) {
+            var isLocalVideoFirstFrameRendered by remember { mutableStateOf(false) }
+
             if (state.isLocalVideoOn) {
-                Box(modifier = Modifier.align(Alignment.End)) {
+
+                val context = LocalContext.current
+
+                val peerView = remember {
+                    PeerView(context).apply {
+                        scaleType = PeerView.ScaleType.CENTER_CROP
+                        setRenderEventsListener(
+                            object : PeerView.PeerViewRenderEventsListener {
+                                override fun onFirstFrameRender() {
+                                    isLocalVideoFirstFrameRendered = true
+                                }
+                            }
+                        )
+                    }
+                }
+
+                DisposableEffect(state.localVideoSource) {
+                    isLocalVideoFirstFrameRendered = false
+                    state.localVideoSource?.let(peerView::renderVideoSource)
+                    onDispose {
+                        isLocalVideoFirstFrameRendered = false
+                        state.localVideoSource?.let(peerView::stopRenderingVideoSource)
+                    }
+                }
+
+                DisposableEffect(Unit) {
+                    onDispose {
+                        isLocalVideoFirstFrameRendered = false
+                        peerView.release()
+                    }
+                }
+
+                Box(
+                    modifier = if (isLocalVideoFirstFrameRendered) {
+                        Modifier.align(Alignment.End)
+                    } else {
+                        Modifier.graphicsLayer(alpha = 0.0f)
+                    }
+                ) {
+                    CircularProgressIndicator(
+                        color = AppTheme.colorSystem.accentBase,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .align(Alignment.Center),
+                    )
                     AndroidView(
-                        factory = { context ->
-                            PeerView(context).apply {
-                                scaleType = PeerView.ScaleType.CENTER_CROP
-                            }
-                        },
-                        update = { view ->
-                            if (state.localVideoSource != null && state.isLocalVideoOn) {
-                                view.renderVideoSource(state.localVideoSource)
-                            }
-                        },
-                        onRelease = { view ->
-                            if (state.localVideoSource != null) {
-                                view.stopRenderingVideoSource(state.localVideoSource)
-                            }
-                            view.release()
-                        },
+                        factory = { peerView },
                         modifier = Modifier
                             .size(120.dp, 180.dp)
                             .clip(RoundedCornerShape(20.dp))
                             .border(
-                                2.dp,
-                                shape = RoundedCornerShape(20.dp),
-                                color = AppTheme.colorSystem.contrast
+                                width = 2.dp,
+                                color = AppTheme.colorSystem.contrast,
+                                shape = RoundedCornerShape(20.dp)
                             )
                     )
 
@@ -294,86 +329,81 @@ private fun RemotePeerComponent(
     modifier: Modifier = Modifier
 ) {
     val peer = peerWithMedia.peerWithUpdateTime.peer
+
     val contentType = peerWithMedia.videoContentType
 
-    val isVisibleState = remember { mutableStateOf(false) }
+    var isVisible by remember {
+        mutableStateOf(false)
+    }
 
-    val isConsumingAudio = remember(peerWithMedia) {
-        when (contentType) {
-            PeerVideoContentType.CUSTOM_VIDEO -> peer.isConsumingAudio(MediaLabel.CUSTOM_AUDIO)
-            PeerVideoContentType.SCREEN_VIDEO -> peer.isConsumingAudio(MediaLabel.SCREEN_AUDIO)
-            PeerVideoContentType.CAMERA -> peer.isConsumingAudio(MediaLabel.MICROPHONE)
+    val isConsumingVideo = when (contentType) {
+        PeerVideoContentType.CUSTOM_VIDEO ->
+            peer.isConsumingVideo(MediaLabel.CUSTOM_VIDEO)
+
+        PeerVideoContentType.SCREEN_VIDEO ->
+            peer.isConsumingVideo(MediaLabel.SCREEN_VIDEO)
+
+        PeerVideoContentType.CAMERA ->
+            peer.isConsumingVideo(MediaLabel.CAMERA)
+
+    }
+
+    val shouldRender = isVisible && isConsumingVideo
+
+    val context = LocalContext.current
+
+    val peerView = remember {
+        PeerView(context).apply {
+            scaleType = when (contentType) {
+                PeerVideoContentType.CUSTOM_VIDEO ->
+                    PeerView.ScaleType.FIT_CENTER
+
+                PeerVideoContentType.SCREEN_VIDEO ->
+                    PeerView.ScaleType.FIT_CENTER
+
+                PeerVideoContentType.CAMERA ->
+                    PeerView.ScaleType.CROP_FIT_FIT_BOUNDED
+            }
         }
     }
 
-    val isConsumingVideo = remember(peerWithMedia) {
-        when (contentType) {
-            PeerVideoContentType.CUSTOM_VIDEO -> peer.isConsumingVideo(MediaLabel.CUSTOM_VIDEO)
-            PeerVideoContentType.SCREEN_VIDEO -> peer.isConsumingVideo(MediaLabel.SCREEN_VIDEO)
-            PeerVideoContentType.CAMERA -> peer.isConsumingVideo(MediaLabel.CAMERA)
-        }
-    }
-
-    Box(
-        modifier = modifier
+    DisposableEffect(
+        peer.id,
+        contentType,
+        shouldRender
     ) {
-        AndroidView(
-            factory = { context ->
-                PeerView(context).apply {
-                    scaleType = when (contentType) {
-                        PeerVideoContentType.CUSTOM_VIDEO -> PeerView.ScaleType.FIT_CENTER
-                        PeerVideoContentType.SCREEN_VIDEO -> PeerView.ScaleType.FIT_CENTER
-                        PeerVideoContentType.CAMERA -> PeerView.ScaleType.CROP_FIT_FIT_BOUNDED
-                    }
-                }
-            },
-            update = { view ->
-                if (isConsumingVideo && isVisibleState.value) {
-                    view.renderPeerVideo(peer, contentType.videoMediaLabel)
-                } else {
-                    view.stopRenderingPeerVideo(peer, contentType.videoMediaLabel)
-                }
-            },
-            onRelease = { view ->
-                view.stopRenderingPeerVideo(peer, contentType.videoMediaLabel)
-                view.release()
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .onVisibilityChanged(minFractionVisible = 0.1f, minDurationMs = 300) { isVisible ->
-                    isVisibleState.value = isVisible
-                }
-        )
+        if (shouldRender) {
+            peerView.renderPeerVideo(
+                peer,
+                contentType.videoMediaLabel
+            )
+        }
 
-        Row(
-            modifier = Modifier
-                .safeDrawingPadding()
-                .padding(12.dp)
-                .align(Alignment.TopEnd),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ContainerComponent(contentPadding = PaddingValues(6.dp)) {
-                Icon(
-                    painter = painterResource(
-                        id = if (isConsumingVideo) R.drawable.ic_camera_on else R.drawable.ic_camera_off
-                    ),
-                    contentDescription = null,
-                    tint = if (isConsumingVideo) AppTheme.colorSystem.contrast else AppTheme.colorSystem.errorBase,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-            ContainerComponent(contentPadding = PaddingValues(6.dp)) {
-                Icon(
-                    painter = painterResource(
-                        id = if (isConsumingAudio) R.drawable.ic_microphone_on else R.drawable.ic_microphone_off
-                    ),
-                    contentDescription = null,
-                    tint = if (isConsumingAudio) AppTheme.colorSystem.contrast else AppTheme.colorSystem.errorBase,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
+        onDispose {
+            peerView.stopRenderingPeerVideo(
+                peer,
+                contentType.videoMediaLabel
+            )
         }
     }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            peerView.release()
+        }
+    }
+
+    AndroidView(
+        factory = { peerView },
+        modifier = modifier
+            .fillMaxSize()
+            .onVisibilityChanged(
+                minFractionVisible = 0.1f,
+                minDurationMs = 300
+            ) { visible ->
+                isVisible = visible
+            }
+    )
 }
 
 private fun buildPeersList(state: ScreenState): List<PeerWithMediaContentType> = buildList {

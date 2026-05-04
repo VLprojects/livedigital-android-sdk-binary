@@ -349,7 +349,6 @@ private fun LocalVideoComponent(
     }
 
     Box(modifier = modifier) {
-
         AndroidView(
             factory = { peerView },
             modifier = Modifier

@@ -25,7 +25,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onVisibilityChanged
 import androidx.compose.ui.platform.LocalContext
@@ -48,6 +47,7 @@ import space.livedigital.example.ui.extensions.gradientBackground
 import space.livedigital.example.ui.theme.AppTheme
 import space.livedigital.sdk.data.entities.MediaLabel
 import space.livedigital.sdk.data.entities.Peer
+import space.livedigital.sdk.media.video.VideoSource
 import space.livedigital.sdk.view.PeerView
 import kotlin.time.Duration
 
@@ -133,77 +133,11 @@ fun MainScreen(
                 .padding(horizontal = 16.dp, vertical = 24.dp)
                 .safeDrawingPadding()
         ) {
-            var isLocalVideoFirstFrameRendered by remember { mutableStateOf(false) }
-
-            if (state.isLocalVideoOn) {
-
-                val context = LocalContext.current
-
-                val peerView = remember(context) {
-                    PeerView(context).apply {
-                        scaleType = PeerView.ScaleType.CENTER_CROP
-                        setRenderEventsListener(
-                            object : PeerView.PeerViewRenderEventsListener {
-                                override fun onFirstFrameRender() {
-                                    isLocalVideoFirstFrameRendered = true
-                                }
-                            }
-                        )
-                    }
-                }
-
-                DisposableEffect(state.localVideoSource) {
-                    isLocalVideoFirstFrameRendered = false
-                    state.localVideoSource?.let(peerView::renderVideoSource)
-                    onDispose {
-                        isLocalVideoFirstFrameRendered = false
-                        state.localVideoSource?.let(peerView::stopRenderingVideoSource)
-                    }
-                }
-
-                DisposableEffect(Unit) {
-                    onDispose {
-                        isLocalVideoFirstFrameRendered = false
-                        peerView.release()
-                    }
-                }
-
-                Box(
-                    modifier = if (isLocalVideoFirstFrameRendered) {
-                        Modifier.align(Alignment.End)
-                    } else {
-                        Modifier.graphicsLayer(alpha = 0.0f)
-                    }
-                ) {
-                    CircularProgressIndicator(
-                        color = AppTheme.colorSystem.accentBase,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .align(Alignment.Center),
-                    )
-                    AndroidView(
-                        factory = { peerView },
-                        modifier = Modifier
-                            .size(120.dp, 180.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .border(
-                                width = 2.dp,
-                                color = AppTheme.colorSystem.contrast,
-                                shape = RoundedCornerShape(20.dp)
-                            )
-                    )
-
-                    ButtonComponent(
-                        onClick = onFlipCameraClick,
-                        style = AppTheme.buttonSystem.tertiaryButtonStyle.copy(
-                            normalContentColor = AppTheme.colorSystem.contrast
-                        ),
-                        icon = ImageVector.vectorResource(R.drawable.ic_swap_camera),
-                        contentPaddingValues = PaddingValues(all = 8.dp),
-                        modifier = Modifier.align(Alignment.TopEnd)
-                    )
-                }
-            }
+            LocalVideoComponent(
+                isLocalVideoOn = state.isLocalVideoOn,
+                localVideoSource = state.localVideoSource,
+                onFlipCameraClick = onFlipCameraClick
+            )
 
             ContainerComponent(contentPadding = PaddingValues(all = 12.dp)) {
                 Row {
@@ -329,67 +263,39 @@ private fun RemotePeerComponent(
     modifier: Modifier = Modifier
 ) {
     val peer = peerWithMedia.peerWithUpdateTime.peer
-
     val contentType = peerWithMedia.videoContentType
-
-    var isVisible by remember {
-        mutableStateOf(false)
-    }
-
-    val isConsumingVideo = when (contentType) {
-        PeerVideoContentType.CUSTOM_VIDEO ->
-            peer.isConsumingVideo(MediaLabel.CUSTOM_VIDEO)
-
-        PeerVideoContentType.SCREEN_VIDEO ->
-            peer.isConsumingVideo(MediaLabel.SCREEN_VIDEO)
-
-        PeerVideoContentType.CAMERA ->
-            peer.isConsumingVideo(MediaLabel.CAMERA)
-
-    }
-
-    val shouldRender = isVisible && isConsumingVideo
-
     val context = LocalContext.current
+
+    var isVisible by remember { mutableStateOf(false) }
+    var isFirstFrameRendered by remember { mutableStateOf(false) }
 
     val peerView = remember(context, peer.id, contentType) {
         PeerView(context).apply {
             scaleType = when (contentType) {
-                PeerVideoContentType.CUSTOM_VIDEO ->
-                    PeerView.ScaleType.FIT_CENTER
+                PeerVideoContentType.CUSTOM_VIDEO,
+                PeerVideoContentType.SCREEN_VIDEO -> PeerView.ScaleType.FIT_CENTER
 
-                PeerVideoContentType.SCREEN_VIDEO ->
-                    PeerView.ScaleType.FIT_CENTER
-
-                PeerVideoContentType.CAMERA ->
-                    PeerView.ScaleType.CROP_FIT_FIT_BOUNDED
+                PeerVideoContentType.CAMERA -> PeerView.ScaleType.CROP_FIT_FIT_BOUNDED
             }
+            setRenderEventsListener(object : PeerView.PeerViewRenderEventsListener {
+                override fun onFirstFrameRender() {
+                    isFirstFrameRendered = true
+                }
+            })
         }
     }
 
-    DisposableEffect(
-        peer.id,
-        contentType,
-        shouldRender
-    ) {
+    LaunchedEffect(peer.id, contentType, isVisible) {
+        val isConsuming = peer.isConsumingVideo(contentType.videoMediaLabel)
+        val shouldRender = isVisible && isConsuming
+
         if (shouldRender) {
-            peerView.renderPeerVideo(
-                peer,
-                contentType.videoMediaLabel
-            )
-        }
-
-        onDispose {
-            peerView.stopRenderingPeerVideo(
-                peer,
-                contentType.videoMediaLabel
-            )
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            peerView.release()
+            peerView.renderPeerVideo(peer, contentType.videoMediaLabel)
+        } else {
+            if (isFirstFrameRendered) {
+                peerView.stopRenderingPeerVideo(peer, contentType.videoMediaLabel)
+            }
+            isFirstFrameRendered = false
         }
     }
 
@@ -397,13 +303,79 @@ private fun RemotePeerComponent(
         factory = { peerView },
         modifier = modifier
             .fillMaxSize()
-            .onVisibilityChanged(
-                minFractionVisible = 0.1f,
-                minDurationMs = 300
-            ) { visible ->
+            .onVisibilityChanged(minFractionVisible = 0.1f, minDurationMs = 300) { visible ->
                 isVisible = visible
+            },
+        onRelease = { view ->
+            if (isFirstFrameRendered) {
+                view.stopRenderingPeerVideo(peer, contentType.videoMediaLabel)
+                view.release()
             }
+            isFirstFrameRendered = false
+        }
     )
+}
+
+@Composable
+private fun LocalVideoComponent(
+    isLocalVideoOn: Boolean,
+    localVideoSource: VideoSource?,
+    onFlipCameraClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (!isLocalVideoOn) return
+
+    val context = LocalContext.current
+    var isFirstFrameRendered by remember { mutableStateOf(false) }
+
+    val peerView = remember(context) {
+        PeerView(context).apply {
+            scaleType = PeerView.ScaleType.CENTER_CROP
+            setRenderEventsListener(object : PeerView.PeerViewRenderEventsListener {
+                override fun onFirstFrameRender() {
+                    isFirstFrameRendered = true
+                }
+            })
+        }
+    }
+
+    LaunchedEffect(localVideoSource) {
+        isFirstFrameRendered = false
+        if (localVideoSource != null) {
+            peerView.renderVideoSource(localVideoSource)
+        }
+    }
+
+    Box(modifier = modifier) {
+
+        AndroidView(
+            factory = { peerView },
+            modifier = Modifier
+                .size(120.dp, 180.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .border(2.dp, AppTheme.colorSystem.contrast, RoundedCornerShape(20.dp)),
+            onRelease = { view ->
+                if (localVideoSource != null) {
+                    view.stopRenderingVideoSource(localVideoSource)
+                }
+                view.release()
+            }
+        )
+
+        if (!isFirstFrameRendered) {
+            CircularProgressIndicator(
+                color = AppTheme.colorSystem.accentBase,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+
+        ButtonComponent(
+            onClick = onFlipCameraClick,
+            style = AppTheme.buttonSystem.tertiaryButtonStyle,
+            icon = ImageVector.vectorResource(R.drawable.ic_swap_camera),
+            modifier = Modifier.align(Alignment.TopEnd)
+        )
+    }
 }
 
 private fun buildPeersList(state: ScreenState): List<PeerWithMediaContentType> = buildList {

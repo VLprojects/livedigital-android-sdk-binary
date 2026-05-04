@@ -136,7 +136,8 @@ fun MainScreen(
             LocalVideoComponent(
                 isLocalVideoOn = state.isLocalVideoOn,
                 localVideoSource = state.localVideoSource,
-                onFlipCameraClick = onFlipCameraClick
+                onFlipCameraClick = onFlipCameraClick,
+                modifier = Modifier.align(Alignment.End)
             )
 
             ContainerComponent(contentPadding = PaddingValues(all = 12.dp)) {
@@ -371,7 +372,10 @@ private fun LocalVideoComponent(
 
         ButtonComponent(
             onClick = onFlipCameraClick,
-            style = AppTheme.buttonSystem.tertiaryButtonStyle,
+            style = AppTheme.buttonSystem.tertiaryButtonStyle.copy(
+                normalContentColor = AppTheme.colorSystem.contrast
+            ),
+            contentPaddingValues = PaddingValues(all = 8.dp),
             icon = ImageVector.vectorResource(R.drawable.ic_swap_camera),
             modifier = Modifier.align(Alignment.TopEnd)
         )

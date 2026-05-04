@@ -286,8 +286,9 @@ private fun RemotePeerComponent(
         }
     }
 
-    LaunchedEffect(peer.id, contentType, isVisible) {
-        val isConsuming = peer.isConsumingVideo(contentType.videoMediaLabel)
+    val isConsuming = peer.isConsumingVideo(contentType.videoMediaLabel)
+
+    LaunchedEffect(peer.id, contentType, isVisible, isConsuming) {
         val shouldRender = isVisible && isConsuming
 
         if (shouldRender) {

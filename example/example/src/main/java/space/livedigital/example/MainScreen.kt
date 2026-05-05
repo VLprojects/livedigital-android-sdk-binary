@@ -1,5 +1,6 @@
 package space.livedigital.example
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import space.livedigital.example.ui.components.buttons.ButtonComponent
 import space.livedigital.example.ui.components.containers.ContainerComponent
 import space.livedigital.example.ui.extensions.gradientBackground
@@ -345,6 +348,17 @@ private fun LocalVideoComponent(
         isFirstFrameRendered = false
         if (localVideoSource != null) {
             peerView.renderVideoSource(localVideoSource)
+        }
+    }
+
+    val activity = LocalActivity.current
+
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
+        if (activity?.isChangingConfigurations == false) {
+            localVideoSource?.let {
+                peerView.stopRenderingVideoSource(it)
+            }
+            peerView.release()
         }
     }
 

@@ -17,7 +17,7 @@ livedigital SDK — клиент сервиса livedigital (https://docs.livedi
 * устройства Android / Android 9+
 * эмуляторы Android / Android 9+
 
-Android target sdk = 15 (35 api)
+Android target sdk = 16 (36 api)
 
 SDK поддерживает работу на эмуляторах, однако полноценное тестирование следует проводить на реальном устройстве, т.к. имплементация работы с камерой, размытие фона, набор поддерживаемых кодеков и видео-форматов могут отличаться.
 
@@ -60,7 +60,7 @@ dependencyResolutionManagement {
 
 ```
 dependencies {
-    implementation("com.github.vlprojects:livedigital-android-sdk:1.6.1")
+    implementation("com.github.vlprojects:livedigital-android-sdk:1.7.0")
 }
 ```
 

@@ -62,8 +62,10 @@ obj/
 *.iws
 /out/
 
-# User-specific configurations
-/.idea
+# IDE config: ignore everything under .idea by default,
+# but keep the shared run configurations so they survive branch switches and other devs.
+/.idea/*
+!/.idea/runConfigurations/
 
 # OS-specific files
 .DS_Store
@@ -105,3 +107,6 @@ atlassian-ide-plugin.xml
 # generated info about release apk
 output.json
 output-metadata.json
+
+# Firebase config (developer-provided, contains project keys)
+/samples/calls/google-services.json

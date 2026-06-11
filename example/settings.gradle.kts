@@ -27,4 +27,11 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "LiveDigitalSDK"
-include(":example")
+
+// Shared SDK integration infrastructure (MoodHood REST client, engine DI, entities).
+include(":shared")
+
+// Runnable SDK usage samples — each is an independent, installable app.
+include(":samples:conference-xml")
+include(":samples:conference-compose")
+include(":samples:calls")

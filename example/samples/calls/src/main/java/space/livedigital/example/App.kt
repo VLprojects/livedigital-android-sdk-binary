@@ -1,0 +1,36 @@
+package space.livedigital.example
+
+import android.app.Application
+import android.content.ComponentName
+import android.telecom.PhoneAccount
+import android.telecom.PhoneAccountHandle
+import android.telecom.TelecomManager
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+import space.livedigital.example.calls.services.CallConnectionService
+import space.livedigital.example.di.interceptorsModule
+import space.livedigital.example.di.liveDigitalEngineModule
+import space.livedigital.example.di.viewModelsModule
+
+internal class App : Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@App)
+            val moduleList = listOf(viewModelsModule, liveDigitalEngineModule, interceptorsModule)
+            this.modules(moduleList)
+        }
+
+        val telecomManager = applicationContext.getSystemService(TELECOM_SERVICE) as TelecomManager
+        val componentName = ComponentName(applicationContext, CallConnectionService::class.java)
+        val phoneAccountHandle = PhoneAccountHandle(componentName, "LD SDK example")
+        val phoneAccount = PhoneAccount.builder(phoneAccountHandle, "LD SDK example")
+            .setCapabilities(
+                PhoneAccount.CAPABILITY_CALL_PROVIDER
+                        or PhoneAccount.CAPABILITY_VIDEO_CALLING
+                        or PhoneAccount.CAPABILITY_SUPPORTS_VIDEO_CALLING
+            ).build()
+        telecomManager.registerPhoneAccount(phoneAccount)
+    }
+}

@@ -1,37 +1,37 @@
 # livedigital SDK
 
-Этот репозиторий содержит сборки нативной реализации livedigital SDK для Android в формате толстого бинарного файла.
+This repository contains builds of the native livedigital SDK implementation for Android, distributed as a fat binary.
 
-livedigital SDK — клиент сервиса livedigital (https://docs.livedigital.space). SDK реализует
-  * сигналинг (подключение, обмен командами с медиа-сервером)
-  * логику восстановления соединения при реконнекте
-  * анализ качества соединения
-  * работу с входящими и исходящими медиа-треками
-  * работу с видео-слоями
-  * размытие и замену фона для исходящего видео
-  * логику выделения активного спикера
-  * транспорт для передачи команд и мета-данных специфичных для приложения
+The livedigital SDK is a client for the livedigital service (https://docs.livedigital.space). The SDK implements:
+  * signaling (connecting and exchanging commands with the media server)
+  * connection recovery logic on reconnect
+  * connection quality analysis
+  * handling of incoming and outgoing media tracks
+  * working with video layers
+  * background blur and replacement for outgoing video
+  * active-speaker detection logic
+  * a transport for application-specific commands and metadata
 
-## Совместимость
+## Compatibility
 
-* устройства Android / Android 9+
-* эмуляторы Android / Android 9+
+* Android devices / Android 9+
+* Android emulators / Android 9+
 
-Android target sdk = 16 (36 api)
+Android target sdk = 16 (api 36)
 
-SDK поддерживает работу на эмуляторах, однако полноценное тестирование следует проводить на реальном устройстве, т.к. имплементация работы с камерой, размытие фона, набор поддерживаемых кодеков и видео-форматов могут отличаться.
+The SDK works on emulators, but full testing should be done on a real device, since the camera implementation, background blur, and the set of supported codecs and video formats may differ.
 
-## Зависимости
+## Dependencies
 
-### Версия Kotlin
+### Kotlin version
 
-Kotlin версии 2.1.20
+Kotlin version 2.1.20
 
-### Библиотеки
+### Libraries
 
-SDK использует зависимости: 
-| Библиотека | Group:Artifact | Версия |
-|------------|----------------|--------|
+The SDK uses the following dependencies:
+| Library | Group:Artifact | Version |
+|---------|----------------|---------|
 | Kotlinx Serialization JSON | `org.jetbrains.kotlinx:kotlinx-serialization-json` | 1.8.0 |
 | Retrofit | `com.squareup.retrofit2:retrofit` | 2.11.0 |
 | Retrofit Serialization Converter | `com.squareup.retrofit2:converter-kotlinx-serialization` | 2.11.0 |
@@ -40,11 +40,11 @@ SDK использует зависимости:
 | ML Kit Segmentation Selfie | `com.google.mlkit:segmentation-selfie` | 16.0.0-beta6 |
 | Protobuf Kotlin Lite | `com.google.protobuf:protobuf-kotlin-lite` | 4.33.3 |
 
-## Подключение
+## Integration
 
-Подключение происходит через Maven‑репозиторий
+Integration is done through a Maven repository.
 
-1. Добавьте следующее в `build.gradle` проекта:
+1. Add the following to your project's `build.gradle`:
 
 ```
 dependencyResolutionManagement {
@@ -56,7 +56,7 @@ dependencyResolutionManagement {
 }
 ```
 
-2. Добавьте зависимость в `build.gradle` нужного модуля:
+2. Add the dependency to the `build.gradle` of the relevant module:
 
 ```
 dependencies {
@@ -64,27 +64,15 @@ dependencies {
 }
 ```
 
-## Пример интеграции и демо
+## Integration example and demo
 
-Этот репозиторий содержит папку Example с проектом демонстрирующим интеграцию и использование livedigital SDK. Example проект выполнен в минималистичном духе и не должен рассматриваться с точки зрения удобства UX, красоты кода и архитектуры, надёжности решений и т.д.
+The `example/` folder is a self-contained Gradle project that demonstrates integrating and using the livedigital SDK. It is split into one shared integration module and three independent sample apps that install side by side:
 
-В приложении реализован Foreground Service `CallService` для работы в фоне(так как Android начиная с 15, ограничивает сетевые запросы, если процесс приложения не активен). Также в приложении реализован механизм выключения локальной камеры при переходе приложения в фон (так как Android ограничивает работу камеры в фоне ~5 секундами)
+| Module | Description |
+|--------|-------------|
+| `:shared` | Shared SDK-integration infrastructure (the MoodHood REST flow, the `LiveDigitalEngine` factory, domain entities). No UI. |
+| `:samples:conference-xml` | Conference scenario, UI on classic Android Views (XML + `RecyclerView`). |
+| `:samples:conference-compose` | The same conference scenario, UI on Jetpack Compose. |
+| `:samples:calls` | 1-on-1 calls: Android telephony integration + FCM push-initiated calls (Jetpack Compose UI). |
 
-При запуске проекта происходит запрос разрешения на отправку уведомления(нужный для работы Foreground Service, сценарий отказа в example не предусмотрен). После успешного получения разрешения вход в комнату и запуск `CallService`. Группа и комната зашиты внутри companion object `MainViewModel.kt`. Также в комментарии над классом `MainActivity` есть ссылка для подключения в комнату с web версии.
-
-Основная работа сосредоточена в классах `MainActivity` и `MainViewModel`, которые отвечает за сессию "звонка" или "конференции".
-
-Для успешного подключения к комнате в ней должен присутствовать пользователь с web версии.
-
-Во время нахождения в комнате доступны следующие действия:
-- Переподключение к комнате по нажатию на кнопку Restart
-- Включение/выключение камеры по нажатию на кнопку Camera (при первом нажатии будет запрошено разрешение на работу с камерой, обработка отказа в рамках example не предусмотрена)
-- Включение/выключение микрофона по нажатию на кнопку Mic (при первом нажатии будет запрошено разрешение на работу с микрофонм, обработка отказа в рамках example не предусмотрена)
-- Переключение девайса отвечающего за аудио (при первом нажатии будет запрошено разрешение на работу с Bluetooth, обработка отказа в рамках example не предусмотрена)
-- Переключение между фронтальной и основной камерами по нажатию на кнопку Switch camera
-
-Видео с локальной камеры отображается в правом нижнем углу сетки участников. Видео удаленного участника отображается на весь размер сетки. Для переключения между удаленными участниками нужно сделать свайп вправо/влево.
-
-Example приложение кроме базовой работы с SDK реализует часто востребованную механику:
-
-* Обмен мета-данными участников. При старте сессии (`liveDigitalEngine?.connectToChannel(...)`) передаётся параметр `channelSessionParams` внутри которого есть поле appData. appData - это `JsonObject`, который может содержать набор произвольных ключей и значений, с которыми работает приложение — имя пользователя, userId в терминах приложения, версия приложения, статус пользователя и т.д.. Во время сессии пользователь может обновлять свои мета-данные через метод `session?.updateMyPeerAppData(...)`. Другие участники находящиеся в комнате могут прочитать метаданные друг друга через свойство `peer.appData`, а также могут получать обновления метаданных в режиме реального времени в callback метод `peerAppDataUpdated(peerId: PeerId, appData: JSONObject)`.
+Each module has its own README, and [`docs/SAMPLES.md`](docs/SAMPLES.md) compares the three samples side by side. The samples are intentionally minimalistic and should not be judged in terms of UX convenience, code beauty and architecture, robustness of solutions, etc.

@@ -5,7 +5,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-internal data class ButtonSystem(
+data class ButtonSystem(
     val acceptButtonStyle: ButtonStyle,
     val rejectButtonStyle: ButtonStyle,
     val primaryButtonStyle: ButtonStyle,
@@ -29,7 +29,7 @@ internal data class ButtonSystem(
     }
 }
 
-internal val LocalButtonSystem = staticCompositionLocalOf {
+val LocalButtonSystem = staticCompositionLocalOf {
     ButtonSystem(
         acceptButtonStyle = ButtonSystem.ButtonStyle.unspecified,
         rejectButtonStyle = ButtonSystem.ButtonStyle.unspecified,
@@ -40,7 +40,7 @@ internal val LocalButtonSystem = staticCompositionLocalOf {
 
 @Composable
 @ReadOnlyComposable
-internal fun createButtonSystem(colorSystem: ColorSystem): ButtonSystem {
+fun createButtonSystem(colorSystem: ColorSystem): ButtonSystem {
     return ButtonSystem(
         acceptButtonStyle = createAcceptButtonStyle(colorSystem),
         rejectButtonStyle = createRejectButtonStyle(colorSystem),

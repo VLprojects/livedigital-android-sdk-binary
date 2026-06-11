@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import space.livedigital.example.ui.theme.ButtonSystem
 
 @Composable
-internal fun BaseButtonComponent(
+fun BaseButtonComponent(
     onClick: () -> Unit,
     style: ButtonSystem.ButtonStyle,
     modifier: Modifier = Modifier,

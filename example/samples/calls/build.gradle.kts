@@ -61,6 +61,9 @@ dependencies {
     // so it must be available in every build variant.
     implementation(libs.chucker.library)
 
+    // Shared Compose design system (theme, base components, modifier extensions).
+    implementation(project(":design"))
+
     // Jetpack Compose UI.
     implementation(libs.androidx.ui)
     implementation(libs.androidx.activity.compose)

@@ -9,7 +9,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-internal fun Modifier.gradientBackground(
+fun Modifier.gradientBackground(
     colors: List<Color>,
 ): Modifier = this.background(
     brush = Brush.linearGradient(
@@ -19,7 +19,7 @@ internal fun Modifier.gradientBackground(
     )
 )
 
-internal fun Modifier.crop(
+fun Modifier.crop(
     horizontal: Dp = 0.dp,
     vertical: Dp = 0.dp,
 ): Modifier = this.layout { measurable, constraints ->

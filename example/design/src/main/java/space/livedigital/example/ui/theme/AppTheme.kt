@@ -6,7 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 
 @Composable
-internal fun AppTheme(
+fun AppTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme {
@@ -19,7 +19,7 @@ internal fun AppTheme(
     }
 }
 
-internal object AppTheme {
+object AppTheme {
     val colorSystem: ColorSystem
         @Composable
         @ReadOnlyComposable

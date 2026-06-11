@@ -43,6 +43,9 @@ dependencies {
     // Transitively exposes the livedigital SDK and Koin.
     implementation(project(":shared"))
 
+    // Shared Compose design system (theme, base components, modifier extensions).
+    implementation(project(":design"))
+
     // Jetpack Compose UI.
     implementation(libs.androidx.ui)
     implementation(libs.androidx.activity.compose)

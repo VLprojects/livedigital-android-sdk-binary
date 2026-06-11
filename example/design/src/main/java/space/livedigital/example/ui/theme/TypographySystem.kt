@@ -9,14 +9,14 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import space.livedigital.example.R
+import space.livedigital.example.design.R
 
 @Immutable
-internal data class TypographySystem(
+data class TypographySystem(
     val mainTextMedium: TextStyle,
 )
 
-internal val LocalTypographySystem = staticCompositionLocalOf {
+val LocalTypographySystem = staticCompositionLocalOf {
     TypographySystem(
         mainTextMedium = TextStyle.Default
     )
@@ -24,7 +24,7 @@ internal val LocalTypographySystem = staticCompositionLocalOf {
 
 @Composable
 @ReadOnlyComposable
-internal fun createTypographySystem(): TypographySystem {
+fun createTypographySystem(): TypographySystem {
     val manropeFontFamily = FontFamily(
         Font(R.font.manrope_bold, FontWeight.Bold),
         Font(R.font.manrope_semibold, FontWeight.SemiBold),

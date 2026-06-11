@@ -31,6 +31,9 @@ rootProject.name = "LiveDigitalSDK"
 // Shared SDK integration infrastructure (MoodHood REST client, engine DI, entities).
 include(":shared")
 
+// Shared Compose design system used by the Compose samples (conference-compose, calls).
+include(":design")
+
 // Runnable SDK usage samples — each is an independent, installable app.
 include(":samples:conference-xml")
 include(":samples:conference-compose")

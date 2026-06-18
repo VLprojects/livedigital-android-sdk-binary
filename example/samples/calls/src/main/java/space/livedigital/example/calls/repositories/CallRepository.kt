@@ -19,6 +19,7 @@ import space.livedigital.example.calls.entities.CallState.Ended
 import space.livedigital.example.calls.entities.CallState.Incoming
 import space.livedigital.example.calls.entities.CallState.Missed
 import space.livedigital.example.calls.entities.CallState.Outgoing
+import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import kotlin.time.TimeSource
 
@@ -67,8 +68,8 @@ internal class CallRepository private constructor() {
                             roomAlias = callAction.roomAlias,
                             callType = callAction.callType
                         ),
-                        isMuted = wasMuted ?: true,
-                        isCameraOn = wasCameraOn ?: false
+                        isMuted = wasMuted ?: false,
+                        isCameraOn = wasCameraOn ?: (callAction.callType == CallType.VIDEO)
                     )
                 }
 
@@ -80,8 +81,8 @@ internal class CallRepository private constructor() {
                             roomAlias = callAction.roomAlias,
                             callType = callAction.callType
                         ),
-                        isMuted = true,
-                        isCameraOn = false,
+                        isMuted = false,
+                        isCameraOn = callAction.callType == CallType.VIDEO,
                     )
                 }
 
@@ -96,8 +97,8 @@ internal class CallRepository private constructor() {
                             roomAlias = callAction.roomAlias,
                             callType = callAction.callType
                         ),
-                        isMuted = wasMuted ?: true,
-                        isCameraOn = wasCameraOn ?: false,
+                        isMuted = wasMuted ?: false,
+                        isCameraOn = wasCameraOn ?: (callAction.callType == CallType.VIDEO),
                         startTimeMark = TimeSource.Monotonic.markNow()
                     )
                 }
@@ -149,8 +150,8 @@ internal class CallRepository private constructor() {
                             roomAlias = callAction.roomAlias,
                             callType = callAction.callType
                         ),
-                        isMuted = true,
-                        isCameraOn = false
+                        isMuted = false,
+                        isCameraOn = callAction.callType == CallType.VIDEO
                     )
                 }
 

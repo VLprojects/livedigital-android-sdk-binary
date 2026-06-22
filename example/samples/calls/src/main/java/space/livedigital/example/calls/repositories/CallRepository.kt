@@ -81,14 +81,16 @@ internal class CallRepository private constructor() {
                             roomAlias = callAction.roomAlias,
                             callType = callAction.callType
                         ),
-                        isMuted = false,
-                        isCameraOn = callAction.callType == CallType.VIDEO,
+                        isMuted = callAction.isMuted,
+                        isCameraOn = callAction.isCameraOn,
                     )
                 }
 
                 is CallAction.PlaceActiveCall -> {
                     val wasMuted = (callState as? CallState.Activated)?.isMuted
+                        ?: (callState as? CallState.Answered)?.isMuted
                     val wasCameraOn = (callState as? CallState.Activated)?.isCameraOn
+                        ?: (callState as? CallState.Answered)?.isCameraOn
 
                     Active(
                         call = Actual(
@@ -150,8 +152,8 @@ internal class CallRepository private constructor() {
                             roomAlias = callAction.roomAlias,
                             callType = callAction.callType
                         ),
-                        isMuted = false,
-                        isCameraOn = callAction.callType == CallType.VIDEO
+                        isMuted = callAction.isMuted,
+                        isCameraOn = callAction.isCameraOn
                     )
                 }
 

@@ -44,6 +44,8 @@ import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.utils.CallConverter
+import space.livedigital.example.calls.utils.initialIsCameraOn
+import space.livedigital.example.calls.utils.initialIsMuted
 
 internal class CallService : LifecycleService() {
 
@@ -59,7 +61,9 @@ internal class CallService : LifecycleService() {
                     displayName = callState.call.displayName,
                     phone = callState.call.phone,
                     roomAlias = callState.call.roomAlias,
-                    callType = callState.call.callType
+                    callType = callState.call.callType,
+                    isMuted = applicationContext.initialIsMuted(),
+                    isCameraOn = applicationContext.initialIsCameraOn(callState.call.callType)
                 )
             )
         }

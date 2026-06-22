@@ -22,6 +22,8 @@ import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallActivityAction
 import space.livedigital.example.calls.services.CallConnectionAudioService
+import space.livedigital.example.calls.utils.initialIsCameraOn
+import space.livedigital.example.calls.utils.initialIsMuted
 import space.livedigital.example.ui.screens.CallScreen
 import space.livedigital.example.ui.theme.AppTheme
 
@@ -123,7 +125,9 @@ internal class CallActivity : ComponentActivity() {
                 displayName = action.call.displayName,
                 phone = action.call.phone,
                 roomAlias = action.call.roomAlias,
-                callType = action.call.callType
+                callType = action.call.callType,
+                isMuted = applicationContext.initialIsMuted(),
+                isCameraOn = applicationContext.initialIsCameraOn(action.call.callType)
             ),
         )
         sendBroadcast(callIntent)

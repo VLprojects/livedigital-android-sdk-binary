@@ -10,7 +10,9 @@ internal sealed interface CallAction : Parcelable {
         val displayName: String,
         val phone: String,
         val roomAlias: String,
-        val callType: CallType
+        val callType: CallType,
+        val isMuted: Boolean,
+        val isCameraOn: Boolean
     ) : CallAction
 
     @Parcelize
@@ -61,7 +63,9 @@ internal sealed interface CallAction : Parcelable {
         val displayName: String,
         val phone: String,
         val roomAlias: String,
-        val callType: CallType
+        val callType: CallType,
+        val isMuted: Boolean,
+        val isCameraOn: Boolean
     ) : CallAction
 
     @Parcelize

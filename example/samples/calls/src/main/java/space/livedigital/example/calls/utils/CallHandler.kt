@@ -192,7 +192,9 @@ internal class CallHandler(
                 displayName = displayName,
                 phone = phone,
                 roomAlias = roomAlias,
-                callType = callType
+                callType = callType,
+                isMuted = applicationContext.initialIsMuted(),
+                isCameraOn = applicationContext.initialIsCameraOn(callType)
             ),
         )
         sendBroadcast(callIntent)

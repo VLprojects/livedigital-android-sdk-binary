@@ -28,6 +28,7 @@
     <string name="description_copy_token">Скопировать токен Firebase для отправки push-уведомлений</string>
     <string name="description_call_is_using_audio_in_background">Звонок использует микрофон</string>
     <string name="button_copy_token_to_clipboards">Скопировать</string>
+    <string name="toast_token_copied">Токен скопирован в буфер обмена</string>
     <string name="button_open_call_accounts_settings">Перейти в настройки аккаунтов для звонков</string>
     <string name="button_call_redial">Повторить звонок</string>
     <string name="button_call_back">Перезвонить</string>

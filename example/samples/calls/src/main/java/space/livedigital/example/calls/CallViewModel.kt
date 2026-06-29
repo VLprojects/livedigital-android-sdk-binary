@@ -88,6 +88,7 @@ internal class CallViewModel(
     private var timer: Job? = null
     private var startConferenceJob: Job? = null
     private var isLocalVideoPaused = false
+    private var isEngineDestroying = false
 
     init {
         viewModelScope.launch {
@@ -125,17 +126,7 @@ internal class CallViewModel(
                 cause = cause
             )
         )
-        liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
-            override fun onDestroyed() {
-                viewModelScope.launch {
-                    stopLocalVideo()
-                    stopLocalAudio()
-                    session = null
-                    apiClient.logout()
-                    liveDigitalEngine = null
-                }
-            }
-        })
+        destroyEngine()
     }
 
     fun onFlipCameraButtonClicked() {
@@ -165,14 +156,14 @@ internal class CallViewModel(
     }
 
     fun onAppBecameFocused() {
-        if (session != null && isLocalVideoPaused) {
+        if (isLocalVideoPaused) {
             startLocalVideo()
             isLocalVideoPaused = false
         }
     }
 
     fun onAppBecameUnfocused() {
-        if (session != null && mutableState.value.isLocalVideoOn) {
+        if (mutableState.value.isLocalVideoOn) {
             isLocalVideoPaused = true
             stopLocalVideo()
         }
@@ -300,17 +291,7 @@ internal class CallViewModel(
                     it.copy(callDuration = Duration.ZERO)
                 }
 
-                liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
-                    override fun onDestroyed() {
-                        viewModelScope.launch {
-                            stopLocalVideo()
-                            stopLocalAudio()
-                            session = null
-                            apiClient.logout()
-                            liveDigitalEngine = null
-                        }
-                    }
-                })
+                destroyEngine()
             }
 
             is CallState.Missed -> {
@@ -321,17 +302,7 @@ internal class CallViewModel(
                     it.copy(callDuration = Duration.ZERO)
                 }
 
-                liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
-                    override fun onDestroyed() {
-                        viewModelScope.launch {
-                            stopLocalVideo()
-                            stopLocalAudio()
-                            session = null
-                            apiClient.logout()
-                            liveDigitalEngine = null
-                        }
-                    }
-                })
+                destroyEngine()
             }
 
             else -> {
@@ -784,15 +755,27 @@ internal class CallViewModel(
     }
 
     private fun restartSession() {
-        liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
+        destroyEngine(onComplete = { startConference() })
+    }
+
+    private fun destroyEngine(onComplete: (suspend () -> Unit)? = null) {
+        if (isEngineDestroying) return
+        val engine = liveDigitalEngine ?: return
+        isEngineDestroying = true
+
+        stopLocalVideo()
+        stopLocalAudio()
+
+        engine.destroy(object : LiveDigitalEngineDestroyDelegate {
             override fun onDestroyed() {
                 viewModelScope.launch {
-                    stopLocalVideo()
-                    stopLocalAudio()
                     session = null
                     apiClient.logout()
-                    liveDigitalEngine = null
-                    startConference()
+                    isLocalVideoPaused = false
+                    mutableState.update { it.copy(remotePeers = emptyList()) }
+                    if (liveDigitalEngine === engine) liveDigitalEngine = null
+                    isEngineDestroying = false
+                    onComplete?.invoke()
                 }
             }
         })

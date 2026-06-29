@@ -33,4 +33,9 @@
     <string name="button_call_redial">Повторить звонок</string>
     <string name="button_call_back">Перезвонить</string>
     <string name="button_xiaomi_permissions_button">Настройки производителя</string>
+    <string name="description_auth">Войдите по номеру телефона, чтобы принимать входящие звонки</string>
+    <string name="label_phone_number">Номер телефона</string>
+    <string name="label_auth_permission_required">Выдайте разрешение на уведомления, чтобы войти</string>
+    <string name="button_login">Войти</string>
+    <string name="button_logout">Выйти</string>
 </resources>

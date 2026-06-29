@@ -34,6 +34,8 @@ internal class MainActivity : AppCompatActivity() {
         parametersOf(buildPermissions(), isPhoneAccountEnabled())
     }
 
+    private val authViewModel by viewModel<AuthViewModel>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(navigationBarStyle = createNavigationBarStyle())
@@ -48,6 +50,7 @@ internal class MainActivity : AppCompatActivity() {
             permissionsViewModel.onPermissionStateUpdated(it.name, it.isGranted)
         }
         permissionsViewModel.onPhoneAccountEnabledStateUpdated(isPhoneAccountRegistered)
+        authViewModel.onPushPermissionStateChanged(isPostNotificationsGranted())
     }
 
     private fun createNavigationBarStyle(): SystemBarStyle {
@@ -62,6 +65,7 @@ internal class MainActivity : AppCompatActivity() {
             AppTheme {
                 val permissionsState =
                     permissionsViewModel.permissionsState.collectAsStateWithLifecycle()
+                val authState = authViewModel.authState.collectAsStateWithLifecycle()
 
                 val permissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission()
@@ -72,10 +76,12 @@ internal class MainActivity : AppCompatActivity() {
                         permissionsViewModel.onPermissionStateUpdated(it.name, it.isGranted)
                     }
                     permissionsViewModel.onPhoneAccountEnabledStateUpdated(isPhoneAccountRegistered)
+                    authViewModel.onPushPermissionStateChanged(isPostNotificationsGranted())
                 }
 
                 MainScreen(
                     permissionsState = permissionsState,
+                    authState = authState,
                     onCopyButtonClicked = ::copyPushTokenToClipboards,
                     onPermissionSwitchClicked = { permission ->
                         if (permission.isGranted) return@MainScreen
@@ -89,6 +95,9 @@ internal class MainActivity : AppCompatActivity() {
                         permissionLauncher.launch(permission.name)
                     },
                     onCallAccountSwitchClicked = ::openPhoneAccountsSettings,
+                    onPhoneNumberChanged = authViewModel::onPhoneNumberChanged,
+                    onLoginClicked = authViewModel::onLoginClicked,
+                    onLogoutClicked = authViewModel::onLogoutClicked,
                 )
             }
         }
@@ -142,6 +151,15 @@ internal class MainActivity : AppCompatActivity() {
     private fun buildVendorPermission(permissionName: String, importance: Importance): Permission {
         val isGranted = XiaomiUtilities.isCustomPermissionGranted(this, permissionName.toInt())
         return Permission(name = permissionName, importance, isGranted = isGranted)
+    }
+
+    // POST_NOTIFICATIONS only exists on Android 13+; it's implicitly granted before that.
+    private fun isPostNotificationsGranted(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true
+        }
+        return checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
     }
 
     // Phone account is not really permission so we need to check it in a different way

@@ -3,6 +3,8 @@ package space.livedigital.example.di
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import space.livedigital.example.AuthStorage
+import space.livedigital.example.AuthViewModel
 import space.livedigital.example.Permission
 import space.livedigital.example.PermissionsViewModel
 import space.livedigital.example.calls.CallViewModel
@@ -16,6 +18,12 @@ internal val viewModelsModule = module {
             contactsRepository = AndroidContactsRepository(
                 contentResolver = androidContext().contentResolver
             )
+        )
+    }
+
+    viewModel {
+        AuthViewModel(
+            authStorage = AuthStorage.instance ?: AuthStorage.create(androidContext())
         )
     }
 

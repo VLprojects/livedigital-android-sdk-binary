@@ -25,6 +25,7 @@ internal fun ButtonComponent(
     onClick: () -> Unit,
     style: ButtonSystem.ButtonStyle,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     icon: ImageVector? = null,
     text: String? = null,
     contentPaddingValues: PaddingValues = ButtonComponentDefaults.ContentPadding,
@@ -33,6 +34,7 @@ internal fun ButtonComponent(
     BaseButtonComponent(
         onClick = onClick,
         style = style,
+        enabled = enabled,
         contentPadding = contentPaddingValues,
         modifier = modifier
     ) {

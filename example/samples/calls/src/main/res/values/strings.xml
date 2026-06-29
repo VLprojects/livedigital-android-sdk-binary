@@ -34,4 +34,9 @@
     <string name="button_call_redial">Redial</string>
     <string name="button_call_back">Call back</string>
     <string name="button_xiaomi_permissions_button">Vendor settings</string>
+    <string name="description_auth">Sign in with your phone number to receive incoming calls</string>
+    <string name="label_phone_number">Phone number</string>
+    <string name="label_auth_permission_required">Grant the notifications permission to sign in</string>
+    <string name="button_login">Sign in</string>
+    <string name="button_logout">Sign out</string>
 </resources>

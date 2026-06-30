@@ -5,6 +5,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import space.livedigital.example.AuthStorage
 import space.livedigital.example.AuthViewModel
+import space.livedigital.example.BuildConfig
 import space.livedigital.example.Permission
 import space.livedigital.example.PermissionsViewModel
 import space.livedigital.example.backend.PushPayloadConferenceBackend
@@ -12,9 +13,17 @@ import space.livedigital.example.calls.CallViewModel
 import space.livedigital.example.calls.backend.ConferenceBackend
 import space.livedigital.example.calls.repositories.AndroidContactsRepository
 import space.livedigital.example.calls.repositories.CallRepository
+import space.livedigital.example.devices.DevicesApiClient
 
 internal val viewModelsModule = module {
-    single<ConferenceBackend> { PushPayloadConferenceBackend() }
+    single {
+        DevicesApiClient(
+            baseUrl = BuildConfig.DEVICES_BASE_URL,
+            apiKey = BuildConfig.DEVICES_API_KEY
+        )
+    }
+
+    single<ConferenceBackend> { PushPayloadConferenceBackend(devicesApiClient = get()) }
 
     viewModel {
         CallViewModel(

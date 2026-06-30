@@ -2,16 +2,12 @@ package space.livedigital.example.backend
 
 import space.livedigital.example.calls.backend.ConferenceBackend
 import space.livedigital.example.calls.backend.JoinParams
+import space.livedigital.example.devices.DevicesApiClient
 
-/**
- * Skeleton [ConferenceBackend] for the push-token-service sample. Unlike the MoodHood backend it
- * does not resolve a room over REST — the join data (signalingToken, channelId, participantId, …)
- * is expected to arrive inside the incoming push payload.
- *
- * Left as a stub for now: the push contract is not yet extended and device registration via
- * :devices-api is not wired. See LK-6568.
- */
-class PushPayloadConferenceBackend : ConferenceBackend {
+class PushPayloadConferenceBackend(
+    @Suppress("unused") // wired now; used once the push-based flow + device registration land
+    private val devicesApiClient: DevicesApiClient
+) : ConferenceBackend {
 
     override suspend fun resolveJoinParams(roomAlias: String): JoinParams? {
         // TODO(LK-6568): build JoinParams from the push payload instead of returning null.

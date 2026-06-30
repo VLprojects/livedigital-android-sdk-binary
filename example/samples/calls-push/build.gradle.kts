@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,18 +7,48 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+val devicesSecrets = Properties().apply {
+    val local = file("secrets.properties")
+    val source = if (local.exists()) {
+        local
+    } else {
+        file("secrets.defaults.properties")
+    }
+    if (source.exists()) {
+        source.inputStream().use {
+            load(it)
+        }
+    }
+}
+
+fun resolveSecret(propertyKey: String, envName: String): String =
+    System.getenv(envName)?.takeIf { it.isNotBlank() }
+        ?: devicesSecrets.getProperty(propertyKey).orEmpty()
+
+fun String.asBuildConfigString(): String =
+    "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 android {
     namespace = "space.livedigital.example"
     compileSdk = 36
 
     defaultConfig {
-        // Same applicationId as :samples:calls so the existing Firebase google-services.json
-        // keeps working. The two call samples therefore can't be installed side by side.
         applicationId = "space.livedigital.example"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField(
+            "String",
+            "DEVICES_BASE_URL",
+            resolveSecret("devicesBaseUrl", "DEVICES_BASE_URL").asBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "DEVICES_API_KEY",
+            resolveSecret("devicesApiKey", "DEVICES_API_KEY").asBuildConfigString()
+        )
     }
 
     buildTypes {
@@ -38,6 +70,10 @@ android {
 
     kotlinOptions {
         jvmTarget = javaVersion.toString()
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 }
 

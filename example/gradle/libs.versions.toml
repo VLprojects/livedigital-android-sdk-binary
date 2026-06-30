@@ -19,7 +19,6 @@ composeBom = "2026.04.01"
 coreTelecom = "1.0.1"
 firebaseBom = "34.8.0"
 lifecycleService = "2.10.0"
-chucker = "4.0.0"
 
 # Networking / DI
 retrofit = "2.11.0"
@@ -49,7 +48,6 @@ androidx-core-telecom = { module = "androidx.core:core-telecom", version.ref = "
 androidx-lifecycle-service = { group = "androidx.lifecycle", name = "lifecycle-service", version.ref = "lifecycleService" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
-chucker-library = { group = "com.github.chuckerteam.chucker", name = "library", version.ref = "chucker" }
 
 # Networking / serialization / DI
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }

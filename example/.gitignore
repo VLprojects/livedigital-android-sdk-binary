@@ -110,3 +110,6 @@ output-metadata.json
 
 # Firebase config (developer-provided, contains project keys)
 /samples/calls/google-services.json
+/samples/calls-push/google-services.json
+
+/.idea

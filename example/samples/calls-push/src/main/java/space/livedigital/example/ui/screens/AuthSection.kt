@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -16,7 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import space.livedigital.example.AuthState
-import space.livedigital.example.callscore.R
+import space.livedigital.example.R
 import space.livedigital.example.ui.components.buttons.ButtonComponent
 import space.livedigital.example.ui.components.containers.ContainerComponent
 import space.livedigital.example.ui.theme.AppTheme
@@ -49,8 +51,10 @@ internal fun AuthContainerComponent(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextField(
                 value = authState.phoneNumber,
-                onValueChange = onPhoneNumberChanged,
-                enabled = isPushPermissionGranted && !authState.isAuthorizedIn,
+                onValueChange = { onPhoneNumberChanged(it) },
+                enabled = isPushPermissionGranted &&
+                        !authState.isAuthorizedIn &&
+                        !authState.isLoading,
                 singleLine = true,
                 label = { Text(text = stringResource(R.string.label_phone_number)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -60,15 +64,22 @@ internal fun AuthContainerComponent(
                     .align(Alignment.CenterVertically)
             )
 
-            if (authState.isAuthorizedIn) {
-                ButtonComponent(
+            when {
+                authState.isLoading -> CircularProgressIndicator(
+                    color = AppTheme.colorSystem.contrast,
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .size(24.dp)
+                )
+
+                authState.isAuthorizedIn -> ButtonComponent(
                     onClick = onSignOutClicked,
                     enabled = isPushPermissionGranted,
                     style = AppTheme.buttonSystem.rejectButtonStyle,
                     text = stringResource(R.string.button_logout),
                 )
-            } else {
-                ButtonComponent(
+
+                else -> ButtonComponent(
                     onClick = onSignInClicked,
                     enabled = isPushPermissionGranted && authState.phoneNumber.isNotBlank(),
                     style = AppTheme.buttonSystem.primaryButtonStyle,

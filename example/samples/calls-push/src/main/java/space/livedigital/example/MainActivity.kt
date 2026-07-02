@@ -25,7 +25,6 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import space.livedigital.example.calls.services.CallConnectionService
 import space.livedigital.example.calls.utils.XiaomiUtilities
-import space.livedigital.example.callscore.R
 import space.livedigital.example.ui.screens.AuthContainerComponent
 import space.livedigital.example.ui.screens.MainScreen
 import space.livedigital.example.ui.theme.AppTheme

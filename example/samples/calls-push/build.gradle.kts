@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+    id("kotlin-parcelize")
 }
 
 val devicesSecrets = Properties().apply {
@@ -22,8 +23,10 @@ val devicesSecrets = Properties().apply {
 }
 
 fun resolveSecret(propertyKey: String, envName: String): String =
-    System.getenv(envName)?.takeIf { it.isNotBlank() }
-        ?: devicesSecrets.getProperty(propertyKey).orEmpty()
+    (System.getenv(envName)?.takeIf { it.isNotBlank() }
+        ?: devicesSecrets.getProperty(propertyKey).orEmpty())
+        .trim()
+        .removeSurrounding("\"")
 
 fun String.asBuildConfigString(): String =
     "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
@@ -78,23 +81,33 @@ android {
 }
 
 dependencies {
-    // Shared call infrastructure (telephony, services, CallViewModel + ConferenceBackend, UI).
-    // Transitively exposes :shared (SDK + Koin), :design and Compose.
-    implementation(project(":calls-core"))
+    // SDK integration infra (engine DI, PeerAppData, JsonUtils) + Koin.
+    implementation(project(":shared"))
+
+    // Compose design system (theme, base components, modifier extensions).
+    implementation(project(":design"))
 
     // Push-device registration REST client — used by this sample's ConferenceBackend (stub for now).
     implementation(project(":devices-api"))
 
+    // Telephony integration (system dialer + self-managed Core-Telecom flows).
+    implementation(libs.androidx.core.telecom)
+
+    // Foreground call service lifecycle.
+    implementation(libs.androidx.lifecycle.service)
+
     // MainActivity extends AppCompatActivity.
     implementation(libs.androidx.appcompat)
 
-    // FCM token retrieval in MainActivity.
+    // FCM push-initiated calls + token retrieval.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
 
-    // Jetpack Compose UI used by MainActivity.
+    // Jetpack Compose UI (CallActivity, screens, components).
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.ui.tooling)
 }

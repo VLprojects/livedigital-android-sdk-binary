@@ -5,9 +5,13 @@ import android.content.ComponentName
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import space.livedigital.example.calls.services.CallConnectionService
+import space.livedigital.example.device.DeviceRepository
 import space.livedigital.example.di.liveDigitalEngineModule
 import space.livedigital.example.di.viewModelsModule
 
@@ -20,6 +24,9 @@ internal class App : Application() {
             val moduleList = listOf(viewModelsModule, liveDigitalEngineModule)
             this.modules(moduleList)
         }
+
+        val deviceRepository = get<DeviceRepository>()
+        get<CoroutineScope>().launch { deviceRepository.registerIfSignedIn() }
 
         val telecomManager = applicationContext.getSystemService(TELECOM_SERVICE) as TelecomManager
         val componentName = ComponentName(applicationContext, CallConnectionService::class.java)

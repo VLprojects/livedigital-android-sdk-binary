@@ -40,10 +40,6 @@ include(":moodhood-api")
 // Shared Compose design system used by the Compose samples (conference-compose, calls).
 include(":design")
 
-// Shared call infrastructure (telephony, services, CallViewModel + ConferenceBackend, UI)
-// reused by the two call samples (:samples:calls, :samples:calls-push).
-include(":calls-core")
-
 // Runnable SDK usage samples — each is an independent, installable app.
 include(":samples:conference-xml")
 include(":samples:conference-compose")

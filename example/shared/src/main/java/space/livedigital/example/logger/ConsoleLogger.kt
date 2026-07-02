@@ -7,7 +7,7 @@ import space.livedigital.sdk.debug.logger.Logger
 object ConsoleLogger : Logger {
     private const val LOG_PREFIX = "LD_SDK_"
 
-    override fun log(level: Level, tag: String, message: String, payload: Map<String, String?>?) {
+    override fun log(level: Level, tag: String, message: String, payload: Map<String, Any?>?) {
         val consoleLogTag = LOG_PREFIX + tag
         var consoleMessage = message
         if (payload.isNullOrEmpty().not()) {

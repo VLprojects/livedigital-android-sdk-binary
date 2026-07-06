@@ -9,12 +9,7 @@ sealed interface CallActivityAction : Parcelable {
     data class Answer(val call: Call) : CallActivityAction
 
     @Parcelize
-    data class PlaceMissedCall(
-        val callerName: String,
-        val phoneNumber: String,
-        val signalingToken: String,
-        val callType: CallType
-    ) : CallActivityAction
+    data class PlaceMissedCall(val call: Call) : CallActivityAction
 
     @Parcelize
     data object StartBackgroundAudioService : CallActivityAction

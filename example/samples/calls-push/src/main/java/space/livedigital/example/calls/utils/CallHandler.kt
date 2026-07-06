@@ -13,6 +13,8 @@ import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import space.livedigital.example.AuthStorage
+import space.livedigital.example.BuildConfig
 import space.livedigital.example.calls.broadcasts.CallBroadcast
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.Call
@@ -23,6 +25,48 @@ import space.livedigital.example.calls.services.CallConnectionService
 class CallHandler(
     private val context: Context
 ) {
+
+    /**
+     * Entry point for dialing a number from this app's own UI: mints the outbound [Call] and
+     * routes it through the regular telecom path ([CallBroadcast] → system dialer or
+     * self-managed CallService). The channel join and `engine.initiateCall()` happen in
+     * CallViewModel once the call screen opens.
+     */
+    fun placeOutgoingCall(calleePhoneNumber: String) {
+        val call = buildOutgoingCall(calleePhoneNumber) ?: return
+        context.sendSelfManagedOutgoingCallBroadcast(call)
+    }
+
+    /**
+     * Builds a locally-signed outbound [Call] for a number that wasn't dialed through this app's
+     * own UI — e.g. redialed from the system call log, or dialed via the native Phone app while
+     * this app's account is the default outgoing account. [onCreateOutgoingConnection][
+     * space.livedigital.example.calls.services.CallConnectionService.onCreateOutgoingConnection]
+     * only receives the destination address in that case, so the signaling token (which is what
+     * actually tells the backend to originate the PSTN leg) has to be minted here instead of
+     * being carried over from [CallConstants.EXTRA_SIGNALING_TOKEN].
+     */
+    fun buildOutgoingCall(calleePhoneNumber: String): Call.Actual? {
+        val authStorage = AuthStorage.instance ?: AuthStorage.create(context)
+        val callerPhoneNumber = authStorage.phoneNumber
+        if (callerPhoneNumber.isBlank()) return null
+
+        val signalingToken = OutboundCallTokenGenerator(
+            devicesApiKey = BuildConfig.DEVICES_API_KEY,
+            signalingTokenKey = BuildConfig.SIGNALING_TOKEN_KEY,
+            deviceId = authStorage.deviceId
+        ).makeOutboundCallToken(
+            callerPhoneNumber = callerPhoneNumber,
+            calleePhoneNumber = calleePhoneNumber
+        )
+
+        return Call.Actual(
+            displayName = calleePhoneNumber,
+            phone = calleePhoneNumber,
+            signalingToken = signalingToken,
+            callType = CallType.AUDIO
+        )
+    }
 
     fun startIncomingCall(call: Call) {
         val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
@@ -63,24 +107,14 @@ class CallHandler(
             } catch (e: SecurityException) {
                 Log.d(TAG, "Permission not granted. e = $e")
                 // If there is no permission to start telecom call, we should start self-managed call
-                context.sendSelfManagedIncomingCallBroadcast(
-                    displayName = call.displayName,
-                    phone = call.phone,
-                    signalingToken = call.signalingToken,
-                    callType = call.callType
-                )
+                context.sendSelfManagedIncomingCallBroadcast(call)
                 return
             } catch (e: Exception) {
                 Log.d(TAG, "exception = $e")
                 return
             }
         } else {
-            context.sendSelfManagedIncomingCallBroadcast(
-                displayName = call.displayName,
-                phone = call.phone,
-                signalingToken = call.signalingToken,
-                callType = call.callType
-            )
+            context.sendSelfManagedIncomingCallBroadcast(call)
         }
     }
 
@@ -120,12 +154,7 @@ class CallHandler(
             } catch (e: SecurityException) {
                 Log.d(TAG, "Permission not granted. e = $e")
                 // If there no permission to start telecom call, we should start self-managed call
-                context.sendSelfManagedOutgoingCallBroadcast(
-                    displayName = call.displayName,
-                    phone = call.phone,
-                    signalingToken = call.signalingToken,
-                    callType = call.callType
-                )
+                context.sendSelfManagedOutgoingCallBroadcast(call)
                 return false
             } catch (e: Exception) {
                 Log.d(TAG, "exception = $e")
@@ -160,41 +189,23 @@ class CallHandler(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun Context.sendSelfManagedIncomingCallBroadcast(
-        displayName: String,
-        phone: String,
-        signalingToken: String,
-        callType: CallType
-    ) {
+    private fun Context.sendSelfManagedIncomingCallBroadcast(call: Call) {
         val callIntent = Intent(applicationContext, CallBroadcast::class.java)
         callIntent.putExtra(
             CallConstants.EXTRA_ACTION,
-            CallAction.PlaceIncomingCall(
-                displayName = displayName,
-                phone = phone,
-                signalingToken = signalingToken,
-                callType = callType
-            ),
+            CallAction.PlaceIncomingCall(call = call),
         )
         sendBroadcast(callIntent)
     }
 
-    private fun Context.sendSelfManagedOutgoingCallBroadcast(
-        displayName: String,
-        phone: String,
-        signalingToken: String,
-        callType: CallType
-    ) {
+    private fun Context.sendSelfManagedOutgoingCallBroadcast(call: Call) {
         val callIntent = Intent(applicationContext, CallBroadcast::class.java)
         callIntent.putExtra(
             CallConstants.EXTRA_ACTION,
             CallAction.PlaceOutgoingCall(
-                displayName = displayName,
-                phone = phone,
-                signalingToken = signalingToken,
-                callType = callType,
+                call = call,
                 isMuted = applicationContext.initialIsMuted(),
-                isCameraOn = applicationContext.initialIsCameraOn(callType)
+                isCameraOn = applicationContext.initialIsCameraOn(call.callType)
             ),
         )
         sendBroadcast(callIntent)

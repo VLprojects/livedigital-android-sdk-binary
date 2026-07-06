@@ -297,7 +297,9 @@ private fun BoxScope.CallInfoComponent(
                 ) {
                     Text(
                         stringResource(
-                            if (callState.wasActive) {
+                            if (callState.wasActive ||
+                                callState.disconnectCause == DisconnectCause(DisconnectCause.LOCAL)
+                            ) {
                                 R.string.label_call_finished
                             } else {
                                 R.string.label_call_rejected
@@ -511,14 +513,10 @@ private fun CallControlPanel(
 
                     ButtonComponent(
                         onClick = {
-                            val call = callState.call
                             onCallAction(
                                 Disconnect(
-                                    call.displayName,
-                                    call.phone,
-                                    call.signalingToken,
-                                    call.callType,
-                                    DisconnectCause(DisconnectCause.LOCAL)
+                                    call = callState.call,
+                                    cause = DisconnectCause(DisconnectCause.LOCAL)
                                 )
                             )
                         },
@@ -533,10 +531,7 @@ private fun CallControlPanel(
                         onClick = {
                             onCallAction(
                                 Answer(
-                                    callState.call.displayName,
-                                    callState.call.phone,
-                                    callState.call.signalingToken,
-                                    callState.call.callType,
+                                    call = callState.call,
                                     isMuted = context.initialIsMuted(),
                                     isCameraOn = context.initialIsCameraOn(callState.call.callType)
                                 )
@@ -550,11 +545,8 @@ private fun CallControlPanel(
                         onClick = {
                             onCallAction(
                                 Disconnect(
-                                    callState.call.displayName,
-                                    callState.call.phone,
-                                    callState.call.signalingToken,
-                                    callState.call.callType,
-                                    DisconnectCause(DisconnectCause.LOCAL)
+                                    call = callState.call,
+                                    cause = DisconnectCause(DisconnectCause.LOCAL)
                                 )
                             )
                         },
@@ -572,10 +564,7 @@ private fun CallControlPanel(
                             call?.let {
                                 onCallAction(
                                     PlaceOutgoingCall(
-                                        it.displayName,
-                                        it.phone,
-                                        it.signalingToken,
-                                        it.callType,
+                                        call = it,
                                         isMuted = context.initialIsMuted(),
                                         isCameraOn = context.initialIsCameraOn(it.callType)
                                     )

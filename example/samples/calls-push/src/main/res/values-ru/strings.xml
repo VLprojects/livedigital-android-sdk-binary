@@ -38,4 +38,7 @@
     <string name="label_auth_permission_required">Выдайте разрешение на уведомления, чтобы войти</string>
     <string name="button_login">Войти</string>
     <string name="button_logout">Выйти</string>
+    <string name="description_outgoing_call">Введите номер телефона, чтобы совершить исходящий звонок</string>
+    <string name="label_callee_phone_number">Номер вызываемого</string>
+    <string name="button_call">Позвонить</string>
 </resources>

@@ -5,6 +5,7 @@ import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import org.koin.core.component.KoinComponent
+import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
@@ -31,8 +32,6 @@ class PushNotificationService : FirebaseMessagingService(), KoinComponent {
             return
         }
 
-        // This sample only implements the incoming (callee) side. `call_start` rings the device;
-        // every other kind terminates the current call with a cause-specific reason.
         when (kind) {
             PushKind.CALL_START -> handleCallStart(data)
             PushKind.CALL_END ->
@@ -42,7 +41,12 @@ class PushNotificationService : FirebaseMessagingService(), KoinComponent {
                 disconnectCurrentCall(DisconnectCause(DisconnectCause.ANSWERED_ELSEWHERE))
 
             PushKind.CALL_DECLINED_BY_CALLEE ->
-                disconnectCurrentCall(DisconnectCause(DisconnectCause.REJECTED))
+                disconnectCurrentCall(
+                    DisconnectCause(
+                        DisconnectCause.REJECTED,
+                        CallConstants.REASON_DECLINED_ELSEWHERE
+                    )
+                )
 
             PushKind.CALL_CANCELLED ->
                 disconnectCurrentCall(DisconnectCause(DisconnectCause.REMOTE))
@@ -91,15 +95,8 @@ class PushNotificationService : FirebaseMessagingService(), KoinComponent {
             return
         }
 
-        val call = currentState.call
         callRepository.dispatchCallAction(
-            CallAction.Disconnect(
-                displayName = call.displayName,
-                phone = call.phone,
-                signalingToken = call.signalingToken,
-                callType = call.callType,
-                cause = cause
-            )
+            CallAction.Disconnect(call = currentState.call, cause = cause)
         )
     }
 

@@ -76,11 +76,8 @@ class CallNotificationManager(private val context: Context) {
             caller,
             getActionPendingIntent(
                 CallAction.Disconnect(
-                    displayName = callState.call.displayName,
-                    phone = callState.call.phone,
-                    signalingToken = callState.call.signalingToken,
-                    cause = DisconnectCause(DisconnectCause.LOCAL),
-                    callType = callState.call.callType
+                    call = callState.call,
+                    cause = DisconnectCause(DisconnectCause.LOCAL)
                 )
             ),
             pendingAnswerIntent
@@ -119,11 +116,8 @@ class CallNotificationManager(private val context: Context) {
             caller,
             getActionPendingIntent(
                 CallAction.Disconnect(
-                    displayName = callState.call.displayName,
-                    phone = callState.call.phone,
-                    signalingToken = callState.call.signalingToken,
-                    cause = DisconnectCause(DisconnectCause.LOCAL),
-                    callType = callState.call.callType
+                    call = callState.call,
+                    cause = DisconnectCause(DisconnectCause.LOCAL)
                 )
             )
         ).setIsVideo(callState.call.callType == CallType.VIDEO)
@@ -189,12 +183,7 @@ class CallNotificationManager(private val context: Context) {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
             putExtra(
                 CallConstants.EXTRA_ACTION,
-                CallActivityAction.PlaceMissedCall(
-                    callerName = callState.call.displayName,
-                    phoneNumber = callState.call.phone,
-                    signalingToken = callState.call.signalingToken,
-                    callType = callState.call.callType
-                )
+                CallActivityAction.PlaceMissedCall(call = callState.call)
             )
         }
 

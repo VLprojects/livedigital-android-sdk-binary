@@ -49,9 +49,25 @@ android {
         )
         buildConfigField(
             "String",
+            "LOAD_BALANCER_BASE_URL",
+            resolveSecret("loadBalancerBaseUrl", "LOAD_BALANCER_BASE_URL").asBuildConfigString()
+        )
+        buildConfigField(
+            "String",
             "DEVICES_API_KEY",
             resolveSecret("devicesApiKey", "DEVICES_API_KEY").asBuildConfigString()
         )
+        buildConfigField(
+            "String",
+            "SIGNALING_API_BASE_URL",
+            resolveSecret("signalingApiBaseUrl", "SIGNALING_API_BASE_URL").asBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SIGNALING_TOKEN_KEY",
+            resolveSecret("signalingTokenKey", "SIGNALING_TOKEN_KEY").asBuildConfigString()
+        )
+
     }
 
     buildTypes {

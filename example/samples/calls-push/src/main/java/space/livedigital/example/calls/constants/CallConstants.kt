@@ -5,4 +5,5 @@ object CallConstants {
     const val EXTRA_SIGNALING_TOKEN = "space.livedigital.extra.SIGNALING_TOKEN"
     const val EXTRA_ACTION = "space.livedigital.extra.ACTION"
     const val EXTRA_CALL_TYPE = "space.livedigital.extra.CALL_TYPE"
+    const val REASON_DECLINED_ELSEWHERE = "declined_elsewhere"
 }

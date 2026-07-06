@@ -5,74 +5,42 @@ import android.telecom.DisconnectCause
 import kotlinx.parcelize.Parcelize
 
 sealed interface CallAction : Parcelable {
+
     @Parcelize
     data class Answer(
-        val displayName: String,
-        val phone: String,
-        val signalingToken: String,
-        val callType: CallType,
+        val call: Call,
         val isMuted: Boolean,
         val isCameraOn: Boolean
     ) : CallAction
 
     @Parcelize
     data class Disconnect(
-        val displayName: String,
-        val phone: String,
-        val signalingToken: String,
-        val callType: CallType,
+        val call: Call,
         val cause: DisconnectCause
     ) : CallAction
 
     @Parcelize
-    data class Activate(
-        val displayName: String,
-        val phone: String,
-        val signalingToken: String,
-        val callType: CallType
-    ) : CallAction
+    data class Activate(val call: Call) : CallAction
 
     @Parcelize
-    data class PlaceActiveCall(
-        val displayName: String,
-        val phone: String,
-        val signalingToken: String,
-        val callType: CallType
-    ) : CallAction
+    data class PlaceActiveCall(val call: Call) : CallAction
 
     @Parcelize
-    data class ToggleMute(
-        val isMute: Boolean
-    ) : CallAction
+    data class ToggleMute(val isMute: Boolean) : CallAction
 
     @Parcelize
-    data class ToggleCamera(
-        val isCameraOn: Boolean
-    ) : CallAction
+    data class ToggleCamera(val isCameraOn: Boolean) : CallAction
 
     @Parcelize
-    data class PlaceIncomingCall(
-        val displayName: String,
-        val phone: String,
-        val signalingToken: String,
-        val callType: CallType
-    ) : CallAction
+    data class PlaceIncomingCall(val call: Call) : CallAction
 
     @Parcelize
     data class PlaceOutgoingCall(
-        val displayName: String,
-        val phone: String,
-        val signalingToken: String,
-        val callType: CallType,
+        val call: Call,
         val isMuted: Boolean,
         val isCameraOn: Boolean
     ) : CallAction
 
     @Parcelize
-    data class PlaceMissedCall(
-        val displayName: String,
-        val phone: String,
-        val signalingToken: String,
-        val callType: CallType
-    ) : CallAction
+    data class PlaceMissedCall(val call: Call) : CallAction
 }

@@ -32,6 +32,7 @@ import space.livedigital.example.calls.entities.CallState
 import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import space.livedigital.example.calls.repositories.CallRepository
+import space.livedigital.example.calls.utils.CallHandler
 import space.livedigital.example.calls.utils.initialIsCameraOn
 import space.livedigital.example.calls.utils.initialIsMuted
 
@@ -41,32 +42,12 @@ class CallConnectionService : ConnectionService() {
         override fun onAnswer(call: Call) {
             repository?.dispatchCallAction(
                 CallAction.Answer(
-                    displayName = call.displayName,
-                    phone = call.phone,
-                    signalingToken = call.signalingToken,
-                    callType = call.callType,
+                    call = call,
                     isMuted = applicationContext.initialIsMuted(),
                     isCameraOn = applicationContext.initialIsCameraOn(call.callType)
                 )
             )
-            val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                putExtra(
-                    CallConstants.EXTRA_ACTION,
-                    CallActivityAction.StartBackgroundAudioService
-                )
-            }
-            val pendingIntent = PendingIntent.getActivity(
-                this@CallConnectionService,
-                System.currentTimeMillis().toInt(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            // We need to add a delay to prevent our app from being overlaid by the system
-            // dialer
-            Handler(Looper.getMainLooper()).postDelayed({
-                pendingIntent.send()
-            }, 500)
+            launchCallActivity()
         }
 
         override fun onDisconnect(
@@ -74,13 +55,7 @@ class CallConnectionService : ConnectionService() {
             disconnectCause: DisconnectCause
         ) {
             repository?.dispatchCallAction(
-                CallAction.Disconnect(
-                    displayName = call.displayName,
-                    phone = call.phone,
-                    signalingToken = call.signalingToken,
-                    callType = call.callType,
-                    cause = disconnectCause
-                )
+                CallAction.Disconnect(call = call, cause = disconnectCause)
             )
         }
 
@@ -153,15 +128,11 @@ class CallConnectionService : ConnectionService() {
                 DisconnectCause(DisconnectCause.RESTRICTED)
             )
         val signalingToken = bundle.getString(CallConstants.EXTRA_SIGNALING_TOKEN)
-            ?: return Connection.createFailedConnection(
-                DisconnectCause(DisconnectCause.RESTRICTED)
-            )
+            ?: return Connection.createFailedConnection(DisconnectCause(DisconnectCause.RESTRICTED))
         val callType = CallType.valueOf(
             bundle.getString(CallConstants.EXTRA_CALL_TYPE)?.uppercase()
                 ?: return Connection.createFailedConnection(
-                    DisconnectCause(
-                        DisconnectCause.RESTRICTED
-                    )
+                    DisconnectCause(DisconnectCause.RESTRICTED)
                 )
         )
         val call = Call.Actual(
@@ -183,14 +154,7 @@ class CallConnectionService : ConnectionService() {
             setCallerDisplayName(caller, TelecomManager.PRESENTATION_ALLOWED)
             addListener(listener)
             setRinging()
-            repository?.dispatchCallAction(
-                CallAction.PlaceIncomingCall(
-                    displayName = call.displayName,
-                    phone = call.phone,
-                    signalingToken = call.signalingToken,
-                    callType = call.callType
-                )
-            )
+            repository?.dispatchCallAction(CallAction.PlaceIncomingCall(call = call))
         }
 
         this.connection = connection
@@ -201,47 +165,53 @@ class CallConnectionService : ConnectionService() {
         connectionManagerPhoneAccount: PhoneAccountHandle?,
         request: ConnectionRequest?
     ): Connection {
-        val bundle = request?.extras ?: return Connection.createFailedConnection(
+        val address = request?.address ?: return Connection.createFailedConnection(
             DisconnectCause(DisconnectCause.RESTRICTED)
         )
-        val signalingToken = bundle.getString(CallConstants.EXTRA_SIGNALING_TOKEN)
-            ?: return Connection.createFailedConnection(DisconnectCause(DisconnectCause.RESTRICTED))
-        val name =
-            bundle.getString(CallConstants.EXTRA_NAME) ?: return Connection.createFailedConnection(
-                DisconnectCause(DisconnectCause.RESTRICTED)
-            )
-        val callType = CallType.valueOf(
-            bundle.getString(CallConstants.EXTRA_CALL_TYPE)?.uppercase()
+        val bundle = request.extras
+        val signalingToken = bundle?.getString(CallConstants.EXTRA_SIGNALING_TOKEN)
+
+        // A signaling token in the extras means this app placed the call itself (see
+        // CallHandler.tryToStartSystemOutgoingCall) and already minted one. Otherwise the call
+        // was placed some other way — e.g. redialed from the system call log, or dialed via the
+        // native Phone app while this app's account is the default outgoing account — so there
+        // is no pre-built Call to read; mint one from just the destination address instead.
+        val call = if (signalingToken != null) {
+            val name = bundle.getString(CallConstants.EXTRA_NAME)
                 ?: return Connection.createFailedConnection(
-                    DisconnectCause(
-                        DisconnectCause.RESTRICTED
-                    )
+                    DisconnectCause(DisconnectCause.RESTRICTED)
                 )
-        )
-        val call = Call.Actual(
-            displayName = name,
-            phone = request.address.schemeSpecificPart,
-            signalingToken = signalingToken,
-            callType = callType
-        )
+            val callType = CallType.valueOf(
+                bundle.getString(CallConstants.EXTRA_CALL_TYPE)?.uppercase()
+                    ?: return Connection.createFailedConnection(
+                        DisconnectCause(DisconnectCause.RESTRICTED)
+                    )
+            )
+            Call.Actual(
+                displayName = name,
+                phone = address.schemeSpecificPart,
+                signalingToken = signalingToken,
+                callType = callType
+            )
+        } else {
+            CallHandler(applicationContext).buildOutgoingCall(address.schemeSpecificPart)
+                ?: return Connection.createFailedConnection(DisconnectCause(DisconnectCause.RESTRICTED))
+        }
 
         val connection = CallConnection(call).apply {
             connectionProperties = Connection.PROPERTY_SELF_MANAGED
-            if (callType == CallType.VIDEO) {
+            if (call.callType == CallType.VIDEO) {
                 connectionCapabilities = Connection.CAPABILITY_SUPPORTS_VT_LOCAL_BIDIRECTIONAL or
                         Connection.CAPABILITY_SUPPORTS_VT_REMOTE_BIDIRECTIONAL
                 videoState = VideoProfile.STATE_BIDIRECTIONAL
             }
-            setAddress(request.address, TelecomManager.PRESENTATION_ALLOWED)
-            setCallerDisplayName(name, TelecomManager.PRESENTATION_ALLOWED)
+            setAddress(address, TelecomManager.PRESENTATION_ALLOWED)
+            setCallerDisplayName(call.displayName, TelecomManager.PRESENTATION_ALLOWED)
             addListener(listener)
             setRinging()
             repository?.dispatchCallAction(
                 CallAction.PlaceOutgoingCall(
-                    displayName = call.displayName,
-                    phone = call.phone,
-                    signalingToken = call.signalingToken,
-                    callType = call.callType,
+                    call = call,
                     isMuted = applicationContext.initialIsMuted(),
                     isCameraOn = applicationContext.initialIsCameraOn(call.callType)
                 )
@@ -256,64 +226,25 @@ class CallConnectionService : ConnectionService() {
         when (callState) {
             is CallState.Answered -> {
                 connection?.setActive()
-                val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    putExtra(
-                        CallConstants.EXTRA_ACTION,
-                        CallActivityAction.StartBackgroundAudioService
-                    )
-                }
-                val pendingIntent = PendingIntent.getActivity(
-                    this@CallConnectionService,
-                    System.currentTimeMillis().toInt(),
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-                // We need to add a delay to prevent our app from being overlaid by the system
-                // dialer
-                Handler(Looper.getMainLooper()).postDelayed({
-                    pendingIntent.send()
-                }, 500)
+                launchCallActivity()
                 repository?.dispatchCallAction(
-                    CallAction.PlaceActiveCall(
-                        displayName = callState.call.displayName,
-                        phone = callState.call.phone,
-                        signalingToken = callState.call.signalingToken,
-                        callType = callState.call.callType
-                    )
+                    CallAction.PlaceActiveCall(call = callState.call)
                 )
             }
 
             is CallState.Activated -> {
                 connection?.setActive()
-                val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    putExtra(
-                        CallConstants.EXTRA_ACTION,
-                        CallActivityAction.StartBackgroundAudioService
-                    )
-                }
-                val pendingIntent = PendingIntent.getActivity(
-                    this@CallConnectionService,
-                    System.currentTimeMillis().toInt(),
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-                // We need to add a delay to prevent our app from being overlaid by the system
-                // dialer
-                Handler(Looper.getMainLooper()).postDelayed({
-                    pendingIntent.send()
-                }, 500)
+                launchCallActivity()
                 repository?.dispatchCallAction(
-                    CallAction.PlaceActiveCall(
-                        displayName = callState.call.displayName,
-                        phone = callState.call.phone,
-                        signalingToken = callState.call.signalingToken,
-                        callType = callState.call.callType
-                    )
+                    CallAction.PlaceActiveCall(call = callState.call)
                 )
+            }
+
+            // The room join and engine.initiateCall() live in CallViewModel, which only exists
+            // while CallActivity is shown. Bring it up over the system dialer right away —
+            // otherwise the outbound call would sit ringing forever without dialing the callee.
+            is CallState.Outgoing -> {
+                launchCallActivity()
             }
 
             is CallState.Ended -> {
@@ -330,5 +261,26 @@ class CallConnectionService : ConnectionService() {
 
             else -> Unit
         }
+    }
+
+    private fun launchCallActivity() {
+        val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(
+                CallConstants.EXTRA_ACTION,
+                CallActivityAction.StartBackgroundAudioService
+            )
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this@CallConnectionService,
+            System.currentTimeMillis().toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // We need to add a delay to prevent our app from being overlaid by the system dialer
+        Handler(Looper.getMainLooper()).postDelayed({
+            pendingIntent.send()
+        }, 500)
     }
 }

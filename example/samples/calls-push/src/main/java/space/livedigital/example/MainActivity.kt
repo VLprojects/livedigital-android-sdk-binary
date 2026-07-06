@@ -24,9 +24,11 @@ import com.google.firebase.messaging.FirebaseMessaging
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import space.livedigital.example.calls.services.CallConnectionService
+import space.livedigital.example.calls.utils.CallHandler
 import space.livedigital.example.calls.utils.XiaomiUtilities
 import space.livedigital.example.ui.screens.AuthContainerComponent
 import space.livedigital.example.ui.screens.MainScreen
+import space.livedigital.example.ui.screens.OutgoingCallContainerComponent
 import space.livedigital.example.ui.theme.AppTheme
 
 internal class MainActivity : AppCompatActivity() {
@@ -107,6 +109,14 @@ internal class MainActivity : AppCompatActivity() {
                         onSignInClicked = authViewModel::onSignInClicked,
                         onSignOutClicked = authViewModel::onSignOutClicked
                     )
+
+                    if (authState.value.isAuthorizedIn) {
+                        OutgoingCallContainerComponent(
+                            onCallButtonClicked = { calleePhoneNumber ->
+                                CallHandler(applicationContext).placeOutgoingCall(calleePhoneNumber)
+                            }
+                        )
+                    }
                 }
             }
         }

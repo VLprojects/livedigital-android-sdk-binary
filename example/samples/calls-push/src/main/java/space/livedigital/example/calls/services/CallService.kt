@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import space.livedigital.example.calls.CallActivity
 import space.livedigital.example.calls.broadcasts.CallBroadcast
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction.Activate
@@ -58,10 +59,7 @@ class CallService : LifecycleService() {
         repository?.currentCallState?.value?.let { callState ->
             repository?.dispatchCallAction(
                 Answer(
-                    displayName = callState.call.displayName,
-                    phone = callState.call.phone,
-                    signalingToken = callState.call.signalingToken,
-                    callType = callState.call.callType,
+                    call = callState.call,
                     isMuted = applicationContext.initialIsMuted(),
                     isCameraOn = applicationContext.initialIsCameraOn(callState.call.callType)
                 )
@@ -75,13 +73,7 @@ class CallService : LifecycleService() {
     val onIsCallDisconnected: suspend (cause: DisconnectCause) -> Unit = { disconnectCause ->
         repository?.currentCallState?.value?.let { callState ->
             repository?.dispatchCallAction(
-                Disconnect(
-                    displayName = callState.call.displayName,
-                    phone = callState.call.phone,
-                    signalingToken = callState.call.signalingToken,
-                    cause = disconnectCause,
-                    callType = callState.call.callType
-                )
+                Disconnect(call = callState.call, cause = disconnectCause)
             )
         }
     }
@@ -92,14 +84,7 @@ class CallService : LifecycleService() {
      */
     val onIsCallActive: suspend () -> Unit = {
         repository?.currentCallState?.value?.let { callState ->
-            repository?.dispatchCallAction(
-                Activate(
-                    displayName = callState.call.displayName,
-                    phone = callState.call.phone,
-                    signalingToken = callState.call.signalingToken,
-                    callType = callState.call.callType
-                )
-            )
+            repository?.dispatchCallAction(Activate(call = callState.call))
         }
     }
 
@@ -165,12 +150,7 @@ class CallService : LifecycleService() {
                         val callIntent = Intent(applicationContext, CallBroadcast::class.java)
                         callIntent.putExtra(
                             CallConstants.EXTRA_ACTION,
-                            PlaceActiveCall(
-                                displayName = callState.call.displayName,
-                                phone = callState.call.phone,
-                                signalingToken = callState.call.signalingToken,
-                                callType = callState.call.callType
-                            ),
+                            PlaceActiveCall(call = callState.call),
                         )
                         sendBroadcast(callIntent)
                     }
@@ -184,12 +164,7 @@ class CallService : LifecycleService() {
                         val callIntent = Intent(applicationContext, CallBroadcast::class.java)
                         callIntent.putExtra(
                             CallConstants.EXTRA_ACTION,
-                            PlaceActiveCall(
-                                displayName = callState.call.displayName,
-                                phone = callState.call.phone,
-                                signalingToken = callState.call.signalingToken,
-                                callType = callState.call.callType
-                            ),
+                            PlaceActiveCall(call = callState.call),
                         )
                         sendBroadcast(callIntent)
                     }
@@ -222,7 +197,11 @@ class CallService : LifecycleService() {
 
                 is CallState.Ended -> {
                     stopRingtoneAndVibration()
-                    callControlScope?.disconnect(disconnectCause = callState.disconnectCause)
+                    callControlScope?.disconnect(
+                        disconnectCause = convertToSafeDisconnectCause(
+                            callState.disconnectCause.code
+                        )
+                    )
                     callControlScope = null
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
@@ -272,7 +251,11 @@ class CallService : LifecycleService() {
                     stopRingtoneAndVibration()
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     notificationManager?.showMissedCallNotification(callState)
-                    callControlScope?.disconnect(disconnectCause = callState.disconnectCause)
+                    callControlScope?.disconnect(
+                        disconnectCause = convertToSafeDisconnectCause(
+                            callState.disconnectCause.code
+                        )
+                    )
                     callControlScope = null
                     stopSelf()
                 }
@@ -301,6 +284,11 @@ class CallService : LifecycleService() {
                     }
                     stopRingtoneAndVibration()
                     if (callControlScope == null) {
+                        // The room join and engine.initiateCall() live in CallViewModel, which
+                        // only exists while CallActivity is shown — the ongoing-call
+                        // notification alone would leave the call ringing forever. Must happen
+                        // before registerCall: addCall suspends until the call session ends.
+                        startCallActivity()
                         registerCall(
                             displayName = callState.call.displayName,
                             phone = callState.call.phone,
@@ -309,6 +297,29 @@ class CallService : LifecycleService() {
                         )
                     }
                 }
+            }
+        }
+    }
+
+    private fun startCallActivity() {
+        val intent = Intent(applicationContext, CallActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(intent)
+    }
+
+    fun convertToSafeDisconnectCause(internalReasonCode: Int): DisconnectCause {
+        return when (internalReasonCode) {
+            DisconnectCause.LOCAL -> DisconnectCause(DisconnectCause.LOCAL)
+            DisconnectCause.REMOTE -> DisconnectCause(DisconnectCause.REMOTE)
+            DisconnectCause.MISSED -> DisconnectCause(DisconnectCause.MISSED)
+            DisconnectCause.REJECTED -> DisconnectCause(DisconnectCause.REJECTED)
+
+            // Map all other cases (like 11 / CALL_PULLED) to an allowed fallback
+            else -> {
+                // For example, if a call was pulled to another device,
+                // from this device's perspective, it's a LOCAL termination.
+                DisconnectCause(DisconnectCause.LOCAL, "Call transferred or pulled")
             }
         }
     }

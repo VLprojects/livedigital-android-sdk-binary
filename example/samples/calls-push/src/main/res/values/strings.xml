@@ -39,4 +39,7 @@
     <string name="label_auth_permission_required">Grant the notifications permission to sign in</string>
     <string name="button_login">Sign in</string>
     <string name="button_logout">Sign out</string>
+    <string name="description_outgoing_call">Enter a phone number to place an outgoing call</string>
+    <string name="label_callee_phone_number">Callee phone number</string>
+    <string name="button_call">Call</string>
 </resources>

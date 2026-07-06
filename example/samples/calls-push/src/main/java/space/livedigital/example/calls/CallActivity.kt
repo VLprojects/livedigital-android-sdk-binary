@@ -122,10 +122,7 @@ class CallActivity : ComponentActivity() {
         callIntent.putExtra(
             CallConstants.EXTRA_ACTION,
             CallAction.Answer(
-                displayName = action.call.displayName,
-                phone = action.call.phone,
-                signalingToken = action.call.signalingToken,
-                callType = action.call.callType,
+                call = action.call,
                 isMuted = applicationContext.initialIsMuted(),
                 isCameraOn = applicationContext.initialIsCameraOn(action.call.callType)
             ),
@@ -137,12 +134,7 @@ class CallActivity : ComponentActivity() {
         val callIntent = Intent(applicationContext, CallBroadcast::class.java)
         callIntent.putExtra(
             CallConstants.EXTRA_ACTION,
-            CallAction.PlaceMissedCall(
-                displayName = action.callerName,
-                phone = action.phoneNumber,
-                signalingToken = action.signalingToken,
-                callType = action.callType
-            ),
+            CallAction.PlaceMissedCall(call = action.call),
         )
         sendBroadcast(callIntent)
     }

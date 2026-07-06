@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
+import org.koin.core.parameter.parametersOf
+import space.livedigital.example.BuildConfig
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallCommand
@@ -23,6 +25,9 @@ import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.repositories.ContactsRepository
 import space.livedigital.example.calls.repositories.HasContactResult
+import space.livedigital.example.calls.utils.OutboundCallTokenGenerator
+import space.livedigital.sdk.Failure
+import space.livedigital.sdk.Success
 import space.livedigital.sdk.channel.ChannelError
 import space.livedigital.sdk.channel.ChannelSession
 import space.livedigital.sdk.channel.ChannelSessionDelegate
@@ -34,6 +39,7 @@ import space.livedigital.sdk.data.entities.MediaLabel
 import space.livedigital.sdk.data.entities.Peer
 import space.livedigital.sdk.data.entities.PeerId
 import space.livedigital.sdk.data.entities.PeerVolume
+import space.livedigital.sdk.data.entities.StockChannelSessionParams
 import space.livedigital.sdk.data.entities.channel_state_consistency.ChannelStateConsistencyIssue
 import space.livedigital.sdk.engine.LiveDigitalEngine
 import space.livedigital.sdk.engine.LiveDigitalEngineDelegate
@@ -70,6 +76,7 @@ class CallViewModel(
     private var startConferenceJob: Job? = null
     private var isLocalVideoPaused = false
     private var isEngineDestroying = false
+    private var isOutboundCallInitiated = false
 
     init {
         viewModelScope.launch {
@@ -99,13 +106,7 @@ class CallViewModel(
 
     fun onCallFinishedBySystem(cause: DisconnectCause) {
         callRepository.dispatchCallAction(
-            CallAction.Disconnect(
-                displayName = state.value.callState.call.displayName,
-                phone = state.value.callState.call.phone,
-                signalingToken = state.value.callState.call.signalingToken,
-                callType = state.value.callState.call.callType,
-                cause = cause
-            )
+            CallAction.Disconnect(call = state.value.callState.call, cause = cause)
         )
         destroyEngine()
     }
@@ -162,9 +163,7 @@ class CallViewModel(
     ) {
         when (callState) {
             is CallState.Active -> {
-                if (liveDigitalEngine == null) {
-                    liveDigitalEngine = get<LiveDigitalEngine>()
-                }
+                ensureEngine()
 
                 if (session == null && startConferenceJob == null) {
                     signalingToken = callState.call.signalingToken
@@ -173,17 +172,7 @@ class CallViewModel(
                     }
                 }
 
-                if (callState.isMuted) {
-                    stopLocalAudio()
-                } else {
-                    startLocalAudio()
-                }
-
-                if (callState.isCameraOn) {
-                    startLocalVideo()
-                } else {
-                    stopLocalVideo()
-                }
+                syncLocalMedia(callState)
 
                 if (timer?.isActive != true) {
                     timer = viewModelScope.launch {
@@ -199,67 +188,29 @@ class CallViewModel(
                 }
             }
 
-            is CallState.Activated -> {
-                if (liveDigitalEngine == null) {
-                    liveDigitalEngine = get<LiveDigitalEngine>()
-                }
-
-                mutableState.update {
-                    it.copy(callDuration = Duration.ZERO)
-                }
-                if (callState.isMuted) {
-                    stopLocalAudio()
-                } else {
-                    startLocalAudio()
-                }
-
-                if (callState.isCameraOn) {
-                    startLocalVideo()
-                } else {
-                    stopLocalVideo()
-                }
-            }
-
-            is CallState.Answered -> {
-                if (liveDigitalEngine == null) {
-                    liveDigitalEngine = get<LiveDigitalEngine>()
-                }
-
-                mutableState.update {
-                    it.copy(callDuration = Duration.ZERO)
-                }
-                if (callState.isMuted) {
-                    stopLocalAudio()
-                } else {
-                    startLocalAudio()
-                }
-
-                if (callState.isCameraOn) {
-                    startLocalVideo()
-                } else {
-                    stopLocalVideo()
-                }
-            }
-
             is CallState.Outgoing -> {
-                if (liveDigitalEngine == null) {
-                    liveDigitalEngine = get<LiveDigitalEngine>()
+                ensureEngine()
+
+                if (session == null && startConferenceJob == null) {
+                    signalingToken = callState.call.signalingToken
+                    startConferenceJob = viewModelScope.launch {
+                        startConference()
+                    }
                 }
 
                 mutableState.update {
                     it.copy(callDuration = Duration.ZERO)
                 }
-                if (callState.isMuted) {
-                    stopLocalAudio()
-                } else {
-                    startLocalAudio()
-                }
+                syncLocalMedia(callState)
+            }
 
-                if (callState.isCameraOn) {
-                    startLocalVideo()
-                } else {
-                    stopLocalVideo()
+            is CallState.WithMedia -> {
+                ensureEngine()
+
+                mutableState.update {
+                    it.copy(callDuration = Duration.ZERO)
                 }
+                syncLocalMedia(callState)
             }
 
             is CallState.Ended -> {
@@ -267,6 +218,7 @@ class CallViewModel(
 
                 timer?.cancel()
                 timer = null
+                isOutboundCallInitiated = false
 
                 mutableState.update {
                     it.copy(callDuration = Duration.ZERO)
@@ -278,6 +230,7 @@ class CallViewModel(
             is CallState.Missed -> {
                 timer?.cancel()
                 timer = null
+                isOutboundCallInitiated = false
 
                 mutableState.update {
                     it.copy(callDuration = Duration.ZERO)
@@ -292,20 +245,76 @@ class CallViewModel(
                 }
                 timer?.cancel()
                 timer = null
+                isOutboundCallInitiated = false
             }
+        }
+    }
+
+    private fun getLiveDigitalEngine(): LiveDigitalEngine = get<LiveDigitalEngine> {
+        parametersOf(
+            BuildConfig.LOAD_BALANCER_BASE_URL,
+            BuildConfig.SIGNALING_API_BASE_URL
+        )
+    }
+
+    private fun ensureEngine(): LiveDigitalEngine =
+        liveDigitalEngine ?: getLiveDigitalEngine().also { liveDigitalEngine = it }
+
+    private fun syncLocalMedia(callState: CallState.WithMedia) {
+        if (callState.isMuted) {
+            stopLocalAudio()
+        } else {
+            startLocalAudio()
+        }
+
+        if (callState.isCameraOn) {
+            startLocalVideo()
+        } else {
+            stopLocalVideo()
         }
     }
 
     private fun startConference() {
         val signalingToken = signalingToken ?: return
 
-        if (liveDigitalEngine == null) {
-            liveDigitalEngine = get<LiveDigitalEngine>()
-        }
+        ensureEngine()
 
         initDelegates()
 
         connectToChannel(signalingToken)
+    }
+
+    /**
+     * For an outbound external call, joining the channel by itself doesn't ring the callee:
+     * once the local peer is connected, the backend must be asked to originate the PSTN leg.
+     * Must happen exactly once per call — session restarts (see [restartSession]) reconnect to
+     * the channel but must not dial the callee again, so the flag is only reset when the call
+     * reaches a terminal state in [handleCallState].
+     */
+    private fun initiateOutboundCallIfNeeded() {
+        if (isOutboundCallInitiated) return
+        val signalingToken = signalingToken ?: return
+        if (!OutboundCallTokenGenerator.isOutboundCallToken(signalingToken)) return
+        val engine = liveDigitalEngine ?: return
+
+        isOutboundCallInitiated = true
+        viewModelScope.launch {
+            when (val result = engine.initiateCall()) {
+                is Success -> {
+                    Log.d(TAG, "Outbound call initiated: ${result.value}")
+                }
+
+                is Failure -> {
+                    Log.e(TAG, "Failed to initiate outbound call: ${result.error}")
+                    callRepository.dispatchCallAction(
+                        CallAction.Disconnect(
+                            call = state.value.callState.call,
+                            cause = DisconnectCause(DisconnectCause.ERROR)
+                        )
+                    )
+                }
+            }
+        }
     }
 
     private fun initDelegates() {
@@ -331,7 +340,11 @@ class CallViewModel(
         Log.d(TAG, "connect to channel")
 
         liveDigitalEngine?.connectToChannel(
-            signalingToken,
+            StockChannelSessionParams(
+                signalingToken = signalingToken,
+                appData = null,
+                analyticsMetaKeyValues = emptyMap()
+            ),
             createChannelSessionDelegate(),
         ) {
             session = it
@@ -362,6 +375,13 @@ class CallViewModel(
             }
 
             override fun peerDisconnected(peerId: PeerId) {
+                callRepository.dispatchCallAction(
+                    CallAction.Disconnect(
+                        call = state.value.callState.call,
+                        cause = DisconnectCause(DisconnectCause.REMOTE)
+                    )
+                )
+
                 if (state.value.callState.call.callType == CallType.VIDEO) {
                     mutableState.update {
                         val peers = it.remotePeers.toMutableList()
@@ -463,8 +483,7 @@ class CallViewModel(
             override fun forceStoppedLocalMedia(label: MediaLabel) {}
 
             override fun connectedToChannel() {
-                // The signaling token already scopes the session to its room, so there is no
-                // separate REST "join room" step in the push-token flow.
+                initiateOutboundCallIfNeeded()
             }
 
             override fun reconnectedToChannel() {}
@@ -476,7 +495,9 @@ class CallViewModel(
                     it.copy(sessionStatus = status)
                 }
 
-                if (status == ChannelSessionStatus.STOPPED) restartSession()
+                if (status == ChannelSessionStatus.STOPPED) {
+                    restartSession()
+                }
             }
 
             override fun onChannelErrorOccurred(error: ChannelError) {}

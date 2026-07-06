@@ -22,9 +22,7 @@ import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.services.CallConnectionService
 
-class CallHandler(
-    private val context: Context
-) {
+class CallHandler(private val context: Context) {
 
     /**
      * Entry point for dialing a number from this app's own UI: mints the outbound [Call] and
@@ -49,7 +47,10 @@ class CallHandler(
     fun buildOutgoingCall(calleePhoneNumber: String): Call.Actual? {
         val authStorage = AuthStorage.instance ?: AuthStorage.create(context)
         val callerPhoneNumber = authStorage.phoneNumber
-        if (callerPhoneNumber.isBlank()) return null
+
+        if (callerPhoneNumber.isBlank()) {
+            return null
+        }
 
         val signalingToken = OutboundCallTokenGenerator(
             devicesApiKey = BuildConfig.DEVICES_API_KEY,

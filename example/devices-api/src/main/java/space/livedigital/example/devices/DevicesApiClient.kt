@@ -1,6 +1,5 @@
 package space.livedigital.example.devices
 
-import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -8,9 +7,9 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import space.livedigital.example.devices.executor.DeviceRequestExecutor
+import space.livedigital.example.devices.executors.ApiRequestExecutor
 import space.livedigital.example.devices.request.RegisterDeviceRequestBody
-import space.livedigital.example.devices.result.DeviceRequestResult
+import space.livedigital.example.devices.result.api.ExecutionResult
 import java.util.concurrent.TimeUnit
 
 class DevicesApiClient(
@@ -18,7 +17,7 @@ class DevicesApiClient(
     private val apiKey: String,
     private val additionalInterceptors: List<Interceptor> = emptyList(),
 ) {
-    private val requestExecutor = DeviceRequestExecutor()
+    private val apiRequestExecutor = ApiRequestExecutor()
 
     suspend fun registerDevice(
         deviceId: String,
@@ -28,7 +27,7 @@ class DevicesApiClient(
         deviceName: String,
         timezone: String,
         pushPlatform: String = DEFAULT_PUSH_PLATFORM,
-    ): DeviceRequestResult<Unit> {
+    ): ExecutionResult<Unit> {
         val body = RegisterDeviceRequestBody(
             pushToken = pushToken,
             locale = locale,
@@ -37,11 +36,11 @@ class DevicesApiClient(
             pushPlatform = pushPlatform,
             timezone = timezone,
         )
-        return requestExecutor.execute { apiService.registerDevice(deviceId, body) }
+        return apiRequestExecutor.execute { apiService.registerDevice(deviceId, body) }
     }
 
-    suspend fun deleteDevice(deviceId: String): DeviceRequestResult<Unit> {
-        return requestExecutor.execute { apiService.deleteDevice(deviceId) }
+    suspend fun deleteDevice(deviceId: String): ExecutionResult<Unit> {
+        return apiRequestExecutor.execute { apiService.deleteDevice(deviceId) }
     }
 
     private val loggingInterceptor = createLoggingInterceptor()
@@ -58,11 +57,7 @@ class DevicesApiClient(
 
     private fun createConverterFactory(): Converter.Factory {
         val contentType = "application/json".toMediaType()
-        val json = Json {
-            ignoreUnknownKeys = true
-            explicitNulls = false
-        }
-        return json.asConverterFactory(contentType)
+        return DevicesJson.asConverterFactory(contentType)
     }
 
     private fun createOkHttpClient(): OkHttpClient {

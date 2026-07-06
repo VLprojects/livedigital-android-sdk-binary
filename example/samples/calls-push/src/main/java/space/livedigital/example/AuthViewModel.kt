@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import space.livedigital.example.device.DeviceRepository
-import space.livedigital.example.devices.result.DeviceRequestResult
+import space.livedigital.example.devices.result.api.ExecutionResult
 
 internal class AuthViewModel(
     private val authStorage: AuthStorage,
@@ -43,7 +43,7 @@ internal class AuthViewModel(
         mutableAuthState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             val result = deviceRepository.register(state.phoneNumber)
-            val signedIn = result == null || result is DeviceRequestResult.Success
+            val signedIn = result == null || result is ExecutionResult.Success
             if (signedIn) {
                 authStorage.phoneNumber = state.phoneNumber
                 mutableAuthState.update { it.copy(isAuthorizedIn = true, isLoading = false) }

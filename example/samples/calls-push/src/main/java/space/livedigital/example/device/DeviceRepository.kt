@@ -7,7 +7,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import space.livedigital.example.AuthStorage
 import space.livedigital.example.BuildConfig
 import space.livedigital.example.devices.DevicesApiClient
-import space.livedigital.example.devices.result.DeviceRequestResult
+import space.livedigital.example.devices.result.ApplicationThrowable
+import space.livedigital.example.devices.result.api.ExecutionError
+import space.livedigital.example.devices.result.api.ExecutionResult
 import java.util.Locale
 import java.util.TimeZone
 import kotlin.coroutines.resume
@@ -27,10 +29,14 @@ internal class DeviceRepository(
             .getOrNull()
     }
 
-    suspend fun register(phoneNumber: String): DeviceRequestResult<Unit>? {
+    suspend fun register(phoneNumber: String): ExecutionResult<Unit>? {
         val client = client ?: return null
         val pushToken = currentPushToken()
-            ?: return DeviceRequestResult.Error(IllegalStateException("No FCM token"))
+            ?: return ExecutionResult.Error(
+                ExecutionError.Failure(
+                    ApplicationThrowable(IllegalStateException("No FCM token"))
+                )
+            )
 
         return client.registerDevice(
             deviceId = authStorage.deviceId,
@@ -42,7 +48,7 @@ internal class DeviceRepository(
         ).also { logResult("registerDevice", it) }
     }
 
-    suspend fun unregister(): DeviceRequestResult<Unit>? {
+    suspend fun unregister(): ExecutionResult<Unit>? {
         val client = client ?: return null
         return client.deleteDevice(deviceId = authStorage.deviceId)
             .also { logResult("deleteDevice", it) }
@@ -70,11 +76,16 @@ internal class DeviceRepository(
     private fun currentDeviceName(): String =
         "${Build.MANUFACTURER} ${Build.MODEL}"
 
-    private fun logResult(request: String, result: DeviceRequestResult<Unit>) {
+    private fun logResult(request: String, result: ExecutionResult<Unit>) {
         when (result) {
-            is DeviceRequestResult.Success -> Log.i(TAG, "$request succeeded")
-            is DeviceRequestResult.Error ->
-                Log.e(TAG, "$request failed: ${result.throwable.message}")
+            is ExecutionResult.Success -> Log.i(TAG, "$request succeeded")
+            is ExecutionResult.Error -> when (val error = result.error) {
+                is ExecutionError.Expected ->
+                    Log.e(TAG, "$request failed: ${error.data.code} ${error.data.message}")
+
+                is ExecutionError.Failure ->
+                    Log.e(TAG, "$request failed: ${error.throwable.cause?.message}")
+            }
         }
     }
 

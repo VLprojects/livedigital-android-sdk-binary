@@ -171,7 +171,7 @@ class CallConnectionService : ConnectionService() {
             callType = callType
         )
         val connection = CallConnection(call).apply {
-            connectionProperties = Connection.PROPERTY_SELF_MANAGED
+            audioModeIsVoip = true
             setAddress(request.address, TelecomManager.PRESENTATION_ALLOWED)
 
             if (callType == CallType.VIDEO) {
@@ -226,7 +226,7 @@ class CallConnectionService : ConnectionService() {
         )
 
         val connection = CallConnection(call).apply {
-            connectionProperties = Connection.PROPERTY_SELF_MANAGED
+            audioModeIsVoip = true
             if (callType == CallType.VIDEO) {
                 connectionCapabilities = Connection.CAPABILITY_SUPPORTS_VT_LOCAL_BIDIRECTIONAL or
                         Connection.CAPABILITY_SUPPORTS_VT_REMOTE_BIDIRECTIONAL

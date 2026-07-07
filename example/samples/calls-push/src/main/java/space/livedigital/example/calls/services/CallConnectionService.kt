@@ -131,7 +131,7 @@ class CallConnectionService : ConnectionService() {
             signalingToken = signalingToken
         )
         val connection = CallConnection(call).apply {
-            connectionProperties = Connection.PROPERTY_SELF_MANAGED
+            audioModeIsVoip = true
             setAddress(request.address, TelecomManager.PRESENTATION_ALLOWED)
             setCallerDisplayName(caller, TelecomManager.PRESENTATION_ALLOWED)
             addListener(listener)
@@ -174,7 +174,7 @@ class CallConnectionService : ConnectionService() {
         }
 
         val connection = CallConnection(call).apply {
-            connectionProperties = Connection.PROPERTY_SELF_MANAGED
+            audioModeIsVoip = true
             setAddress(address, TelecomManager.PRESENTATION_ALLOWED)
             setCallerDisplayName(call.displayName, TelecomManager.PRESENTATION_ALLOWED)
             addListener(listener)

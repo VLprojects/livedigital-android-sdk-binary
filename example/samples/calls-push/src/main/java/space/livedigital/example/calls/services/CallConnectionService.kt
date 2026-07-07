@@ -14,7 +14,6 @@ import android.telecom.ConnectionService
 import android.telecom.DisconnectCause
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
-import android.telecom.VideoProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -29,11 +28,9 @@ import space.livedigital.example.calls.entities.CallActivityAction
 import space.livedigital.example.calls.entities.CallCommand
 import space.livedigital.example.calls.entities.CallConnection
 import space.livedigital.example.calls.entities.CallState
-import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.utils.CallHandler
-import space.livedigital.example.calls.utils.initialIsCameraOn
 import space.livedigital.example.calls.utils.initialIsMuted
 
 class CallConnectionService : ConnectionService() {
@@ -43,8 +40,7 @@ class CallConnectionService : ConnectionService() {
             repository?.dispatchCallAction(
                 CallAction.Answer(
                     call = call,
-                    isMuted = applicationContext.initialIsMuted(),
-                    isCameraOn = applicationContext.initialIsCameraOn(call.callType)
+                    isMuted = applicationContext.initialIsMuted()
                 )
             )
             launchCallActivity()
@@ -129,28 +125,14 @@ class CallConnectionService : ConnectionService() {
             )
         val signalingToken = bundle.getString(CallConstants.EXTRA_SIGNALING_TOKEN)
             ?: return Connection.createFailedConnection(DisconnectCause(DisconnectCause.RESTRICTED))
-        val callType = CallType.valueOf(
-            bundle.getString(CallConstants.EXTRA_CALL_TYPE)?.uppercase()
-                ?: return Connection.createFailedConnection(
-                    DisconnectCause(DisconnectCause.RESTRICTED)
-                )
-        )
         val call = Call.Actual(
             displayName = caller,
             phone = request.address.schemeSpecificPart,
-            signalingToken = signalingToken,
-            callType = callType
+            signalingToken = signalingToken
         )
         val connection = CallConnection(call).apply {
             connectionProperties = Connection.PROPERTY_SELF_MANAGED
             setAddress(request.address, TelecomManager.PRESENTATION_ALLOWED)
-
-            if (callType == CallType.VIDEO) {
-                connectionCapabilities = Connection.CAPABILITY_SUPPORTS_VT_LOCAL_BIDIRECTIONAL or
-                        Connection.CAPABILITY_SUPPORTS_VT_REMOTE_BIDIRECTIONAL
-                videoState = VideoProfile.STATE_BIDIRECTIONAL
-            }
-
             setCallerDisplayName(caller, TelecomManager.PRESENTATION_ALLOWED)
             addListener(listener)
             setRinging()
@@ -181,17 +163,10 @@ class CallConnectionService : ConnectionService() {
                 ?: return Connection.createFailedConnection(
                     DisconnectCause(DisconnectCause.RESTRICTED)
                 )
-            val callType = CallType.valueOf(
-                bundle.getString(CallConstants.EXTRA_CALL_TYPE)?.uppercase()
-                    ?: return Connection.createFailedConnection(
-                        DisconnectCause(DisconnectCause.RESTRICTED)
-                    )
-            )
             Call.Actual(
                 displayName = name,
                 phone = address.schemeSpecificPart,
-                signalingToken = signalingToken,
-                callType = callType
+                signalingToken = signalingToken
             )
         } else {
             CallHandler(applicationContext).buildOutgoingCall(address.schemeSpecificPart)
@@ -200,11 +175,6 @@ class CallConnectionService : ConnectionService() {
 
         val connection = CallConnection(call).apply {
             connectionProperties = Connection.PROPERTY_SELF_MANAGED
-            if (call.callType == CallType.VIDEO) {
-                connectionCapabilities = Connection.CAPABILITY_SUPPORTS_VT_LOCAL_BIDIRECTIONAL or
-                        Connection.CAPABILITY_SUPPORTS_VT_REMOTE_BIDIRECTIONAL
-                videoState = VideoProfile.STATE_BIDIRECTIONAL
-            }
             setAddress(address, TelecomManager.PRESENTATION_ALLOWED)
             setCallerDisplayName(call.displayName, TelecomManager.PRESENTATION_ALLOWED)
             addListener(listener)
@@ -212,8 +182,7 @@ class CallConnectionService : ConnectionService() {
             repository?.dispatchCallAction(
                 CallAction.PlaceOutgoingCall(
                     call = call,
-                    isMuted = applicationContext.initialIsMuted(),
-                    isCameraOn = applicationContext.initialIsCameraOn(call.callType)
+                    isMuted = applicationContext.initialIsMuted()
                 )
             )
         }

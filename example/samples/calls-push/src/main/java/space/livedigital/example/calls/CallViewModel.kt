@@ -20,7 +20,6 @@ import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallCommand
 import space.livedigital.example.calls.entities.CallState
-import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.repositories.ContactsRepository
@@ -46,13 +45,8 @@ import space.livedigital.sdk.engine.LiveDigitalEngineDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineDestroyDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineError
 import space.livedigital.sdk.media.MediaSourceId
-import space.livedigital.sdk.media.video.CameraManager
-import space.livedigital.sdk.media.video.CameraManagerDelegate
-import space.livedigital.sdk.media.video.CameraPosition
-import space.livedigital.sdk.media.video.visual_effects.VideoSourceType
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeSource.Monotonic.markNow
 
 class CallViewModel(
     private val callRepository: CallRepository,
@@ -74,7 +68,6 @@ class CallViewModel(
     private var signalingToken: String? = null
     private var timer: Job? = null
     private var startConferenceJob: Job? = null
-    private var isLocalVideoPaused = false
     private var isEngineDestroying = false
     private var isOutboundCallInitiated = false
 
@@ -111,16 +104,6 @@ class CallViewModel(
         destroyEngine()
     }
 
-    fun onFlipCameraButtonClicked() {
-        liveDigitalEngine?.cameraManager?.flipCamera()
-    }
-
-    fun onChangeLocalPreviewFullscreenStateClicked() {
-        mutableState.update {
-            it.copy(isLocalPreviewFullscreen = !it.isLocalPreviewFullscreen)
-        }
-    }
-
     fun onAudioDevicePickerClicked() {
         mutableState.update {
             it.copy(
@@ -134,20 +117,6 @@ class CallViewModel(
             it.copy(
                 isAudioDevicePickerShown = false
             )
-        }
-    }
-
-    fun onAppBecameFocused() {
-        if (isLocalVideoPaused) {
-            startLocalVideo()
-            isLocalVideoPaused = false
-        }
-    }
-
-    fun onAppBecameUnfocused() {
-        if (mutableState.value.isLocalVideoOn) {
-            isLocalVideoPaused = true
-            stopLocalVideo()
         }
     }
 
@@ -266,12 +235,6 @@ class CallViewModel(
         } else {
             startLocalAudio()
         }
-
-        if (callState.isCameraOn) {
-            startLocalVideo()
-        } else {
-            stopLocalVideo()
-        }
     }
 
     private fun startConference() {
@@ -318,17 +281,6 @@ class CallViewModel(
     }
 
     private fun initDelegates() {
-        liveDigitalEngine?.cameraManager?.delegate = object : CameraManagerDelegate {
-            override fun cameraManagerSwitchedCamera(
-                cameraManager: CameraManager,
-                cameraPosition: CameraPosition
-            ) {
-                mutableState.update {
-                    mutableState.value.copy(localCameraPosition = cameraPosition)
-                }
-            }
-        }
-
         liveDigitalEngine?.delegate = object : LiveDigitalEngineDelegate {
             override fun engineFailed(error: LiveDigitalEngineError) {
                 Log.e(TAG, "Engine failed $error")
@@ -369,24 +321,6 @@ class CallViewModel(
         return object : ChannelSessionDelegate {
             override fun peersJoined(peers: List<Peer>) {
                 activateOutgoingCallIfNeeded(peers)
-
-                if (state.value.callState.call.callType == CallType.VIDEO) {
-                    for (peer in peers) {
-                        if (peer.id == session?.myPeerId) {
-                            // TODO: On demand, modify sdk to be able to show your remote peer
-                            break
-                        }
-
-                        Log.d(TAG, "Peer ${peer.id} joined")
-                        val peerWithUpdateTime = PeerWithVersion(
-                            peer = peer,
-                            version = markNow(),
-                        )
-                        mutableState.update {
-                            mutableState.value.copy(remotePeers = it.remotePeers + peerWithUpdateTime)
-                        }
-                    }
-                }
             }
 
             override fun peerDisconnected(peerId: PeerId) {
@@ -396,76 +330,22 @@ class CallViewModel(
                         cause = DisconnectCause(DisconnectCause.REMOTE)
                     )
                 )
-
-                if (state.value.callState.call.callType == CallType.VIDEO) {
-                    mutableState.update {
-                        val peers = it.remotePeers.toMutableList()
-                        peers.removeIf { it.peer.id == peerId }
-                        mutableState.value.copy(remotePeers = peers.toList())
-                    }
-                }
             }
 
-            override fun peerCanStartVideo(peer: Peer, label: MediaLabel) {
-                session?.startVideo(peer, label)
-            }
+            // External (PSTN) calls are audio-only, so the video lifecycle callbacks are no-ops.
+            override fun peerCanStartVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerStartedVideo(peer: Peer, label: MediaLabel) {
-                if (state.value.callState.call.callType == CallType.VIDEO) {
-                    peer.setIsVideoConsumerCanBeImmediatelyResumed(label, true)
-                }
-            }
+            override fun peerStartedVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerCanResumeVideo(peer: Peer, label: MediaLabel) {
-                if (state.value.callState.call.callType == CallType.VIDEO) {
-                    session?.proceedVideo(peer, label)
-                }
-            }
+            override fun peerCanResumeVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerResumedVideo(peer: Peer, label: MediaLabel) {
-                if (state.value.callState.call.callType == CallType.VIDEO) {
-                    val peerWithUpdateTime = PeerWithVersion(peer = peer, version = markNow())
-                    mutableState.update {
-                        mutableState.value.copy(
-                            remotePeers = it.remotePeers.replaceBy(peerWithUpdateTime) {
-                                it.peer.id == peer.id
-                            })
-                    }
-                }
-            }
+            override fun peerResumedVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerCanPauseVideo(peer: Peer, label: MediaLabel) {
-                if (state.value.callState.call.callType == CallType.VIDEO) {
-                    session?.suspendVideo(peer, label)
-                }
-            }
+            override fun peerCanPauseVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerPausedVideo(peer: Peer, label: MediaLabel) {
-                if (state.value.callState.call.callType == CallType.VIDEO) {
-                    val peerWithUpdateTime = PeerWithVersion(peer = peer, version = markNow())
-                    mutableState.update { it ->
-                        it.copy(
-                            remotePeers = it.remotePeers.replaceBy(
-                                peerWithUpdateTime
-                            ) {
-                                it.peer.id == peer.id
-                            })
-                    }
-                }
-            }
+            override fun peerPausedVideo(peer: Peer, label: MediaLabel) {}
 
-            override fun peerStoppedVideo(peer: Peer, label: MediaLabel) {
-                if (state.value.callState.call.callType == CallType.VIDEO) {
-                    val peerWithUpdateTime = PeerWithVersion(peer = peer, version = markNow())
-                    mutableState.update {
-                        mutableState.value.copy(
-                            remotePeers = it.remotePeers.replaceBy(peerWithUpdateTime) {
-                                it.peer.id == peer.id
-                            }
-                        )
-                    }
-                }
-            }
+            override fun peerStoppedVideo(peer: Peer, label: MediaLabel) {}
 
             override fun peerCanStartAudio(peer: Peer, label: MediaLabel) {
                 session?.startAudio(peer, label)
@@ -537,45 +417,6 @@ class CallViewModel(
         }
     }
 
-    private fun startLocalVideo() {
-        if (state.value.isLocalVideoOn) return
-
-        val localVideoSource = liveDigitalEngine?.startCameraVideoSource(
-            videoOutputFormat = null,
-            videoEncodingPresets = null,
-            visualEffects = listOf(),
-            videoSourceType = VideoSourceType.CAMERA
-        )
-        localVideoSource?.let { source ->
-            mutableState.update {
-                mutableState.value.copy(
-                    localVideoSource = source,
-                    isLocalVideoOn = true
-                )
-            }
-        }
-    }
-
-    private fun stopLocalVideo() {
-        if (!mutableState.value.isLocalVideoOn) {
-            mutableState.update {
-                mutableState.value.copy(localVideoSource = null)
-            }
-            return
-        }
-
-        mutableState.value.localVideoSource?.let {
-            liveDigitalEngine?.stopMediaSource(
-                mediaSource = it,
-                videoSourceType = VideoSourceType.CAMERA
-            )
-
-            mutableState.update {
-                mutableState.value.copy(isLocalVideoOn = false)
-            }
-        }
-    }
-
     private fun startLocalAudio() {
         if (state.value.isLocalAudioOn) return
 
@@ -615,15 +456,12 @@ class CallViewModel(
         val engine = liveDigitalEngine ?: return
         isEngineDestroying = true
 
-        stopLocalVideo()
         stopLocalAudio()
 
         engine.destroy(object : LiveDigitalEngineDestroyDelegate {
             override fun onDestroyed() {
                 viewModelScope.launch {
                     session = null
-                    isLocalVideoPaused = false
-                    mutableState.update { it.copy(remotePeers = emptyList()) }
                     if (liveDigitalEngine === engine) liveDigitalEngine = null
                     isEngineDestroying = false
                     onComplete?.invoke()
@@ -660,6 +498,3 @@ class CallViewModel(
         const val TAG = "LivedigitalAndroidSdkExample"
     }
 }
-
-private fun <T> List<T>.replaceBy(item: T, predicate: (T) -> Boolean): List<T> =
-    (filterNot(predicate) + item)

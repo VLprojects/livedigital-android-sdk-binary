@@ -9,7 +9,6 @@ import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
-import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.push.PushTokenListener
 import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.utils.CallHandler
@@ -63,8 +62,7 @@ class PushNotificationService : FirebaseMessagingService(), KoinComponent {
         val call = Call.Actual(
             displayName = data[KEY_CALLER].orEmpty(),
             phone = HARDCODED_CALLER_PHONE,
-            signalingToken = signalingToken,
-            callType = CallType.AUDIO
+            signalingToken = signalingToken
         )
 
         val callRepository = CallRepository.instance ?: CallRepository.create()

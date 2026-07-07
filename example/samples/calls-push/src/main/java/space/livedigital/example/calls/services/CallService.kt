@@ -41,11 +41,9 @@ import space.livedigital.example.calls.entities.CallAction.Disconnect
 import space.livedigital.example.calls.entities.CallAction.PlaceActiveCall
 import space.livedigital.example.calls.entities.CallCommand
 import space.livedigital.example.calls.entities.CallState
-import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.utils.CallConverter
-import space.livedigital.example.calls.utils.initialIsCameraOn
 import space.livedigital.example.calls.utils.initialIsMuted
 
 class CallService : LifecycleService() {
@@ -60,8 +58,7 @@ class CallService : LifecycleService() {
             repository?.dispatchCallAction(
                 Answer(
                     call = callState.call,
-                    isMuted = applicationContext.initialIsMuted(),
-                    isCameraOn = applicationContext.initialIsCameraOn(callState.call.callType)
+                    isMuted = applicationContext.initialIsMuted()
                 )
             )
         }
@@ -114,8 +111,7 @@ class CallService : LifecycleService() {
         // Manager to add call in system (without integration with dialer app)
         callsManager = CallsManager(applicationContext).apply {
             registerAppWithTelecom(
-                capabilities = CallsManager.CAPABILITY_SUPPORTS_CALL_STREAMING and
-                        CallsManager.CAPABILITY_SUPPORTS_VIDEO_CALLING
+                capabilities = CallsManager.CAPABILITY_SUPPORTS_CALL_STREAMING
             )
         }
 
@@ -143,7 +139,7 @@ class CallService : LifecycleService() {
                 is CallState.Answered -> {
                     stopRingtoneAndVibration()
                     val result = callControlScope?.answer(
-                        callType = CallConverter.convertToTelecomCallType(callState.call.callType)
+                        callType = CallAttributesCompat.CALL_TYPE_AUDIO_CALL
                     )
 
                     if (result is CallControlResult.Success) {
@@ -241,7 +237,6 @@ class CallService : LifecycleService() {
                         registerCall(
                             displayName = callState.call.displayName,
                             phone = callState.call.phone,
-                            callType = callState.call.callType,
                             isIncoming = true
                         )
                     }
@@ -292,7 +287,6 @@ class CallService : LifecycleService() {
                         registerCall(
                             displayName = callState.call.displayName,
                             phone = callState.call.phone,
-                            callType = callState.call.callType,
                             isIncoming = true
                         )
                     }
@@ -349,7 +343,6 @@ class CallService : LifecycleService() {
     private suspend fun registerCall(
         displayName: String,
         phone: String,
-        callType: CallType,
         isIncoming: Boolean
     ) {
         val callAttributes = CallAttributesCompat(
@@ -359,7 +352,7 @@ class CallService : LifecycleService() {
                 phone,   // must be digits or +E.164
                 null
             ),
-            callType = CallConverter.convertToTelecomCallType(callType),
+            callType = CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
             direction = if (isIncoming) {
                 CallAttributesCompat.DIRECTION_INCOMING
             } else {

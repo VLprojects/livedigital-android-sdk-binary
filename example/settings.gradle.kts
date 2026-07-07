@@ -48,3 +48,7 @@ include(":samples:calls")
 // Second call sample: same UI/telephony shell as :samples:calls but backed by :devices-api
 // (push-token-service flow) instead of MoodHood. Hosts the phone-number auth/login feature.
 include(":samples:calls-push")
+
+// Library with the code shared verbatim by the two call samples (permissions dashboard,
+// telecom endpoint model, shared Compose components). Not an installable app.
+include(":samples:calls-shared")

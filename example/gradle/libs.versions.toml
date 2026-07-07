@@ -46,6 +46,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 # Calls
 androidx-core-telecom = { module = "androidx.core:core-telecom", version.ref = "coreTelecom" }
 androidx-lifecycle-service = { group = "androidx.lifecycle", name = "lifecycle-service", version.ref = "lifecycleService" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleService" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 

@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import space.livedigital.example.R
+import space.livedigital.example.calls.shared.R
 import space.livedigital.example.ui.extensions.gradientBackground
 import space.livedigital.example.ui.theme.AppTheme
 

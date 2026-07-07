@@ -1,0 +1,18 @@
+<resources>
+    <string name="button_copy_token_to_clipboards">Скопировать</string>
+    <string name="description_call_account">Включите аккаунт звонков приложения, чтобы вызовы отображались в системном приложении для звонков</string>
+    <string name="description_copy_token">Скопировать токен Firebase для отправки push-уведомлений</string>
+    <string name="label_bluetooth">Bluetooth</string>
+    <string name="label_call_phone">Совершение звонков</string>
+    <string name="label_camera">Камера</string>
+    <string name="label_importance_description">Красный: критически важное разрешение, необходимое для всех звонков и работы приложения.\n\nСиний: важное разрешение для системного управления звонками.\n\nСерый: обычное разрешение, без которого функционал приложения может работать частично или ограниченно.\</string>
+    <string name="label_microphone">Микрофон</string>
+    <string name="label_notifications">Уведомления</string>
+    <string name="label_phone_account_enabled">Аккаунт для звонков</string>
+    <string name="label_phone_state">Состояние телефона</string>
+    <string name="label_read_contacts">Чтение контактов</string>
+    <string name="label_write_contacts">Изменение контактов</string>
+    <string name="label_xiaomi_lock_screen">Экран блокировки</string>
+    <string name="label_xiaomi_open_from_background">Открывать новые окна, когда запущено в фоновом режиме</string>
+    <string name="label_xiaomi_permissions_info">На некоторых устройствах (например, Xiaomi) звонки могут не работать, если не включены «Показывать на экране блокировки» и «Разрешить открывать окна из фона».</string>
+</resources>

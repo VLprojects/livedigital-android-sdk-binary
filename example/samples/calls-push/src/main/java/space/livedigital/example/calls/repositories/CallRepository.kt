@@ -27,7 +27,6 @@ import space.livedigital.example.calls.entities.CallState.Ended
 import space.livedigital.example.calls.entities.CallState.Incoming
 import space.livedigital.example.calls.entities.CallState.Missed
 import space.livedigital.example.calls.entities.CallState.Outgoing
-import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import space.livedigital.sdk.Failure
 import space.livedigital.sdk.Success
@@ -89,22 +88,17 @@ class CallRepository private constructor() : KoinComponent {
             when (callAction) {
                 is CallAction.Activate -> Activated(
                     call = callAction.call,
-                    isMuted = previousMedia?.isMuted ?: false,
-                    isCameraOn = previousMedia?.isCameraOn
-                        ?: (callAction.call.callType == CallType.VIDEO)
+                    isMuted = previousMedia?.isMuted ?: false
                 )
 
                 is CallAction.Answer -> Answered(
                     call = callAction.call,
-                    isMuted = callAction.isMuted,
-                    isCameraOn = callAction.isCameraOn,
+                    isMuted = callAction.isMuted
                 )
 
                 is CallAction.PlaceActiveCall -> Active(
                     call = callAction.call,
                     isMuted = previousMedia?.isMuted ?: false,
-                    isCameraOn = previousMedia?.isCameraOn
-                        ?: (callAction.call.callType == CallType.VIDEO),
                     startTimeMark = TimeSource.Monotonic.markNow()
                 )
 
@@ -131,15 +125,11 @@ class CallRepository private constructor() : KoinComponent {
 
                 is CallAction.PlaceOutgoingCall -> Outgoing(
                     call = callAction.call,
-                    isMuted = callAction.isMuted,
-                    isCameraOn = callAction.isCameraOn
+                    isMuted = callAction.isMuted
                 )
 
                 is CallAction.ToggleMute ->
                     previousMedia?.copyMedia(isMuted = callAction.isMute) ?: callState
-
-                is CallAction.ToggleCamera ->
-                    previousMedia?.copyMedia(isCameraOn = callAction.isCameraOn) ?: callState
 
                 is CallAction.PlaceMissedCall -> Missed(
                     call = callAction.call,

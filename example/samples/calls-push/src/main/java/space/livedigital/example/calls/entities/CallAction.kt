@@ -9,8 +9,7 @@ sealed interface CallAction : Parcelable {
     @Parcelize
     data class Answer(
         val call: Call,
-        val isMuted: Boolean,
-        val isCameraOn: Boolean
+        val isMuted: Boolean
     ) : CallAction
 
     @Parcelize
@@ -29,16 +28,12 @@ sealed interface CallAction : Parcelable {
     data class ToggleMute(val isMute: Boolean) : CallAction
 
     @Parcelize
-    data class ToggleCamera(val isCameraOn: Boolean) : CallAction
-
-    @Parcelize
     data class PlaceIncomingCall(val call: Call) : CallAction
 
     @Parcelize
     data class PlaceOutgoingCall(
         val call: Call,
-        val isMuted: Boolean,
-        val isCameraOn: Boolean
+        val isMuted: Boolean
     ) : CallAction
 
     @Parcelize

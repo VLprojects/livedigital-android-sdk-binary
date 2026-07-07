@@ -23,7 +23,6 @@ import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallActivityAction
 import space.livedigital.example.calls.entities.CallState
-import space.livedigital.example.calls.entities.CallType
 
 class CallNotificationManager(private val context: Context) {
 
@@ -81,7 +80,7 @@ class CallNotificationManager(private val context: Context) {
                 )
             ),
             pendingAnswerIntent
-        ).setIsVideo(callState.call.callType == CallType.VIDEO)
+        )
 
         val notification = NotificationCompat.Builder(context, INCOMING_CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_push_notification)
@@ -120,7 +119,7 @@ class CallNotificationManager(private val context: Context) {
                     cause = DisconnectCause(DisconnectCause.LOCAL)
                 )
             )
-        ).setIsVideo(callState.call.callType == CallType.VIDEO)
+        )
 
         val contentIntent = Intent(context, CallActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_SINGLE_TOP
@@ -197,13 +196,7 @@ class CallNotificationManager(private val context: Context) {
         val notification = NotificationCompat.Builder(context, MISSED_CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_push_notification)
             .setContentTitle(callState.call.displayName)
-            .setContentText(
-                if (callState.call.callType == CallType.VIDEO) {
-                    context.getString(R.string.label_missed_video_call)
-                } else {
-                    context.getString(R.string.label_missed_call)
-                }
-            )
+            .setContentText(context.getString(R.string.label_missed_call))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()

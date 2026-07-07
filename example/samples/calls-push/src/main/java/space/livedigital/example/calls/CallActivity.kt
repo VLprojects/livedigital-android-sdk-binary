@@ -22,7 +22,6 @@ import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallActivityAction
 import space.livedigital.example.calls.services.CallConnectionAudioService
-import space.livedigital.example.calls.utils.initialIsCameraOn
 import space.livedigital.example.calls.utils.initialIsMuted
 import space.livedigital.example.ui.screens.CallScreen
 import space.livedigital.example.ui.theme.AppTheme
@@ -37,16 +36,6 @@ class CallActivity : ComponentActivity() {
         setupCallActivity()
         handleIntent()
         setContent()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.onAppBecameFocused()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (isChangingConfigurations.not()) viewModel.onAppBecameUnfocused()
     }
 
     override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
@@ -123,8 +112,7 @@ class CallActivity : ComponentActivity() {
             CallConstants.EXTRA_ACTION,
             CallAction.Answer(
                 call = action.call,
-                isMuted = applicationContext.initialIsMuted(),
-                isCameraOn = applicationContext.initialIsCameraOn(action.call.callType)
+                isMuted = applicationContext.initialIsMuted()
             ),
         )
         sendBroadcast(callIntent)
@@ -163,9 +151,6 @@ class CallActivity : ComponentActivity() {
                         )
                         sendBroadcast(callIntent)
                     },
-                    onFlipCameraClicked = viewModel::onFlipCameraButtonClicked,
-                    onChangeLocalPreviewFullscreenStateClicked =
-                        viewModel::onChangeLocalPreviewFullscreenStateClicked,
                     onAudioDevicePickerClicked = viewModel::onAudioDevicePickerClicked,
                     onAudioDevicePickerDismissed = viewModel::onAudioDevicePickerDismissed,
                     onAudioDevicePicked = viewModel::onAudioDevicePicked

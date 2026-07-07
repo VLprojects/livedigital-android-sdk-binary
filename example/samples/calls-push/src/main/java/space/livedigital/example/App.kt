@@ -32,11 +32,8 @@ internal class App : Application() {
         val componentName = ComponentName(applicationContext, CallConnectionService::class.java)
         val phoneAccountHandle = PhoneAccountHandle(componentName, "LD SDK example")
         val phoneAccount = PhoneAccount.builder(phoneAccountHandle, "LD SDK example")
-            .setCapabilities(
-                PhoneAccount.CAPABILITY_CALL_PROVIDER
-                        or PhoneAccount.CAPABILITY_VIDEO_CALLING
-                        or PhoneAccount.CAPABILITY_SUPPORTS_VIDEO_CALLING
-            ).build()
+            .setCapabilities(PhoneAccount.CAPABILITY_CALL_PROVIDER)
+            .build()
         telecomManager.registerPhoneAccount(phoneAccount)
     }
 }

@@ -103,6 +103,10 @@ dependencies {
     // Compose design system (theme, base components, modifier extensions).
     implementation(project(":design"))
 
+    // Code shared verbatim with :samples:calls — permissions dashboard, telecom endpoint
+    // model, CallType, shared Compose components.
+    implementation(project(":samples:calls-shared"))
+
     // Push-device registration REST client — used by this sample's ConferenceBackend (stub for now).
     implementation(project(":devices-api"))
 

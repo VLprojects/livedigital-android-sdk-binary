@@ -34,7 +34,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import space.livedigital.example.Importance
 import space.livedigital.example.Permission
 import space.livedigital.example.PermissionsState
-import space.livedigital.example.R
+import space.livedigital.example.calls.shared.R
 import space.livedigital.example.calls.utils.XiaomiUtilities
 import space.livedigital.example.ui.components.buttons.ButtonComponent
 import space.livedigital.example.ui.components.containers.ContainerComponent

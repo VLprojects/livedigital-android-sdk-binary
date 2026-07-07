@@ -6,17 +6,13 @@ import kotlin.time.TimeMark
 sealed class CallState(open val call: Call) {
 
     /**
-     * States in which local media is live (or being set up): mute/camera toggles apply here,
-     * and the engine keeps the microphone/camera sources in sync with these flags.
+     * States in which local media is live (or being set up): the mute toggle applies here,
+     * and the engine keeps the microphone source in sync with this flag.
      */
     sealed interface WithMedia {
         val isMuted: Boolean
-        val isCameraOn: Boolean
 
-        fun copyMedia(
-            isMuted: Boolean = this.isMuted,
-            isCameraOn: Boolean = this.isCameraOn
-        ): CallState
+        fun copyMedia(isMuted: Boolean = this.isMuted): CallState
     }
 
     data object Idle : CallState(call = Call.Idle)
@@ -27,39 +23,31 @@ sealed class CallState(open val call: Call) {
 
     data class Outgoing(
         override val call: Call,
-        override val isMuted: Boolean,
-        override val isCameraOn: Boolean
+        override val isMuted: Boolean
     ) : CallState(call), WithMedia {
-        override fun copyMedia(isMuted: Boolean, isCameraOn: Boolean) =
-            copy(isMuted = isMuted, isCameraOn = isCameraOn)
+        override fun copyMedia(isMuted: Boolean) = copy(isMuted = isMuted)
     }
 
     data class Active(
         override val call: Call,
         override val isMuted: Boolean,
-        override val isCameraOn: Boolean,
         val startTimeMark: TimeMark
     ) : CallState(call), WithMedia {
-        override fun copyMedia(isMuted: Boolean, isCameraOn: Boolean) =
-            copy(isMuted = isMuted, isCameraOn = isCameraOn)
+        override fun copyMedia(isMuted: Boolean) = copy(isMuted = isMuted)
     }
 
     data class Activated(
         override val call: Call,
-        override val isMuted: Boolean,
-        override val isCameraOn: Boolean
+        override val isMuted: Boolean
     ) : CallState(call), WithMedia {
-        override fun copyMedia(isMuted: Boolean, isCameraOn: Boolean) =
-            copy(isMuted = isMuted, isCameraOn = isCameraOn)
+        override fun copyMedia(isMuted: Boolean) = copy(isMuted = isMuted)
     }
 
     data class Answered(
         override val call: Call,
-        override val isMuted: Boolean,
-        override val isCameraOn: Boolean
+        override val isMuted: Boolean
     ) : CallState(call), WithMedia {
-        override fun copyMedia(isMuted: Boolean, isCameraOn: Boolean) =
-            copy(isMuted = isMuted, isCameraOn = isCameraOn)
+        override fun copyMedia(isMuted: Boolean) = copy(isMuted = isMuted)
     }
 
     data class Missed(

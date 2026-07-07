@@ -20,9 +20,3 @@ sealed class Call(
         override val callType: CallType
     ) : Call(displayName, phone, roomAlias, callType)
 }
-
-@Parcelize
-enum class CallType : Parcelable {
-    AUDIO,
-    VIDEO
-}

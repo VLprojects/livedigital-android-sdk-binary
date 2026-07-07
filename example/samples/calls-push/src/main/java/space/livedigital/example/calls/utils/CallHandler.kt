@@ -19,7 +19,6 @@ import space.livedigital.example.calls.broadcasts.CallBroadcast
 import space.livedigital.example.calls.constants.CallConstants
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
-import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.services.CallConnectionService
 
 class CallHandler(private val context: Context) {
@@ -64,8 +63,7 @@ class CallHandler(private val context: Context) {
         return Call.Actual(
             displayName = calleePhoneNumber,
             phone = calleePhoneNumber,
-            signalingToken = signalingToken,
-            callType = CallType.AUDIO
+            signalingToken = signalingToken
         )
     }
 
@@ -95,10 +93,6 @@ class CallHandler(private val context: Context) {
                         call.phone,   // must be digits or +E.164
                         null
                     )
-                )
-                putString(
-                    CallConstants.EXTRA_CALL_TYPE,
-                    call.callType.name
                 )
                 putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle)
             }
@@ -143,7 +137,6 @@ class CallHandler(private val context: Context) {
                     Bundle().apply {
                         putString(CallConstants.EXTRA_SIGNALING_TOKEN, call.signalingToken)
                         putString(CallConstants.EXTRA_NAME, call.displayName)
-                        putString(CallConstants.EXTRA_CALL_TYPE, call.callType.name)
                     }
                 )
             }
@@ -205,8 +198,7 @@ class CallHandler(private val context: Context) {
             CallConstants.EXTRA_ACTION,
             CallAction.PlaceOutgoingCall(
                 call = call,
-                isMuted = applicationContext.initialIsMuted(),
-                isCameraOn = applicationContext.initialIsCameraOn(call.callType)
+                isMuted = applicationContext.initialIsMuted()
             ),
         )
         sendBroadcast(callIntent)

@@ -336,6 +336,19 @@ class CallViewModel(
         }
     }
 
+    private fun activateOutgoingCallIfNeeded(peers: List<Peer>) {
+        val callState = callRepository.currentCallState.value
+
+        if (callState !is CallState.Outgoing) {
+            return
+        }
+        if (peers.none { it.id != session?.myPeerId }) {
+            return
+        }
+
+        callRepository.dispatchCallAction(CallAction.Activate(call = callState.call))
+    }
+
     private fun connectToChannel(signalingToken: String) {
         Log.d(TAG, "connect to channel")
 
@@ -355,6 +368,8 @@ class CallViewModel(
     private fun createChannelSessionDelegate(): ChannelSessionDelegate {
         return object : ChannelSessionDelegate {
             override fun peersJoined(peers: List<Peer>) {
+                activateOutgoingCallIfNeeded(peers)
+
                 if (state.value.callState.call.callType == CallType.VIDEO) {
                     for (peer in peers) {
                         if (peer.id == session?.myPeerId) {

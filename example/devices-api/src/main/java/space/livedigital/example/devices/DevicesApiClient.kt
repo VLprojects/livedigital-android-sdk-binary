@@ -13,8 +13,8 @@ import space.livedigital.example.devices.result.api.ExecutionResult
 import java.util.concurrent.TimeUnit
 
 class DevicesApiClient(
+    apiKey: String,
     private val baseUrl: String,
-    private val apiKey: String,
     private val additionalInterceptors: List<Interceptor> = emptyList(),
 ) {
     private val apiRequestExecutor = ApiRequestExecutor()

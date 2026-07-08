@@ -12,7 +12,6 @@
     <string name="label_missed_video_call">Пропущенный видео вызов</string>
     <string name="label_microphone_is_active">Микрофон активен</string>
     <string name="description_call_is_using_audio_in_background">Звонок использует микрофон</string>
-    <string name="toast_token_copied">Токен скопирован в буфер обмена</string>
     <string name="button_open_call_accounts_settings">Перейти в настройки аккаунтов для звонков</string>
     <string name="button_call_redial">Повторить звонок</string>
     <string name="button_call_back">Перезвонить</string>

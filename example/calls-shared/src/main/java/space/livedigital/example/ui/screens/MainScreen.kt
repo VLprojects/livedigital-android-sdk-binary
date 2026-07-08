@@ -44,9 +44,9 @@ import space.livedigital.example.ui.theme.AppTheme
 @Composable
 fun MainScreen(
     permissionsState: State<PermissionsState>,
-    onCopyButtonClicked: () -> Unit,
     onPermissionSwitchClicked: (permission: Permission) -> Unit,
     onCallAccountSwitchClicked: () -> Unit,
+    onCopyButtonClicked: (() -> Unit)? = null,
     extraContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     Column(
@@ -64,7 +64,9 @@ fun MainScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        CopyButtonContainerComponent(onCopyButtonClicked = onCopyButtonClicked)
+        if (onCopyButtonClicked != null) {
+            CopyButtonContainerComponent(onCopyButtonClicked = onCopyButtonClicked)
+        }
 
         extraContent()
 

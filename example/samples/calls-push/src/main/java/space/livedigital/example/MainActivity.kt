@@ -1,18 +1,13 @@
 package space.livedigital.example
 
 import android.Manifest
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -20,7 +15,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.firebase.messaging.FirebaseMessaging
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import space.livedigital.example.calls.services.CallConnectionService
@@ -88,7 +82,6 @@ internal class MainActivity : AppCompatActivity() {
 
                 MainScreen(
                     permissionsState = permissionsState,
-                    onCopyButtonClicked = ::copyPushTokenToClipboards,
                     onPermissionSwitchClicked = { permission ->
                         if (permission.isGranted) return@MainScreen
 
@@ -125,30 +118,6 @@ internal class MainActivity : AppCompatActivity() {
     private fun isVendorSpecificPermission(permission: Permission): Boolean =
         permission.name == XiaomiUtilities.OP_SHOW_WHEN_LOCKED.toString() ||
                 permission.name == XiaomiUtilities.OP_BACKGROUND_START_ACTIVITY.toString()
-
-    private fun copyPushTokenToClipboards() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val token = task.result
-                copyToClipboard(this@MainActivity, token)
-            } else {
-                Log.d(
-                    "FCM",
-                    "Fetching FCM registration token failed", task.exception
-                )
-            }
-        }
-    }
-
-    private fun copyToClipboard(context: Context, text: String) {
-        val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("label", text)
-        clipboard.setPrimaryClip(clip)
-
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
-            Toast.makeText(context, R.string.toast_token_copied, Toast.LENGTH_SHORT).show()
-        }
-    }
 
     private fun buildPermissions(): List<Permission> {
         return buildList {

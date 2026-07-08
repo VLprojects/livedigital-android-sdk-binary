@@ -13,7 +13,6 @@
     <string name="label_missed_video_call">Missed video call</string>
     <string name="label_microphone_is_active">Microphone is active</string>
     <string name="description_call_is_using_audio_in_background">Call is using audio in background</string>
-    <string name="toast_token_copied">Token copied to clipboard</string>
     <string name="button_open_call_accounts_settings">Go to phone account settings</string>
     <string name="button_call_redial">Redial</string>
     <string name="button_call_back">Call back</string>

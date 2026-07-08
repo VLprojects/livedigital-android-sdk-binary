@@ -51,7 +51,7 @@ dependencies {
 
     // Code shared verbatim with :samples:calls-push — permissions dashboard, telecom endpoint
     // model, CallType, shared Compose components.
-    implementation(project(":samples:calls-shared"))
+    implementation(project(":calls-shared"))
 
     // MoodHood REST client — backs this sample's ConferenceBackend implementation.
     implementation(project(":moodhood-api"))

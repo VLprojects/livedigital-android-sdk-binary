@@ -21,6 +21,7 @@ fun BaseButtonComponent(
     onClick: () -> Unit,
     style: ButtonSystem.ButtonStyle,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     contentPadding: PaddingValues = ButtonComponentDefaults.ContentPadding,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable RowScope.() -> Unit
@@ -45,14 +46,19 @@ fun BaseButtonComponent(
 
     Button(
         onClick = onClick,
+        enabled = enabled,
         contentPadding = contentPadding,
         shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
-            contentColor = contentColor
+            contentColor = contentColor,
+            disabledContainerColor = style.normalContainerColor.copy(alpha = DISABLED_ALPHA),
+            disabledContentColor = style.normalContentColor.copy(alpha = DISABLED_ALPHA)
         ),
         interactionSource = interactionSource,
         content = content,
         modifier = modifier.defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
     )
 }
+
+private const val DISABLED_ALPHA = 0.4f

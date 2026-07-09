@@ -8,7 +8,6 @@ import android.telecom.TelecomManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import space.livedigital.example.calls.services.CallConnectionService
-import space.livedigital.example.di.interceptorsModule
 import space.livedigital.example.di.liveDigitalEngineModule
 import space.livedigital.example.di.viewModelsModule
 
@@ -18,7 +17,7 @@ internal class App : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@App)
-            val moduleList = listOf(viewModelsModule, liveDigitalEngineModule, interceptorsModule)
+            val moduleList = listOf(viewModelsModule, liveDigitalEngineModule)
             this.modules(moduleList)
         }
 

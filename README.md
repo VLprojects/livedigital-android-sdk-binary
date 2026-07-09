@@ -11,6 +11,7 @@ The livedigital SDK is a client for the livedigital service (https://docs.livedi
   * background blur and replacement for outgoing video
   * active-speaker detection logic
   * a transport for application-specific commands and metadata
+  * initiating and declining calls to external telephony (PSTN) through the SIP gateway
 
 ## Compatibility
 
@@ -60,19 +61,31 @@ dependencyResolutionManagement {
 
 ```
 dependencies {
-    implementation("com.github.vlprojects:livedigital-android-sdk:1.7.0")
+    implementation("com.github.vlprojects:livedigital-android-sdk:1.8.0")
 }
 ```
 
 ## Integration example and demo
 
-The `example/` folder is a self-contained Gradle project that demonstrates integrating and using the livedigital SDK. It is split into one shared integration module and three independent sample apps that install side by side:
+The `example/` folder is a self-contained Gradle project that demonstrates integrating and using the livedigital SDK. It is split into shared library modules and four independent sample apps that install side by side.
+
+Shared library modules (no launchable app):
 
 | Module | Description |
 |--------|-------------|
-| `:shared` | Shared SDK-integration infrastructure (the MoodHood REST flow, the `LiveDigitalEngine` factory, domain entities). No UI. |
+| `:shared` | livedigital SDK integration glue: the Koin `LiveDigitalEngine` factory, a console logger and shared helpers. Transitively re-exports the SDK and Koin to the samples. No UI. |
+| `:moodhood-api` | REST client for the MoodHood backend — guest authentication, rooms, participants and signaling tokens. Used by the conference samples and `:samples:calls`. |
+| `:devices-api` | REST client for the CRS push-device-registration API — registering/unregistering a device's push token against a phone number. Used by `:samples:calls-push`. |
+| `:calls-shared` | Shared telephony shell for the call samples: Android Telecom integration, runtime permissions, call entities, contacts and push-token plumbing. Used by `:samples:calls` and `:samples:calls-push`. |
+| `:design` | Shared Jetpack Compose design system (theme, colors, typography, buttons). Used by the Compose-based modules. |
+
+Sample apps:
+
+| Module | Description |
+|--------|-------------|
 | `:samples:conference-xml` | Conference scenario, UI on classic Android Views (XML + `RecyclerView`). |
 | `:samples:conference-compose` | The same conference scenario, UI on Jetpack Compose. |
-| `:samples:calls` | 1-on-1 calls: Android telephony integration + FCM push-initiated calls (Jetpack Compose UI). |
+| `:samples:calls` | 1-on-1 phone calls integrated with Android telephony (`ConnectionService` and Core-Telecom), with call setup over MoodHood and FCM push. Jetpack Compose UI. |
+| `:samples:calls-push` | The same calls shell, but backed by the CRS push-device-registration API and the SIP gateway: phone-number sign-in, device registration for push, incoming calls delivered via push and outgoing calls placed with a signaling token and `initiateCall()`. Jetpack Compose UI. |
 
-Each module has its own README, and [`docs/SAMPLES.md`](docs/SAMPLES.md) compares the three samples side by side. The samples are intentionally minimalistic and should not be judged in terms of UX convenience, code beauty and architecture, robustness of solutions, etc.
+Each sample app has its own README. The samples are intentionally minimalistic and should not be judged in terms of UX convenience, code beauty and architecture, robustness of solutions, etc.

@@ -1,0 +1,27 @@
+<resources>
+    <string name="label_headset">Наушники</string>
+    <string name="label_speaker">Динамик</string>
+    <string name="label_earpiece">Телефон</string>
+    <string name="label_call_finished">Звонок завершен</string>
+    <string name="label_call_rejected">Вызов отклонен</string>
+    <string name="label_incoming_call">Входящий вызов…</string>
+    <string name="label_incoming_video_call">Входящий видео вызов</string>
+    <string name="label_call">Вызов…</string>
+    <string name="label_connection">Соединение…</string>
+    <string name="label_missed_call">Пропущенный вызов</string>
+    <string name="label_missed_video_call">Пропущенный видео вызов</string>
+    <string name="label_microphone_is_active">Микрофон активен</string>
+    <string name="description_call_is_using_audio_in_background">Звонок использует микрофон</string>
+    <string name="button_open_call_accounts_settings">Перейти в настройки аккаунтов для звонков</string>
+    <string name="button_call_redial">Повторить звонок</string>
+    <string name="button_call_back">Перезвонить</string>
+    <string name="button_xiaomi_permissions_button">Настройки производителя</string>
+    <string name="description_auth">Войдите по номеру телефона, чтобы принимать входящие звонки</string>
+    <string name="label_phone_number">Номер телефона</string>
+    <string name="label_auth_permission_required">Выдайте разрешение на уведомления, чтобы войти</string>
+    <string name="button_login">Войти</string>
+    <string name="button_logout">Выйти</string>
+    <string name="description_outgoing_call">Введите номер телефона, чтобы совершить исходящий звонок</string>
+    <string name="label_callee_phone_number">Номер вызываемого</string>
+    <string name="button_call">Позвонить</string>
+</resources>

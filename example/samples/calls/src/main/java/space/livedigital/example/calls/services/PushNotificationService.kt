@@ -4,6 +4,7 @@ import android.telecom.DisconnectCause
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import org.koin.core.component.KoinComponent
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
@@ -11,12 +12,7 @@ import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.utils.CallHandler
 
-internal class PushNotificationService : FirebaseMessagingService() {
-
-    override fun onNewToken(p0: String) {
-        super.onNewToken(p0)
-        // Need to send new token to server
-    }
+class PushNotificationService : FirebaseMessagingService(), KoinComponent {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         val pushType = PushType.valueOf(remoteMessage.data.getValue("type").uppercase())

@@ -4,13 +4,15 @@ import android.os.Parcelable
 import android.telecom.DisconnectCause
 import kotlinx.parcelize.Parcelize
 
-internal sealed interface CallAction : Parcelable {
+sealed interface CallAction : Parcelable {
     @Parcelize
     data class Answer(
         val displayName: String,
         val phone: String,
         val roomAlias: String,
-        val callType: CallType
+        val callType: CallType,
+        val isMuted: Boolean,
+        val isCameraOn: Boolean
     ) : CallAction
 
     @Parcelize
@@ -61,7 +63,9 @@ internal sealed interface CallAction : Parcelable {
         val displayName: String,
         val phone: String,
         val roomAlias: String,
-        val callType: CallType
+        val callType: CallType,
+        val isMuted: Boolean,
+        val isCameraOn: Boolean
     ) : CallAction
 
     @Parcelize

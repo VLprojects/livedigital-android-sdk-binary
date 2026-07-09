@@ -3,7 +3,7 @@ package space.livedigital.example.calls.entities
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
-internal sealed interface CallActivityAction : Parcelable {
+sealed interface CallActivityAction : Parcelable {
 
     @Parcelize
     data class Answer(val call: Call) : CallActivityAction

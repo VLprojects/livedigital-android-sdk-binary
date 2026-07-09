@@ -28,8 +28,7 @@ android {
 dependencies {
     api(libs.livedigital.sdk)
     api(libs.koin)
-    implementation(libs.retrofit2.retrofit)
-    implementation(libs.retrofit2.kotlinx.serialization.converter)
+    // Kept for JsonUtils + PeerAppData serialization (used by every sample's connectToChannel).
+    // The MoodHood REST/Retrofit stack now lives in :moodhood-api.
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.okhttp3.logging.interceptor)
 }

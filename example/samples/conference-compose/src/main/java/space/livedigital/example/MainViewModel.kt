@@ -22,7 +22,6 @@ import space.livedigital.example.moodhood_api.result.api.ExecutionError
 import space.livedigital.example.moodhood_api.result.api.ExecutionResult
 import space.livedigital.example.utils.JsonUtils
 import space.livedigital.sdk.channel.ChannelError
-import space.livedigital.sdk.channel.ChannelId
 import space.livedigital.sdk.channel.ChannelSession
 import space.livedigital.sdk.channel.ChannelSessionDelegate
 import space.livedigital.sdk.channel.ChannelSessionStatus
@@ -33,7 +32,6 @@ import space.livedigital.sdk.data.entities.MediaLabel
 import space.livedigital.sdk.data.entities.Peer
 import space.livedigital.sdk.data.entities.PeerId
 import space.livedigital.sdk.data.entities.PeerVolume
-import space.livedigital.sdk.data.entities.Role
 import space.livedigital.sdk.data.entities.StockChannelSessionParams
 import space.livedigital.sdk.data.entities.channel_state_consistency.ChannelStateConsistencyIssue
 import space.livedigital.sdk.engine.LiveDigitalEngine
@@ -168,12 +166,6 @@ class MainViewModel() : ViewModel(), KoinComponent {
         currentTimer?.cancel()
         currentTimer = null
 
-        val channelId = room.channelId
-        if (channelId == null) {
-            Log.e(TAG, "Error getting channelId from: $room")
-            return
-        }
-
         val participant = createParticipant() ?: return
         val participantId = participant.id
         localParticipantId = participantId
@@ -193,7 +185,7 @@ class MainViewModel() : ViewModel(), KoinComponent {
 
         initDelegates()
 
-        connectToChannel(channelId, participantId, signalingToken)
+        connectToChannel(signalingToken)
     }
 
     private suspend fun authorize() {
@@ -312,11 +304,7 @@ class MainViewModel() : ViewModel(), KoinComponent {
         )
     }
 
-    private fun connectToChannel(
-        channelId: String,
-        participantId: String,
-        signalingToken: String
-    ) {
+    private fun connectToChannel(signalingToken: String) {
         Log.d(TAG, "connect to channel")
         val appData = PeerAppData(
             name = "${Build.MANUFACTURER} ${Build.MODEL}"
@@ -324,11 +312,7 @@ class MainViewModel() : ViewModel(), KoinComponent {
         val appDataJson = JsonUtils.encodeToJsonString(appData)
 
         val channelSessionParams = StockChannelSessionParams(
-            channelId = ChannelId(channelId),
-            participantId = participantId,
-            role = Role.HOST,
             signalingToken = signalingToken,
-            peerId = PeerId(participantId),
             appData = JSONObject(appDataJson),
             analyticsMetaKeyValues = emptyMap()
         )
@@ -490,9 +474,13 @@ class MainViewModel() : ViewModel(), KoinComponent {
 
             override fun peerPermissionsUpdated(peerId: PeerId, permissions: List<MediaLabel>) {}
 
-            override fun stoppedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+            override fun startedLocalAudio(label: MediaLabel, mediaSourceId: MediaSourceId) {}
 
             override fun stoppedLocalAudio(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+
+            override fun startedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+
+            override fun stoppedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
 
             override fun forceStoppedLocalMedia(label: MediaLabel) {}
 

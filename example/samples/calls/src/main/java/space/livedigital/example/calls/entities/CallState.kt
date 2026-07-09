@@ -3,7 +3,7 @@ package space.livedigital.example.calls.entities
 import android.telecom.DisconnectCause
 import kotlin.time.TimeMark
 
-internal sealed class CallState(open val call: Call) {
+sealed class CallState(open val call: Call) {
 
     data object Idle : CallState(call = Call.Idle)
 

@@ -5,7 +5,6 @@ import android.telecom.DisconnectCause
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chuckerteam.chucker.api.ChuckerInterceptor
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -16,7 +15,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import space.livedigital.example.bson.BSONObjectIdGenerator
+import space.livedigital.example.calls.backend.ConferenceBackend
 import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallCommand
@@ -26,16 +25,9 @@ import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.repositories.ContactsRepository
 import space.livedigital.example.calls.repositories.HasContactResult
-import space.livedigital.example.entities.MoodhoodParticipant
 import space.livedigital.example.entities.PeerAppData
-import space.livedigital.example.entities.Room
-import space.livedigital.example.entities.SignalingToken
-import space.livedigital.example.moodhood_api.MoodHoodApiClient
-import space.livedigital.example.moodhood_api.result.api.ExecutionError
-import space.livedigital.example.moodhood_api.result.api.ExecutionResult
 import space.livedigital.example.utils.JsonUtils
 import space.livedigital.sdk.channel.ChannelError
-import space.livedigital.sdk.channel.ChannelId
 import space.livedigital.sdk.channel.ChannelSession
 import space.livedigital.sdk.channel.ChannelSessionDelegate
 import space.livedigital.sdk.channel.ChannelSessionStatus
@@ -46,7 +38,6 @@ import space.livedigital.sdk.data.entities.MediaLabel
 import space.livedigital.sdk.data.entities.Peer
 import space.livedigital.sdk.data.entities.PeerId
 import space.livedigital.sdk.data.entities.PeerVolume
-import space.livedigital.sdk.data.entities.Role
 import space.livedigital.sdk.data.entities.StockChannelSessionParams
 import space.livedigital.sdk.data.entities.channel_state_consistency.ChannelStateConsistencyIssue
 import space.livedigital.sdk.engine.LiveDigitalEngine
@@ -62,9 +53,10 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource.Monotonic.markNow
 
-internal class CallViewModel(
+class CallViewModel(
     private val callRepository: CallRepository,
-    private val contactsRepository: ContactsRepository
+    private val contactsRepository: ContactsRepository,
+    private val conferenceBackend: ConferenceBackend
 ) : ViewModel(), KoinComponent {
 
     val state
@@ -76,10 +68,6 @@ internal class CallViewModel(
     private val mutableState = MutableStateFlow(ScreenState())
 
     private val eventsChannel = Channel<ScreenEvent>(Channel.UNLIMITED)
-    private val apiClient = MoodHoodApiClient(
-        baseUrl = MOODHOOD_API_URL,
-        additionalInterceptors = listOf(get<ChuckerInterceptor>())
-    )
 
     private var localParticipantId: String? = null
     private var session: ChannelSession? = null
@@ -88,6 +76,7 @@ internal class CallViewModel(
     private var timer: Job? = null
     private var startConferenceJob: Job? = null
     private var isLocalVideoPaused = false
+    private var isEngineDestroying = false
 
     init {
         viewModelScope.launch {
@@ -125,17 +114,7 @@ internal class CallViewModel(
                 cause = cause
             )
         )
-        liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
-            override fun onDestroyed() {
-                viewModelScope.launch {
-                    stopLocalVideo()
-                    stopLocalAudio()
-                    session = null
-                    apiClient.logout()
-                    liveDigitalEngine = null
-                }
-            }
-        })
+        destroyEngine()
     }
 
     fun onFlipCameraButtonClicked() {
@@ -165,14 +144,14 @@ internal class CallViewModel(
     }
 
     fun onAppBecameFocused() {
-        if (session != null && isLocalVideoPaused) {
+        if (isLocalVideoPaused) {
             startLocalVideo()
             isLocalVideoPaused = false
         }
     }
 
     fun onAppBecameUnfocused() {
-        if (session != null && mutableState.value.isLocalVideoOn) {
+        if (mutableState.value.isLocalVideoOn) {
             isLocalVideoPaused = true
             stopLocalVideo()
         }
@@ -300,17 +279,7 @@ internal class CallViewModel(
                     it.copy(callDuration = Duration.ZERO)
                 }
 
-                liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
-                    override fun onDestroyed() {
-                        viewModelScope.launch {
-                            stopLocalVideo()
-                            stopLocalAudio()
-                            session = null
-                            apiClient.logout()
-                            liveDigitalEngine = null
-                        }
-                    }
-                })
+                destroyEngine()
             }
 
             is CallState.Missed -> {
@@ -321,17 +290,7 @@ internal class CallViewModel(
                     it.copy(callDuration = Duration.ZERO)
                 }
 
-                liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
-                    override fun onDestroyed() {
-                        viewModelScope.launch {
-                            stopLocalVideo()
-                            stopLocalAudio()
-                            session = null
-                            apiClient.logout()
-                            liveDigitalEngine = null
-                        }
-                    }
-                })
+                destroyEngine()
             }
 
             else -> {
@@ -345,31 +304,9 @@ internal class CallViewModel(
     }
 
     private suspend fun startConference() {
-        authorize()
-
-        val room = getRoom() ?: return
-        val roomId = room.id ?: return
-        val spaceId = room.spaceId ?: return
-        val channelId = room.channelId
-        if (channelId == null) {
-            Log.e(TAG, "Error getting channelId from: $room")
-            return
-        }
-
-        val participant = createParticipant(spaceId, roomId) ?: return
-        val participantId = participant.id
-        localParticipantId = participantId
-        if (participantId == null) {
-            Log.e(TAG, "Error getting participantId from: $participant")
-            return
-        }
-
-        val signalingTokenResult = getSignalingToken(participantId, spaceId)
-        val signalingToken = signalingTokenResult?.signalingToken
-        if (signalingToken == null) {
-            Log.e(TAG, "Error getting signalingToken from: $signalingTokenResult")
-            return
-        }
+        val roomAlias = roomAlias ?: return
+        val joinParams = conferenceBackend.resolveJoinParams(roomAlias) ?: return
+        localParticipantId = joinParams.participantId
 
         if (liveDigitalEngine == null) {
             liveDigitalEngine = get<LiveDigitalEngine>()
@@ -377,100 +314,11 @@ internal class CallViewModel(
 
         initDelegates()
 
-        connectToChannel(channelId, participantId, signalingToken, spaceId, roomId)
-    }
-
-    private suspend fun authorize() {
-        val userTokenResult = apiClient.authorizeAsGuest(
-            MOODHOOD_CLIENT_ID,
-            MOODHOOD_CLIENT_SECRET,
-            CLIENT_CREDENTIALS_GARANT_TYPE
+        connectToChannel(
+            signalingToken = joinParams.signalingToken,
+            spaceId = joinParams.spaceId,
+            roomId = joinParams.roomId
         )
-        when (userTokenResult) {
-            is ExecutionResult.Success -> {
-                Log.i(TAG, "Created user token")
-            }
-
-            is ExecutionResult.Error -> {
-                val error = userTokenResult.error
-                val message = when (error) {
-                    is ExecutionError.Expected -> error.data.message
-                    is ExecutionError.Failure -> error.throwable.message
-
-                }
-                Log.e(TAG, "Error creating user token: $message")
-            }
-        }
-    }
-
-    private suspend fun getRoom(): Room? {
-        val roomAlias = roomAlias ?: return null
-        val roomResult = apiClient.getRoomByAlias(roomAlias)
-        return when (roomResult) {
-            is ExecutionResult.Success -> {
-                Log.i(TAG, "Room details received: ${roomResult.data}")
-                roomResult.data
-            }
-
-            is ExecutionResult.Error -> {
-                val error = roomResult.error
-                val message = when (error) {
-                    is ExecutionError.Expected -> error.data.message
-                    is ExecutionError.Failure -> error.throwable.message
-
-                }
-                Log.e(TAG, "Error getting room details: $message")
-                null
-            }
-        }
-    }
-
-    private suspend fun createParticipant(spaceId: String, roomId: String): MoodhoodParticipant? {
-        val participantResult = apiClient.createParticipant(
-            name = "${Build.MANUFACTURER} ${Build.MODEL}",
-            role = "host",
-            clientUniqueId = BSONObjectIdGenerator.generateBSONObjectId(),
-            spaceId = spaceId,
-            roomId = roomId
-        )
-
-        return when (participantResult) {
-            is ExecutionResult.Success -> {
-                Log.i(TAG, "Created participant: ${participantResult.data}")
-                participantResult.data
-            }
-
-            is ExecutionResult.Error -> {
-                val error = participantResult.error
-                val message = when (error) {
-                    is ExecutionError.Expected -> error.data.message
-                    is ExecutionError.Failure -> error.throwable.message
-
-                }
-                Log.e(TAG, "Error creating participant: $message")
-                null
-            }
-        }
-    }
-
-    private suspend fun getSignalingToken(participantId: String, spaceId: String): SignalingToken? {
-        val signalingTokenResult = apiClient.getSignalingToken(spaceId, participantId)
-        return when (signalingTokenResult) {
-            is ExecutionResult.Success -> {
-                Log.i(TAG, "Created signaling token")
-                signalingTokenResult.data
-            }
-
-            is ExecutionResult.Error -> {
-                val message = when (val error = signalingTokenResult.error) {
-                    is ExecutionError.Expected -> error.data.message
-                    is ExecutionError.Failure -> error.throwable.message
-
-                }
-                Log.e(TAG, "Error creating signaling token: $message")
-                null
-            }
-        }
     }
 
     private fun initDelegates() {
@@ -493,8 +341,6 @@ internal class CallViewModel(
     }
 
     private fun connectToChannel(
-        channelId: String,
-        participantId: String,
         signalingToken: String,
         spaceId: String,
         roomId: String
@@ -506,11 +352,7 @@ internal class CallViewModel(
         val appDataJson = JsonUtils.encodeToJsonString(appData)
 
         val channelSessionParams = StockChannelSessionParams(
-            channelId = ChannelId(channelId),
-            participantId = participantId,
-            role = Role.HOST,
             signalingToken = signalingToken,
-            peerId = PeerId(participantId),
             appData = JSONObject(appDataJson),
             analyticsMetaKeyValues = emptyMap()
         )
@@ -645,9 +487,13 @@ internal class CallViewModel(
 
             override fun peerPermissionsUpdated(peerId: PeerId, permissions: List<MediaLabel>) {}
 
-            override fun stoppedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+            override fun startedLocalAudio(label: MediaLabel, mediaSourceId: MediaSourceId) {}
 
             override fun stoppedLocalAudio(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+
+            override fun startedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+
+            override fun stoppedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
 
             override fun forceStoppedLocalMedia(label: MediaLabel) {}
 
@@ -698,20 +544,7 @@ internal class CallViewModel(
             return
         }
 
-        when (val joinRoomResult = apiClient.joinRoom(participantId, spaceId, roomId)) {
-            is ExecutionResult.Success -> {
-                Log.i(TAG, "Joined room")
-            }
-
-            is ExecutionResult.Error -> {
-                val message = when (val error = joinRoomResult.error) {
-                    is ExecutionError.Expected -> error.data.message
-                    is ExecutionError.Failure -> error.throwable.message
-
-                }
-                Log.e(TAG, "Failed to join room: $message")
-            }
-        }
+        conferenceBackend.joinRoom(participantId, spaceId, roomId)
     }
 
     private fun startLocalVideo() {
@@ -784,15 +617,27 @@ internal class CallViewModel(
     }
 
     private fun restartSession() {
-        liveDigitalEngine?.destroy(object : LiveDigitalEngineDestroyDelegate {
+        destroyEngine(onComplete = { startConference() })
+    }
+
+    private fun destroyEngine(onComplete: (suspend () -> Unit)? = null) {
+        if (isEngineDestroying) return
+        val engine = liveDigitalEngine ?: return
+        isEngineDestroying = true
+
+        stopLocalVideo()
+        stopLocalAudio()
+
+        engine.destroy(object : LiveDigitalEngineDestroyDelegate {
             override fun onDestroyed() {
                 viewModelScope.launch {
-                    stopLocalVideo()
-                    stopLocalAudio()
                     session = null
-                    apiClient.logout()
-                    liveDigitalEngine = null
-                    startConference()
+                    conferenceBackend.logout()
+                    isLocalVideoPaused = false
+                    mutableState.update { it.copy(remotePeers = emptyList()) }
+                    if (liveDigitalEngine === engine) liveDigitalEngine = null
+                    isEngineDestroying = false
+                    onComplete?.invoke()
                 }
             }
         })
@@ -823,11 +668,6 @@ internal class CallViewModel(
     }
 
     companion object {
-        const val MOODHOOD_API_URL = "https://moodhood-api.livedigital.space/"
-        const val MOODHOOD_CLIENT_ID = "moodhood-demo"
-        const val MOODHOOD_CLIENT_SECRET = "demo12345abcde6789zxcvDemo"
-        const val CLIENT_CREDENTIALS_GARANT_TYPE = "client_credentials"
-
         const val TAG = "LivedigitalAndroidSdkExample"
     }
 }

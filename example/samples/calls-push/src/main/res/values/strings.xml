@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name" translatable="false">LiveDigitalSDK</string>
+    <string name="label_headset">Headset</string>
+    <string name="label_earpiece">Earpiece</string>
+    <string name="label_speaker">Speaker</string>
+    <string name="label_call_finished">Call finished</string>
+    <string name="label_call_rejected">Call rejected</string>
+    <string name="label_incoming_call">Incoming call…</string>
+    <string name="label_incoming_video_call">Incoming video call..</string>
+    <string name="label_call">Call…</string>
+    <string name="label_connection">Connecting…</string>
+    <string name="label_missed_call">Missed call</string>
+    <string name="label_missed_video_call">Missed video call</string>
+    <string name="label_microphone_is_active">Microphone is active</string>
+    <string name="description_call_is_using_audio_in_background">Call is using audio in background</string>
+    <string name="button_open_call_accounts_settings">Go to phone account settings</string>
+    <string name="button_call_redial">Redial</string>
+    <string name="button_call_back">Call back</string>
+    <string name="button_xiaomi_permissions_button">Vendor settings</string>
+    <string name="description_auth">Sign in with your phone number to receive incoming calls</string>
+    <string name="label_phone_number">Phone number</string>
+    <string name="label_auth_permission_required">Grant the notifications permission to sign in</string>
+    <string name="button_login">Sign in</string>
+    <string name="button_logout">Sign out</string>
+    <string name="description_outgoing_call">Enter a phone number to place an outgoing call</string>
+    <string name="label_callee_phone_number">Callee phone number</string>
+    <string name="button_call">Call</string>
+</resources>

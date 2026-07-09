@@ -67,6 +67,8 @@ import space.livedigital.example.calls.entities.CallAction.ToggleMute
 import space.livedigital.example.calls.entities.CallState
 import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
+import space.livedigital.example.calls.utils.initialIsCameraOn
+import space.livedigital.example.calls.utils.initialIsMuted
 import space.livedigital.example.ui.components.buttons.ButtonComponent
 import space.livedigital.example.ui.components.containers.ContainerComponent
 import space.livedigital.example.ui.components.peer.RemotePeerComponent
@@ -81,7 +83,7 @@ import space.livedigital.sdk.view.PeerView
 import kotlin.time.Duration
 
 @Composable
-internal fun CallScreen(
+fun CallScreen(
     state: State<ScreenState>,
     onCallFinished: () -> Unit,
     onCallAction: (CallAction) -> Unit,
@@ -526,6 +528,7 @@ private fun CallControlPanel(
                 }
 
                 is CallState.Incoming -> {
+                    val context = LocalContext.current
                     ButtonComponent(
                         onClick = {
                             onCallAction(
@@ -533,7 +536,9 @@ private fun CallControlPanel(
                                     callState.call.displayName,
                                     callState.call.phone,
                                     callState.call.roomAlias,
-                                    callState.call.callType
+                                    callState.call.callType,
+                                    isMuted = context.initialIsMuted(),
+                                    isCameraOn = context.initialIsCameraOn(callState.call.callType)
                                 )
                             )
                         },
@@ -559,6 +564,7 @@ private fun CallControlPanel(
                 }
 
                 is CallState.Ended, is CallState.Missed -> {
+                    val context = LocalContext.current
                     val call = (callState as? CallState.Ended)?.call
                         ?: (callState as? CallState.Missed)?.call
                     ButtonComponent(
@@ -569,7 +575,9 @@ private fun CallControlPanel(
                                         it.displayName,
                                         it.phone,
                                         it.roomAlias,
-                                        it.callType
+                                        it.callType,
+                                        isMuted = context.initialIsMuted(),
+                                        isCameraOn = context.initialIsCameraOn(it.callType)
                                     )
                                 )
                             }

@@ -4,7 +4,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-internal sealed class Call(
+sealed class Call(
     open val displayName: String,
     open val phone: String,
     open val roomAlias: String,
@@ -19,10 +19,4 @@ internal sealed class Call(
         override val roomAlias: String,
         override val callType: CallType
     ) : Call(displayName, phone, roomAlias, callType)
-}
-
-@Parcelize
-enum class CallType : Parcelable {
-    AUDIO,
-    VIDEO
 }

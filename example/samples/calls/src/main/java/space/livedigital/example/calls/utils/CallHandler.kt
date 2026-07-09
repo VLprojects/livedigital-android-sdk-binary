@@ -20,7 +20,7 @@ import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.services.CallConnectionService
 
-internal class CallHandler(
+class CallHandler(
     private val context: Context
 ) {
 
@@ -192,7 +192,9 @@ internal class CallHandler(
                 displayName = displayName,
                 phone = phone,
                 roomAlias = roomAlias,
-                callType = callType
+                callType = callType,
+                isMuted = applicationContext.initialIsMuted(),
+                isCameraOn = applicationContext.initialIsCameraOn(callType)
             ),
         )
         sendBroadcast(callIntent)

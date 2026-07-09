@@ -42,9 +42,12 @@ android {
 }
 
 dependencies {
-    // Shared SDK integration infrastructure (MoodHood REST, engine DI, entities).
+    // Shared SDK integration infrastructure (engine DI, PeerAppData, JsonUtils).
     // Transitively exposes the livedigital SDK and Koin.
     implementation(project(":shared"))
+
+    // MoodHood REST client (guest auth → room → participant → signaling token → join).
+    implementation(project(":moodhood-api"))
 
     // XML-UI specific dependencies.
     implementation(libs.androidx.appcompat)

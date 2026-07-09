@@ -5,17 +5,22 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import space.livedigital.example.Permission
 import space.livedigital.example.PermissionsViewModel
+import space.livedigital.example.backend.MoodHoodConferenceBackend
 import space.livedigital.example.calls.CallViewModel
+import space.livedigital.example.calls.backend.ConferenceBackend
 import space.livedigital.example.calls.repositories.AndroidContactsRepository
 import space.livedigital.example.calls.repositories.CallRepository
 
 internal val viewModelsModule = module {
+    single<ConferenceBackend> { MoodHoodConferenceBackend() }
+
     viewModel {
         CallViewModel(
             callRepository = CallRepository.instance ?: CallRepository.create(),
             contactsRepository = AndroidContactsRepository(
                 contentResolver = androidContext().contentResolver
-            )
+            ),
+            conferenceBackend = get()
         )
     }
 

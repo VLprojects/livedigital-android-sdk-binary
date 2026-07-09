@@ -32,8 +32,10 @@ import space.livedigital.example.calls.entities.CallState
 import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import space.livedigital.example.calls.repositories.CallRepository
+import space.livedigital.example.calls.utils.initialIsCameraOn
+import space.livedigital.example.calls.utils.initialIsMuted
 
-internal class CallConnectionService : ConnectionService() {
+class CallConnectionService : ConnectionService() {
 
     private val listener = object : CallConnection.CallStateListener {
         override fun onAnswer(call: Call) {
@@ -42,7 +44,9 @@ internal class CallConnectionService : ConnectionService() {
                     displayName = call.displayName,
                     phone = call.phone,
                     roomAlias = call.roomAlias,
-                    callType = call.callType
+                    callType = call.callType,
+                    isMuted = applicationContext.initialIsMuted(),
+                    isCameraOn = applicationContext.initialIsCameraOn(call.callType)
                 )
             )
             val intent = Intent(this@CallConnectionService, CallActivity::class.java).apply {
@@ -167,7 +171,7 @@ internal class CallConnectionService : ConnectionService() {
             callType = callType
         )
         val connection = CallConnection(call).apply {
-            connectionProperties = Connection.PROPERTY_SELF_MANAGED
+            audioModeIsVoip = true
             setAddress(request.address, TelecomManager.PRESENTATION_ALLOWED)
 
             if (callType == CallType.VIDEO) {
@@ -222,7 +226,7 @@ internal class CallConnectionService : ConnectionService() {
         )
 
         val connection = CallConnection(call).apply {
-            connectionProperties = Connection.PROPERTY_SELF_MANAGED
+            audioModeIsVoip = true
             if (callType == CallType.VIDEO) {
                 connectionCapabilities = Connection.CAPABILITY_SUPPORTS_VT_LOCAL_BIDIRECTIONAL or
                         Connection.CAPABILITY_SUPPORTS_VT_REMOTE_BIDIRECTIONAL
@@ -237,7 +241,9 @@ internal class CallConnectionService : ConnectionService() {
                     displayName = call.displayName,
                     phone = call.phone,
                     roomAlias = call.roomAlias,
-                    callType = call.callType
+                    callType = call.callType,
+                    isMuted = applicationContext.initialIsMuted(),
+                    isCameraOn = applicationContext.initialIsCameraOn(call.callType)
                 )
             )
         }

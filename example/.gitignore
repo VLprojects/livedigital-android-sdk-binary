@@ -110,3 +110,9 @@ output-metadata.json
 
 # Firebase config (developer-provided, contains project keys)
 /samples/calls/google-services.json
+/samples/calls-push/google-services.json
+
+# Devices API config (developer-provided baseUrl/apiKey, surfaced via BuildConfig)
+/samples/calls-push/secrets.properties
+
+/.idea

@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -115,6 +116,10 @@ internal class MainActivity : AppCompatActivity() {
         val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("label", text)
         clipboard.setPrimaryClip(clip)
+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
+            Toast.makeText(context, R.string.toast_token_copied, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun buildPermissions(): List<Permission> {

@@ -1,0 +1,213 @@
+package space.livedigital.example
+
+import android.Manifest
+import android.content.ComponentName
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Color
+import android.os.Build
+import android.os.Bundle
+import android.telecom.TelecomManager
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
+import space.livedigital.example.calls.services.CallConnectionService
+import space.livedigital.example.calls.utils.CallHandler
+import space.livedigital.example.calls.utils.XiaomiUtilities
+import space.livedigital.example.ui.screens.AuthContainerComponent
+import space.livedigital.example.ui.screens.MainScreen
+import space.livedigital.example.ui.screens.OutgoingCallContainerComponent
+import space.livedigital.example.ui.theme.AppTheme
+
+internal class MainActivity : AppCompatActivity() {
+
+    private val permissionsViewModel by viewModel<PermissionsViewModel> {
+        parametersOf(buildPermissions(), isPhoneAccountEnabled())
+    }
+
+    private val authViewModel by viewModel<AuthViewModel>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge(navigationBarStyle = createNavigationBarStyle())
+        setContent()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val permissions = buildPermissions()
+        val isPhoneAccountRegistered = isPhoneAccountEnabled()
+        permissions.forEach {
+            permissionsViewModel.onPermissionStateUpdated(it.name, it.isGranted)
+        }
+        permissionsViewModel.onPhoneAccountEnabledStateUpdated(isPhoneAccountRegistered)
+        authViewModel.onPushPermissionStateChanged(isPostNotificationsGranted())
+    }
+
+    private fun createNavigationBarStyle(): SystemBarStyle {
+        return SystemBarStyle.light(
+            scrim = Color.TRANSPARENT,
+            darkScrim = Color.TRANSPARENT
+        )
+    }
+
+    private fun setContent() {
+        setContent {
+            AppTheme {
+                val permissionsState =
+                    permissionsViewModel.permissionsState.collectAsStateWithLifecycle()
+                val authState = authViewModel.authState.collectAsStateWithLifecycle()
+
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission()
+                ) { _ ->
+                    val permissions = buildPermissions()
+                    val isPhoneAccountRegistered = isPhoneAccountEnabled()
+                    permissions.forEach {
+                        permissionsViewModel.onPermissionStateUpdated(it.name, it.isGranted)
+                    }
+                    permissionsViewModel.onPhoneAccountEnabledStateUpdated(isPhoneAccountRegistered)
+                    authViewModel.onPushPermissionStateChanged(isPostNotificationsGranted())
+                }
+
+                val isPushPermissionGranted = permissionsState.value.permissions
+                    .find { it.name == Manifest.permission.POST_NOTIFICATIONS }
+                    ?.isGranted ?: true
+
+                MainScreen(
+                    permissionsState = permissionsState,
+                    onPermissionSwitchClicked = { permission ->
+                        if (permission.isGranted) return@MainScreen
+
+                        if (isVendorSpecificPermission(permission)) {
+                            val intent = XiaomiUtilities.getPermissionManagerIntent(this)
+                            startActivity(intent)
+                            return@MainScreen
+                        }
+
+                        permissionLauncher.launch(permission.name)
+                    },
+                    onCallAccountSwitchClicked = ::openPhoneAccountsSettings,
+                ) {
+                    AuthContainerComponent(
+                        authState = authState,
+                        isPushPermissionGranted = isPushPermissionGranted,
+                        onPhoneNumberChanged = authViewModel::onPhoneNumberChanged,
+                        onSignInClicked = authViewModel::onSignInClicked,
+                        onSignOutClicked = authViewModel::onSignOutClicked
+                    )
+
+                    if (authState.value.isAuthorizedIn) {
+                        OutgoingCallContainerComponent(
+                            onCallButtonClicked = { calleePhoneNumber ->
+                                CallHandler(applicationContext).placeOutgoingCall(calleePhoneNumber)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun isVendorSpecificPermission(permission: Permission): Boolean =
+        permission.name == XiaomiUtilities.OP_SHOW_WHEN_LOCKED.toString() ||
+                permission.name == XiaomiUtilities.OP_BACKGROUND_START_ACTIVITY.toString()
+
+    private fun buildPermissions(): List<Permission> {
+        return buildList {
+            permissionImportanceByNames.forEach { (permissionName, importance) ->
+                add(buildPermission(permissionName, importance))
+            }
+            vendorPermissions?.forEach { (permissionName, importance) ->
+                add(buildVendorPermission(permissionName, importance))
+            }
+        }
+    }
+
+    private fun buildPermission(permissionName: String, importance: Importance): Permission {
+        val isGranted =
+            this.checkSelfPermission(permissionName) == PackageManager.PERMISSION_GRANTED
+        return Permission(name = permissionName, importance = importance, isGranted = isGranted)
+    }
+
+    private fun buildVendorPermission(permissionName: String, importance: Importance): Permission {
+        val isGranted = XiaomiUtilities.isCustomPermissionGranted(this, permissionName.toInt())
+        return Permission(name = permissionName, importance, isGranted = isGranted)
+    }
+
+    // POST_NOTIFICATIONS only exists on Android 13+; it's implicitly granted before that.
+    private fun isPostNotificationsGranted(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true
+        }
+        return checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+    }
+
+    // Phone account is not really permission so we need to check it in a different way
+    private fun isPhoneAccountEnabled(): Boolean {
+        if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
+        }
+
+        val telecomManager = getSystemService(TELECOM_SERVICE) as TelecomManager
+        return telecomManager.callCapablePhoneAccounts.any {
+            it.componentName == ComponentName(this, CallConnectionService::class.java)
+        }
+    }
+
+    private fun openPhoneAccountsSettings() {
+        startActivity(Intent(TelecomManager.ACTION_CHANGE_PHONE_ACCOUNTS))
+    }
+
+    companion object {
+        private val permissionImportanceByNames =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                mapOf(
+                    Manifest.permission.POST_NOTIFICATIONS to Importance.IMPORTANT_FOR_ALL_CALLS,
+                    Manifest.permission.READ_PHONE_STATE to Importance.IMPORTANT_FOR_SYSTEM_CALLS,
+                    Manifest.permission.WRITE_CONTACTS to Importance.DEFAULT,
+                    Manifest.permission.CALL_PHONE to Importance.IMPORTANT_FOR_SYSTEM_CALLS,
+                    Manifest.permission.READ_CONTACTS to Importance.DEFAULT,
+                    Manifest.permission.RECORD_AUDIO to Importance.DEFAULT,
+                    Manifest.permission.BLUETOOTH_CONNECT to Importance.DEFAULT,
+                    Manifest.permission.CAMERA to Importance.DEFAULT
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                mapOf(
+                    Manifest.permission.READ_PHONE_STATE to Importance.IMPORTANT_FOR_SYSTEM_CALLS,
+                    Manifest.permission.WRITE_CONTACTS to Importance.DEFAULT,
+                    Manifest.permission.CALL_PHONE to Importance.IMPORTANT_FOR_SYSTEM_CALLS,
+                    Manifest.permission.READ_CONTACTS to Importance.DEFAULT,
+                    Manifest.permission.RECORD_AUDIO to Importance.DEFAULT,
+                    Manifest.permission.BLUETOOTH_CONNECT to Importance.DEFAULT,
+                    Manifest.permission.CAMERA to Importance.DEFAULT
+                )
+            } else {
+                mapOf(
+                    Manifest.permission.READ_PHONE_STATE to Importance.IMPORTANT_FOR_SYSTEM_CALLS,
+                    Manifest.permission.WRITE_CONTACTS to Importance.DEFAULT,
+                    Manifest.permission.CALL_PHONE to Importance.IMPORTANT_FOR_SYSTEM_CALLS,
+                    Manifest.permission.READ_CONTACTS to Importance.DEFAULT,
+                    Manifest.permission.RECORD_AUDIO to Importance.DEFAULT,
+                    Manifest.permission.CAMERA to Importance.DEFAULT
+                )
+            }
+
+        private val vendorPermissions = mapOf(
+            XiaomiUtilities.OP_BACKGROUND_START_ACTIVITY.toString() to
+                    Importance.IMPORTANT_FOR_SYSTEM_CALLS,
+            XiaomiUtilities.OP_SHOW_WHEN_LOCKED.toString() to Importance.DEFAULT
+        ).takeIf {
+            XiaomiUtilities.isMIUI
+        }
+    }
+}

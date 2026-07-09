@@ -23,7 +23,7 @@ import space.livedigital.example.calls.entities.CallType
 import space.livedigital.example.calls.entities.GeneralCallEndpoint
 import kotlin.time.TimeSource
 
-internal class CallRepository private constructor() {
+class CallRepository private constructor() {
 
     val currentCallState
         get() = _currentCallState.asStateFlow()
@@ -81,14 +81,16 @@ internal class CallRepository private constructor() {
                             roomAlias = callAction.roomAlias,
                             callType = callAction.callType
                         ),
-                        isMuted = false,
-                        isCameraOn = callAction.callType == CallType.VIDEO,
+                        isMuted = callAction.isMuted,
+                        isCameraOn = callAction.isCameraOn,
                     )
                 }
 
                 is CallAction.PlaceActiveCall -> {
                     val wasMuted = (callState as? CallState.Activated)?.isMuted
+                        ?: (callState as? CallState.Answered)?.isMuted
                     val wasCameraOn = (callState as? CallState.Activated)?.isCameraOn
+                        ?: (callState as? CallState.Answered)?.isCameraOn
 
                     Active(
                         call = Actual(
@@ -150,8 +152,8 @@ internal class CallRepository private constructor() {
                             roomAlias = callAction.roomAlias,
                             callType = callAction.callType
                         ),
-                        isMuted = false,
-                        isCameraOn = callAction.callType == CallType.VIDEO
+                        isMuted = callAction.isMuted,
+                        isCameraOn = callAction.isCameraOn
                     )
                 }
 

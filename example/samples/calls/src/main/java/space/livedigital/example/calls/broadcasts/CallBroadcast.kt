@@ -13,7 +13,7 @@ import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.services.CallService
 import space.livedigital.example.calls.utils.CallHandler
 
-internal class CallBroadcast : BroadcastReceiver(), KoinComponent {
+class CallBroadcast : BroadcastReceiver(), KoinComponent {
 
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {

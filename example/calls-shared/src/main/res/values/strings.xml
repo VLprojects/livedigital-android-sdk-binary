@@ -1,0 +1,18 @@
+<resources>
+    <string name="button_copy_token_to_clipboards">Copy</string>
+    <string name="description_call_account">Enable the app’s call account so that incoming calls appear in the system phone app</string>
+    <string name="description_copy_token">Copy the Firebase token for sending push notifications</string>
+    <string name="label_bluetooth">Bluetooth</string>
+    <string name="label_call_phone">Make calls</string>
+    <string name="label_camera">Camera</string>
+    <string name="label_importance_description">Red: critically important permission for all calls and app functionality.\n\nBlue: important permission for system-managed call integration.\n\nGray: standard permission, app features may work partially or limited without it.</string>
+    <string name="label_microphone">Microphone</string>
+    <string name="label_notifications">Notifications</string>
+    <string name="label_phone_account_enabled">Call account</string>
+    <string name="label_phone_state">Phone status</string>
+    <string name="label_read_contacts">Read contacts</string>
+    <string name="label_write_contacts">Edit contacts</string>
+    <string name="label_xiaomi_lock_screen">Show on lockscreen</string>
+    <string name="label_xiaomi_open_from_background">Open new windows while running in the background</string>
+    <string name="label_xiaomi_permissions_info">On some devices (e.g., Xiaomi), calls may not work unless “Show on lock screen” and “Allow opening windows from background” are enabled.</string>
+</resources>

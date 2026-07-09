@@ -10,7 +10,7 @@ import space.livedigital.sdk.media.video.VideoSource
 import kotlin.time.Duration
 import kotlin.time.TimeMark
 
-internal data class ScreenState(
+data class ScreenState(
     val remotePeers: List<PeerWithVersion> = emptyList(),
     val isLocalVideoOn: Boolean = false,
     val localVideoSource: VideoSource? = null,

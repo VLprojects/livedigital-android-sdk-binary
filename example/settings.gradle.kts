@@ -31,10 +31,24 @@ rootProject.name = "LiveDigitalSDK"
 // Shared SDK integration infrastructure (MoodHood REST client, engine DI, entities).
 include(":shared")
 
+// Standalone REST client for the push-device registration API (PUT/DELETE v1/devices).
+include(":devices-api")
+
+// MoodHood REST client (guest auth → room → participant → signaling token → join).
+include(":moodhood-api")
+
 // Shared Compose design system used by the Compose samples (conference-compose, calls).
 include(":design")
+
+// Library with the code shared verbatim by the two call samples (permissions dashboard,
+// telecom endpoint model, shared Compose components). Not an installable app.
+include(":calls-shared")
 
 // Runnable SDK usage samples — each is an independent, installable app.
 include(":samples:conference-xml")
 include(":samples:conference-compose")
 include(":samples:calls")
+
+// Second call sample: same UI/telephony shell as :samples:calls but backed by :devices-api
+// (push-token-service flow) instead of MoodHood. Hosts the phone-number auth/login feature.
+include(":samples:calls-push")

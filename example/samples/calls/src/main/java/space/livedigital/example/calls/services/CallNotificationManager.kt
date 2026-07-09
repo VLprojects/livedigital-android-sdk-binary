@@ -25,7 +25,7 @@ import space.livedigital.example.calls.entities.CallActivityAction
 import space.livedigital.example.calls.entities.CallState
 import space.livedigital.example.calls.entities.CallType
 
-internal class CallNotificationManager(private val context: Context) {
+class CallNotificationManager(private val context: Context) {
 
     private val notificationManager: NotificationManagerCompat =
         NotificationManagerCompat.from(context)

@@ -43,32 +43,37 @@ android {
 }
 
 dependencies {
-    // Shared SDK integration infrastructure (MoodHood REST, engine DI, entities).
-    // Transitively exposes the livedigital SDK and Koin.
+    // SDK integration infra (engine DI, PeerAppData, JsonUtils) + Koin.
     implementation(project(":shared"))
+
+    // Compose design system (theme, base components, modifier extensions).
+    implementation(project(":design"))
+
+    // Code shared verbatim with :samples:calls-push — permissions dashboard, telecom endpoint
+    // model, CallType, shared Compose components.
+    implementation(project(":calls-shared"))
+
+    // MoodHood REST client — backs this sample's ConferenceBackend implementation.
+    implementation(project(":moodhood-api"))
 
     // Telephony integration (system dialer + self-managed Core-Telecom flows).
     implementation(libs.androidx.core.telecom)
 
-    // FCM push-initiated calls.
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging)
-
     // Foreground call service lifecycle.
     implementation(libs.androidx.lifecycle.service)
 
-    // Network inspector. Referenced from main source (InterceptorsModule / CallViewModel),
-    // so it must be available in every build variant.
-    implementation(libs.chucker.library)
+    // MainActivity extends AppCompatActivity.
+    implementation(libs.androidx.appcompat)
 
-    // Shared Compose design system (theme, base components, modifier extensions).
-    implementation(project(":design"))
+    // FCM push-initiated calls + token retrieval.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
-    // Jetpack Compose UI.
+    // Jetpack Compose UI (CallActivity, screens, components).
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.material3)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.ui.tooling)
-    implementation(libs.androidx.material3)
 }

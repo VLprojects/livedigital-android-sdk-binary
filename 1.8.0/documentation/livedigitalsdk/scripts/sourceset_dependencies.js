@@ -1,0 +1,1 @@
+sourceset_dependencies='{":livedigital-android-sdk:sdk/main":[],":livedigital-android-sdk:sdk/production":[],":livedigital-android-sdk:sdk/productionRelease":[],":livedigital-android-sdk:sdk/release":[],":livedigital-android-sdk:sdk/staging":[],":livedigital-android-sdk:sdk/stagingRelease":[]}'

@@ -17,38 +17,44 @@ class PushNotificationService : FirebaseMessagingService(), KoinComponent {
 
     override fun onNewToken(p0: String) {
         super.onNewToken(p0)
-        // Delegated to whichever app bound a PushTokenListener (no-op if none).
         getKoin().getOrNull<PushTokenListener>()?.onNewToken(p0)
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         val data = remoteMessage.data
-        Log.d(TAG, "remoteMessage data $data")
 
         val kind = data[KEY_KIND]?.let(PushKind::fromWireValue)
+
         if (kind == null) {
             Log.w(TAG, "Unknown or missing push kind: ${data[KEY_KIND]}")
             return
         }
 
         when (kind) {
-            PushKind.CALL_START -> handleCallStart(data)
-            PushKind.CALL_END ->
+            PushKind.CALL_START -> {
+                handleCallStart(data)
+            }
+
+            PushKind.CALL_END -> {
                 disconnectCurrentCall(DisconnectCause(DisconnectCause.REMOTE))
+            }
 
-            PushKind.CALL_ANSWERED ->
+            PushKind.CALL_ANSWERED -> {
                 disconnectCurrentCall(DisconnectCause(DisconnectCause.ANSWERED_ELSEWHERE))
+            }
 
-            PushKind.CALL_DECLINED_BY_CALLEE ->
+            PushKind.CALL_DECLINED_BY_CALLEE -> {
                 disconnectCurrentCall(
                     DisconnectCause(
                         DisconnectCause.REJECTED,
                         CallConstants.REASON_DECLINED_ELSEWHERE
                     )
                 )
+            }
 
-            PushKind.CALL_CANCELLED ->
+            PushKind.CALL_CANCELLED -> {
                 disconnectCurrentCall(DisconnectCause(DisconnectCause.REMOTE))
+            }
         }
     }
 
@@ -67,12 +73,17 @@ class PushNotificationService : FirebaseMessagingService(), KoinComponent {
 
         val callRepository = CallRepository.instance ?: CallRepository.create()
         val currentState = callRepository.currentCallState.value
-        val isSafeToStart = currentState is CallState.Idle ||
+        val isSafeToStart = currentState is CallState.Missed ||
                 currentState is CallState.Ended ||
-                currentState is CallState.Missed
+                currentState is CallState.Idle
+
         if (!isSafeToStart) {
-            Log.d(TAG, "Ignoring incoming call_start — a call is already in progress")
-            return
+            callRepository.dispatchCallAction(
+                CallAction.Disconnect(
+                    call = call,
+                    cause = DisconnectCause(DisconnectCause.ANSWERED_ELSEWHERE)
+                )
+            )
         }
 
         runCatching {

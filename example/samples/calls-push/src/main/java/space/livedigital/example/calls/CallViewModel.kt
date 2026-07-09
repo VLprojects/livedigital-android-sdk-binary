@@ -371,9 +371,13 @@ class CallViewModel(
 
             override fun peerPermissionsUpdated(peerId: PeerId, permissions: List<MediaLabel>) {}
 
-            override fun stoppedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+            override fun startedLocalAudio(label: MediaLabel, mediaSourceId: MediaSourceId) {}
 
             override fun stoppedLocalAudio(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+
+            override fun startedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+
+            override fun stoppedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
 
             override fun forceStoppedLocalMedia(label: MediaLabel) {}
 

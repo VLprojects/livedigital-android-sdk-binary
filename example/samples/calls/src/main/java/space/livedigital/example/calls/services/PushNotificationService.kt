@@ -9,21 +9,12 @@ import space.livedigital.example.calls.entities.Call
 import space.livedigital.example.calls.entities.CallAction
 import space.livedigital.example.calls.entities.CallState
 import space.livedigital.example.calls.entities.CallType
-import space.livedigital.example.calls.push.PushTokenListener
 import space.livedigital.example.calls.repositories.CallRepository
 import space.livedigital.example.calls.utils.CallHandler
 
 class PushNotificationService : FirebaseMessagingService(), KoinComponent {
 
-    override fun onNewToken(p0: String) {
-        super.onNewToken(p0)
-        // Delegated to whichever app bound a PushTokenListener (no-op if none).
-        getKoin().getOrNull<PushTokenListener>()?.onNewToken(p0)
-    }
-
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Log.d(TAG, "remoteMessage data ${remoteMessage.data}")
-        return
         val pushType = PushType.valueOf(remoteMessage.data.getValue("type").uppercase())
         val call = Call.Actual(
             displayName = remoteMessage.data.getValue("caller"),

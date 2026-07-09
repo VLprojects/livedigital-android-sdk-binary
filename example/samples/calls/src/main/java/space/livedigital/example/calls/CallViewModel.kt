@@ -28,7 +28,6 @@ import space.livedigital.example.calls.repositories.HasContactResult
 import space.livedigital.example.entities.PeerAppData
 import space.livedigital.example.utils.JsonUtils
 import space.livedigital.sdk.channel.ChannelError
-import space.livedigital.sdk.channel.ChannelId
 import space.livedigital.sdk.channel.ChannelSession
 import space.livedigital.sdk.channel.ChannelSessionDelegate
 import space.livedigital.sdk.channel.ChannelSessionStatus
@@ -39,7 +38,6 @@ import space.livedigital.sdk.data.entities.MediaLabel
 import space.livedigital.sdk.data.entities.Peer
 import space.livedigital.sdk.data.entities.PeerId
 import space.livedigital.sdk.data.entities.PeerVolume
-import space.livedigital.sdk.data.entities.Role
 import space.livedigital.sdk.data.entities.StockChannelSessionParams
 import space.livedigital.sdk.data.entities.channel_state_consistency.ChannelStateConsistencyIssue
 import space.livedigital.sdk.engine.LiveDigitalEngine
@@ -317,8 +315,6 @@ class CallViewModel(
         initDelegates()
 
         connectToChannel(
-            channelId = joinParams.channelId,
-            participantId = joinParams.participantId,
             signalingToken = joinParams.signalingToken,
             spaceId = joinParams.spaceId,
             roomId = joinParams.roomId
@@ -345,8 +341,6 @@ class CallViewModel(
     }
 
     private fun connectToChannel(
-        channelId: String,
-        participantId: String,
         signalingToken: String,
         spaceId: String,
         roomId: String
@@ -358,11 +352,7 @@ class CallViewModel(
         val appDataJson = JsonUtils.encodeToJsonString(appData)
 
         val channelSessionParams = StockChannelSessionParams(
-            channelId = ChannelId(channelId),
-            participantId = participantId,
-            role = Role.HOST,
             signalingToken = signalingToken,
-            peerId = PeerId(participantId),
             appData = JSONObject(appDataJson),
             analyticsMetaKeyValues = emptyMap()
         )
@@ -497,9 +487,13 @@ class CallViewModel(
 
             override fun peerPermissionsUpdated(peerId: PeerId, permissions: List<MediaLabel>) {}
 
-            override fun stoppedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+            override fun startedLocalAudio(label: MediaLabel, mediaSourceId: MediaSourceId) {}
 
             override fun stoppedLocalAudio(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+
+            override fun startedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
+
+            override fun stoppedLocalVideo(label: MediaLabel, mediaSourceId: MediaSourceId) {}
 
             override fun forceStoppedLocalMedia(label: MediaLabel) {}
 

@@ -9,7 +9,9 @@ import space.livedigital.sdk.engine.StockLiveDigitalEngine
 
 val liveDigitalEngineModule = module {
 
-    factory<LiveDigitalEngine> { (loadBalancerUrl: String?, signalingApiUrl: String?) ->
+    factory<LiveDigitalEngine> { params ->
+        val loadBalancerUrl = params.values.getOrNull(0) as? String
+        val signalingApiUrl = params.values.getOrNull(1) as? String
         val environment = when {
             loadBalancerUrl != null && signalingApiUrl != null -> {
                 LiveDigitalSDKEnvironment(

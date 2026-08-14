@@ -134,10 +134,12 @@ class CallViewModel(
             is CallState.Active -> {
                 ensureEngine()
 
-                if (session == null && startConferenceJob == null) {
+                if (session == null && startConferenceJob == null && !isEngineDestroying) {
                     signalingToken = callState.call.signalingToken
                     startConferenceJob = viewModelScope.launch {
-                        startConference()
+                        if (!startConference()) {
+                            startConferenceJob = null
+                        }
                     }
                 }
 
@@ -160,10 +162,12 @@ class CallViewModel(
             is CallState.Outgoing -> {
                 ensureEngine()
 
-                if (session == null && startConferenceJob == null) {
+                if (session == null && startConferenceJob == null && !isEngineDestroying) {
                     signalingToken = callState.call.signalingToken
                     startConferenceJob = viewModelScope.launch {
-                        startConference()
+                        if (!startConference()) {
+                            startConferenceJob = null
+                        }
                     }
                 }
 
@@ -237,14 +241,15 @@ class CallViewModel(
         }
     }
 
-    private fun startConference() {
-        val signalingToken = signalingToken ?: return
+    private fun startConference(): Boolean {
+        val signalingToken = signalingToken ?: return false
 
         ensureEngine()
 
         initDelegates()
 
         connectToChannel(signalingToken)
+        return true
     }
 
     /**
@@ -423,6 +428,9 @@ class CallViewModel(
 
     private fun startLocalAudio() {
         if (state.value.isLocalAudioOn) return
+        // The dying engine would accept the source but it is lost with the engine;
+        // resumeCallAfterDestroy() re-applies media state on the new engine
+        if (isEngineDestroying) return
 
         val localAudioSource = liveDigitalEngine?.startAudioSource(audioEncodingPresets = null)
         localAudioSource?.let { source ->
@@ -452,14 +460,16 @@ class CallViewModel(
     }
 
     private fun restartSession() {
-        destroyEngine(onComplete = { startConference() })
+        destroyEngine()
     }
 
-    private fun destroyEngine(onComplete: (suspend () -> Unit)? = null) {
+    private fun destroyEngine() {
         if (isEngineDestroying) return
         val engine = liveDigitalEngine ?: return
         isEngineDestroying = true
 
+        startConferenceJob?.cancel()
+        startConferenceJob = null
         stopLocalAudio()
 
         engine.destroy(object : LiveDigitalEngineDestroyDelegate {
@@ -468,10 +478,19 @@ class CallViewModel(
                     session = null
                     if (liveDigitalEngine === engine) liveDigitalEngine = null
                     isEngineDestroying = false
-                    onComplete?.invoke()
+                    resumeCallAfterDestroy()
                 }
             }
         })
+    }
+
+    // A new call may have become active while the previous engine was still being
+    // destroyed; its handling was skipped then, so replay it now that destroy is done
+    private suspend fun resumeCallAfterDestroy() {
+        val callState = state.value.callState
+        if (callState is CallState.WithMedia) {
+            handleCallState(callState, wasActive = null)
+        }
     }
 
     private suspend fun createContactIfMissing(

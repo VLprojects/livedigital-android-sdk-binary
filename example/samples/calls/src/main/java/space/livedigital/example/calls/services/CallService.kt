@@ -129,7 +129,7 @@ class CallService : LifecycleService() {
         // Manager to add call in system (without integration with dialer app)
         callsManager = CallsManager(applicationContext).apply {
             registerAppWithTelecom(
-                capabilities = CallsManager.CAPABILITY_SUPPORTS_CALL_STREAMING and
+                capabilities = CallsManager.CAPABILITY_SUPPORTS_CALL_STREAMING or
                         CallsManager.CAPABILITY_SUPPORTS_VIDEO_CALLING
             )
         }

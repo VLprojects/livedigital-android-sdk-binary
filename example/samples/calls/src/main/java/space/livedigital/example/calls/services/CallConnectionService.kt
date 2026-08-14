@@ -16,6 +16,7 @@ import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.telecom.VideoProfile
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
@@ -100,7 +101,7 @@ class CallConnectionService : ConnectionService() {
     override fun onCreate() {
         super.onCreate()
         repository = CallRepository.instance ?: CallRepository.create()
-        scope = CoroutineScope(SupervisorJob())
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         scope?.let {
             repository?.currentCallState
                 ?.onEach { callState ->

@@ -45,6 +45,7 @@ import space.livedigital.sdk.engine.LiveDigitalEngineDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineDestroyDelegate
 import space.livedigital.sdk.engine.LiveDigitalEngineError
 import space.livedigital.sdk.media.MediaSourceId
+import space.livedigital.sdk.media.audio.AudioCodec
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -432,7 +433,10 @@ class CallViewModel(
         // resumeCallAfterDestroy() re-applies media state on the new engine
         if (isEngineDestroying) return
 
-        val localAudioSource = liveDigitalEngine?.startAudioSource(audioEncodingPresets = null)
+        val localAudioSource = liveDigitalEngine?.startAudioSource(
+            audioEncodingPresets = null,
+            preferredCodec = AudioCodec.PCMU
+        )
         localAudioSource?.let { source ->
             mutableState.update {
                 mutableState.value.copy(

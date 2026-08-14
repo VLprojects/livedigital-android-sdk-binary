@@ -4,7 +4,7 @@ kotlin = "2.1.20"
 googleServices = "4.4.4"
 kotlinxSerializationJson = "1.8.0"
 
-livedigitalSdk = "1.8.0"
+livedigitalSdk = "1.9.0"
 
 # Conference (XML) UI stack
 appcompat = "1.7.0"

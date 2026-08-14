@@ -169,28 +169,18 @@ class CallViewModel(
     ) {
         when (callState) {
             is CallState.Active -> {
-                if (liveDigitalEngine == null) {
-                    liveDigitalEngine = get<LiveDigitalEngine>()
-                }
+                ensureEngine()
 
-                if (session == null && startConferenceJob == null) {
+                if (session == null && startConferenceJob == null && !isEngineDestroying) {
                     roomAlias = callState.call.roomAlias
                     startConferenceJob = viewModelScope.launch {
-                        startConference()
+                        if (!startConference()) {
+                            startConferenceJob = null
+                        }
                     }
                 }
 
-                if (callState.isMuted) {
-                    stopLocalAudio()
-                } else {
-                    startLocalAudio()
-                }
-
-                if (callState.isCameraOn) {
-                    startLocalVideo()
-                } else {
-                    stopLocalVideo()
-                }
+                syncLocalMedia(callState.isMuted, callState.isCameraOn)
 
                 if (timer?.isActive != true) {
                     timer = viewModelScope.launch {
@@ -207,66 +197,30 @@ class CallViewModel(
             }
 
             is CallState.Activated -> {
-                if (liveDigitalEngine == null) {
-                    liveDigitalEngine = get<LiveDigitalEngine>()
-                }
+                ensureEngine()
 
                 mutableState.update {
                     it.copy(callDuration = Duration.ZERO)
                 }
-                if (callState.isMuted) {
-                    stopLocalAudio()
-                } else {
-                    startLocalAudio()
-                }
-
-                if (callState.isCameraOn) {
-                    startLocalVideo()
-                } else {
-                    stopLocalVideo()
-                }
+                syncLocalMedia(callState.isMuted, callState.isCameraOn)
             }
 
             is CallState.Answered -> {
-                if (liveDigitalEngine == null) {
-                    liveDigitalEngine = get<LiveDigitalEngine>()
-                }
+                ensureEngine()
 
                 mutableState.update {
                     it.copy(callDuration = Duration.ZERO)
                 }
-                if (callState.isMuted) {
-                    stopLocalAudio()
-                } else {
-                    startLocalAudio()
-                }
-
-                if (callState.isCameraOn) {
-                    startLocalVideo()
-                } else {
-                    stopLocalVideo()
-                }
+                syncLocalMedia(callState.isMuted, callState.isCameraOn)
             }
 
             is CallState.Outgoing -> {
-                if (liveDigitalEngine == null) {
-                    liveDigitalEngine = get<LiveDigitalEngine>()
-                }
+                ensureEngine()
 
                 mutableState.update {
                     it.copy(callDuration = Duration.ZERO)
                 }
-                if (callState.isMuted) {
-                    stopLocalAudio()
-                } else {
-                    startLocalAudio()
-                }
-
-                if (callState.isCameraOn) {
-                    startLocalVideo()
-                } else {
-                    stopLocalVideo()
-                }
+                syncLocalMedia(callState.isMuted, callState.isCameraOn)
             }
 
             is CallState.Ended -> {
@@ -303,14 +257,29 @@ class CallViewModel(
         }
     }
 
-    private suspend fun startConference() {
-        val roomAlias = roomAlias ?: return
-        val joinParams = conferenceBackend.resolveJoinParams(roomAlias) ?: return
+    private fun ensureEngine(): LiveDigitalEngine =
+        liveDigitalEngine ?: get<LiveDigitalEngine>().also { liveDigitalEngine = it }
+
+    private fun syncLocalMedia(isMuted: Boolean, isCameraOn: Boolean) {
+        if (isMuted) {
+            stopLocalAudio()
+        } else {
+            startLocalAudio()
+        }
+
+        if (isCameraOn) {
+            startLocalVideo()
+        } else {
+            stopLocalVideo()
+        }
+    }
+
+    private suspend fun startConference(): Boolean {
+        val roomAlias = roomAlias ?: return false
+        val joinParams = conferenceBackend.resolveJoinParams(roomAlias) ?: return false
         localParticipantId = joinParams.participantId
 
-        if (liveDigitalEngine == null) {
-            liveDigitalEngine = get<LiveDigitalEngine>()
-        }
+        ensureEngine()
 
         initDelegates()
 
@@ -319,6 +288,7 @@ class CallViewModel(
             spaceId = joinParams.spaceId,
             roomId = joinParams.roomId
         )
+        return true
     }
 
     private fun initDelegates() {
@@ -549,6 +519,9 @@ class CallViewModel(
 
     private fun startLocalVideo() {
         if (state.value.isLocalVideoOn) return
+        // The dying engine would accept the source but it is lost with the engine;
+        // resumeCallAfterDestroy() re-applies media state on the new engine
+        if (isEngineDestroying) return
 
         val localVideoSource = liveDigitalEngine?.startCameraVideoSource(
             videoOutputFormat = null,
@@ -588,6 +561,9 @@ class CallViewModel(
 
     private fun startLocalAudio() {
         if (state.value.isLocalAudioOn) return
+        // The dying engine would accept the source but it is lost with the engine;
+        // resumeCallAfterDestroy() re-applies media state on the new engine
+        if (isEngineDestroying) return
 
         val localAudioSource = liveDigitalEngine?.startAudioSource(audioEncodingPresets = null)
         localAudioSource?.let { source ->
@@ -617,14 +593,16 @@ class CallViewModel(
     }
 
     private fun restartSession() {
-        destroyEngine(onComplete = { startConference() })
+        destroyEngine()
     }
 
-    private fun destroyEngine(onComplete: (suspend () -> Unit)? = null) {
+    private fun destroyEngine() {
         if (isEngineDestroying) return
         val engine = liveDigitalEngine ?: return
         isEngineDestroying = true
 
+        startConferenceJob?.cancel()
+        startConferenceJob = null
         stopLocalVideo()
         stopLocalAudio()
 
@@ -637,10 +615,22 @@ class CallViewModel(
                     mutableState.update { it.copy(remotePeers = emptyList()) }
                     if (liveDigitalEngine === engine) liveDigitalEngine = null
                     isEngineDestroying = false
-                    onComplete?.invoke()
+                    resumeCallAfterDestroy()
                 }
             }
         })
+    }
+
+    // A new call may have become active while the previous engine was still being
+    // destroyed; its handling was skipped then, so replay it now that destroy is done
+    private suspend fun resumeCallAfterDestroy() {
+        when (val callState = state.value.callState) {
+            is CallState.Active,
+            is CallState.Answered,
+            is CallState.Outgoing -> handleCallState(callState, wasActive = null)
+
+            else -> Unit
+        }
     }
 
     private suspend fun createContactIfMissing(
